@@ -73,7 +73,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
     try {
       if (initialData) {
-        // Atualizar tarefa existente
         const { error } = await supabase
           .from("tasks")
           .update({
@@ -91,7 +90,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         if (error) throw error;
         showSuccess("Tarefa atualizada com sucesso!");
       } else {
-        // Adicionar nova tarefa
         const { error } = await supabase.from("tasks").insert({
           title: values.title,
           description: values.description,
@@ -117,13 +115,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
-      <h2 className="text-xl font-semibold">{initialData ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</h2>
       <div>
-        <Label htmlFor="title">Título</Label>
+        <Label htmlFor="title" className="text-foreground">Título</Label>
         <Input
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -132,21 +130,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         )}
       </div>
       <div>
-        <Label htmlFor="description">Descrição (Opcional)</Label>
+        <Label htmlFor="description" className="text-foreground">Descrição (Opcional)</Label>
         <Textarea
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa..."
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
-        <Label htmlFor="due_date">Data de Vencimento (Opcional)</Label>
+        <Label htmlFor="due_date" className="text-foreground">Data de Vencimento (Opcional)</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("due_date") && "text-muted-foreground"
               )}
             >
@@ -158,7 +157,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("due_date") || undefined}
@@ -170,7 +169,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       </div>
 
       <div>
-        <Label htmlFor="time">Horário (Opcional)</Label>
+        <Label htmlFor="time" className="text-foreground">Horário (Opcional)</Label>
         <TimePicker
           value={form.watch("time") || undefined}
           onChange={(time) => form.setValue("time", time || null)}
@@ -178,18 +177,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       </div>
 
       <div>
-        <Label htmlFor="recurrence_type">Recorrência</Label>
+        <Label htmlFor="recurrence_type" className="text-foreground">Recorrência</Label>
         <Select
           onValueChange={(value: "none" | "daily_weekday" | "weekly" | "monthly") => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_details", null); // Limpa detalhes ao mudar o tipo
+            form.setValue("recurrence_details", null);
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type">
+          <SelectTrigger id="recurrence_type" className="bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily_weekday">Dias de Semana (Seg-Sex)</SelectItem>
             <SelectItem value="weekly">Semanal</SelectItem>
@@ -200,15 +199,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
       {recurrenceType === "weekly" && (
         <div>
-          <Label htmlFor="recurrence_details_weekly">Dia da Semana</Label>
+          <Label htmlFor="recurrence_details_weekly" className="text-foreground">Dia da Semana</Label>
           <Select
             onValueChange={(value) => form.setValue("recurrence_details", value)}
             value={form.watch("recurrence_details") || undefined}
           >
-            <SelectTrigger id="recurrence_details_weekly">
+            <SelectTrigger id="recurrence_details_weekly" className="bg-input border-border text-foreground focus-visible:ring-ring">
               <SelectValue placeholder="Selecionar dia da semana" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
               <SelectItem value="Sunday">Domingo</SelectItem>
               <SelectItem value="Monday">Segunda-feira</SelectItem>
               <SelectItem value="Tuesday">Terça-feira</SelectItem>
@@ -223,7 +222,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
       {recurrenceType === "monthly" && (
         <div>
-          <Label htmlFor="recurrence_details_monthly">Dia do Mês</Label>
+          <Label htmlFor="recurrence_details_monthly" className="text-foreground">Dia do Mês</Label>
           <Input
             id="recurrence_details_monthly"
             type="number"
@@ -231,6 +230,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             max="31"
             {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
+            className="bg-input border-border text-foreground focus-visible:ring-ring"
           />
           {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
@@ -240,7 +240,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         </div>
       )}
 
-      <Button type="submit" className="w-full">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
     </form>
   );
 };

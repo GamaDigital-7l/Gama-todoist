@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useSession } from "@/integrations/supabase/auth"; // Importar useSession
+import { useSession } from "@/integrations/supabase/auth";
 
 interface MotivationMessage {
   id: string;
@@ -29,7 +29,7 @@ const fetchDailyMotivation = async (userId: string | undefined): Promise<Motivat
     .limit(1)
     .single();
 
-  if (todayError && todayError.code !== 'PGRST116') { // PGRST116 means no rows found
+  if (todayError && todayError.code !== 'PGRST116') {
     console.error("Erro ao buscar mensagem motivacional do dia:", todayError);
   }
 
@@ -57,16 +57,16 @@ const DailyMotivation: React.FC = () => {
   const userId = session?.user?.id;
 
   const { data: motivation, isLoading, error } = useQuery<MotivationMessage | null, Error>({
-    queryKey: ["dailyMotivation", userId], // Adicionar userId à chave da query
+    queryKey: ["dailyMotivation", userId],
     queryFn: () => fetchDailyMotivation(userId),
     staleTime: 1000 * 60 * 60 * 24, // Cache por 24 horas
   });
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">Motivação do Dia</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Motivação do Dia</CardTitle>
           <Sparkles className="h-5 w-5 text-yellow-500" />
         </CardHeader>
         <CardContent>
@@ -78,9 +78,9 @@ const DailyMotivation: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">Motivação do Dia</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Motivação do Dia</CardTitle>
           <Sparkles className="h-5 w-5 text-yellow-500" />
         </CardHeader>
         <CardContent>
@@ -92,9 +92,9 @@ const DailyMotivation: React.FC = () => {
 
   if (!motivation) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">Motivação do Dia</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Motivação do Dia</CardTitle>
           <Sparkles className="h-5 w-5 text-yellow-500" />
         </CardHeader>
         <CardContent>
@@ -105,13 +105,13 @@ const DailyMotivation: React.FC = () => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-semibold">Motivação do Dia</CardTitle>
-        <Sparkles className="h-5 w-5 text-yellow-500" />
+        <CardTitle className="text-lg font-semibold text-primary">Motivação do Dia</CardTitle>
+        <Sparkles className="h-5 w-5 text-primary" />
       </CardHeader>
       <CardContent>
-        <blockquote className="text-lg font-medium italic leading-relaxed">
+        <blockquote className="text-lg font-medium italic leading-relaxed text-foreground">
           "{motivation.message}"
         </blockquote>
         {motivation.author && (

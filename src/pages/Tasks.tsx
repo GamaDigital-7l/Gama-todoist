@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import TaskForm, { TaskFormValues } from "@/components/TaskForm"; // Importar TaskFormValues
+import TaskForm, { TaskFormValues } from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
@@ -12,11 +12,11 @@ import { format, isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle } from "lucide-react"; // Importar Edit e PlusCircle
+import { Trash2, Repeat, Clock, Edit, PlusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
 
-interface Task extends TaskFormValues { // Estender de TaskFormValues
+interface Task extends TaskFormValues {
   id: string;
   is_completed: boolean;
   created_at: string;
@@ -154,18 +154,19 @@ const Tasks: React.FC = () => {
     return (
       <div className="space-y-3">
         {filteredTasks.map((task) => (
-          <div key={task.id} className="flex items-center justify-between p-3 border rounded-md bg-background">
+          <div key={task.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-background shadow-sm">
             <div className="flex items-center gap-3">
               <Checkbox
                 id={`task-${task.id}`}
                 checked={task.is_completed}
                 onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
+                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
               />
               <div className="grid gap-1.5">
                 <label
                   htmlFor={`task-${task.id}`}
                   className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                    task.is_completed ? "line-through text-muted-foreground" : ""
+                    task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
                   }`}
                 >
                   {task.title}
@@ -191,12 +192,12 @@ const Tasks: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)}>
-                <Edit className="h-4 w-4 text-blue-500" />
+              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
+                <Edit className="h-4 w-4" />
                 <span className="sr-only">Editar Tarefa</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
-                <Trash2 className="h-4 w-4 text-red-500" />
+              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
+                <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Deletar Tarefa</span>
               </Button>
             </div>
@@ -206,7 +207,7 @@ const Tasks: React.FC = () => {
     );
   };
 
-  if (isLoading) return <p>Carregando tarefas...</p>;
+  if (isLoading) return <p className="text-muted-foreground">Carregando tarefas...</p>;
   if (error) return <p className="text-red-500">Erro ao carregar tarefas: {error.message}</p>;
 
   const dailyTasks = tasks?.filter((task) => filterTasks(task, "daily")) || [];
@@ -217,22 +218,22 @@ const Tasks: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Suas Tarefas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
             setIsFormOpen(open);
-            if (!open) setEditingTask(undefined); // Limpa a tarefa de edição ao fechar
+            if (!open) setEditingTask(undefined);
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)}>
+            <Button onClick={() => setEditingTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle>{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
+              <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
             </DialogHeader>
             <TaskForm
               initialData={editingTask}
@@ -247,17 +248,17 @@ const Tasks: React.FC = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-card border border-border rounded-lg shadow-sm">
           <CardHeader>
-            <CardTitle>Minhas Tarefas</CardTitle>
+            <CardTitle className="text-foreground">Minhas Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="daily" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="daily">Diárias</TabsTrigger>
-                <TabsTrigger value="weekly">Semanais</TabsTrigger>
-                <TabsTrigger value="monthly">Mensais</TabsTrigger>
-                <TabsTrigger value="all">Todas</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 bg-secondary/50 border border-border rounded-md">
+                <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
+                <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
+                <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
               </TabsList>
               <div className="mt-4">
                 <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>

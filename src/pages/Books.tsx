@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import BookForm from "@/components/BookForm";
-import { Link } from "react-router-dom"; // Importar Link
+import { Link } from "react-router-dom";
 
 interface Book {
   id: string;
@@ -41,8 +41,8 @@ const Books: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-4">
-        <h1 className="text-3xl font-bold">Sua Biblioteca de Livros</h1>
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-muted-foreground">Carregando seus livros...</p>
         <div className="flex-1 flex items-end justify-center">
           <MadeWithDyad />
@@ -54,8 +54,8 @@ const Books: React.FC = () => {
   if (error) {
     showError("Erro ao carregar livros: " + error.message);
     return (
-      <div className="flex flex-1 flex-col gap-4">
-        <h1 className="text-3xl font-bold">Sua Biblioteca de Livros</h1>
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-red-500">Erro ao carregar livros: {error.message}</p>
         <div className="flex-1 flex items-end justify-center">
           <MadeWithDyad />
@@ -65,18 +65,18 @@ const Books: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Sua Biblioteca de Livros</h1>
+        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle>Adicionar Novo Livro</DialogTitle>
+              <DialogTitle className="text-foreground">Adicionar Novo Livro</DialogTitle>
             </DialogHeader>
             <BookForm onBookAdded={refetch} onClose={() => setIsFormOpen(false)} />
           </DialogContent>
@@ -89,16 +89,16 @@ const Books: React.FC = () => {
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
-            <Link to={`/books/${book.id}`} key={book.id} className="block"> {/* Envolve o Card com Link */}
-              <Card className="flex flex-col overflow-hidden h-full hover:shadow-lg transition-shadow duration-200">
+            <Link to={`/books/${book.id}`} key={book.id} className="block">
+              <Card className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}
                   alt={book.title}
                   className="w-full h-48 object-cover"
                 />
                 <CardHeader>
-                  <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
-                  <CardDescription className="line-clamp-1">{book.author}</CardDescription>
+                  <CardTitle className="text-lg line-clamp-2 text-foreground">{book.title}</CardTitle>
+                  <CardDescription className="line-clamp-1 text-muted-foreground">{book.author}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <span

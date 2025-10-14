@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
-import { ThemeToggle } from "@/components/ThemeToggle"; // Importar ThemeToggle
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -25,12 +25,12 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <span className="sr-only">Alternar Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs">
-            <nav className="grid gap-6 text-lg font-medium">
+          <SheetContent side="left" className="sm:max-w-xs bg-sidebar">
+            <nav className="grid gap-6 text-lg font-medium p-4">
               <NavLink
                 to="/dashboard"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
                 Dashboard
@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <NavLink
                 to="/tasks"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
                 Tarefas
@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <NavLink
                 to="/goals"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
                 >
                 Metas
@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <NavLink
                 to="/books"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-primary bg-accent" : "text-muted-foreground hover:text-foreground"}`
                 }
               >
                 Livros
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <NavLink
                 to="/motivation"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
                 Motivação
@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
                 Configurações
@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
       )}
       <h1 className="text-xl font-semibold">Minha Netflix da Vida Pessoal</h1>
       <div className="ml-auto flex items-center gap-4">
-        <ThemeToggle /> {/* Adicionar o botão de alternância de tema aqui */}
+        <ThemeToggle />
       </div>
     </header>
   );

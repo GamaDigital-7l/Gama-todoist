@@ -13,22 +13,21 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (!isLoading && session) {
-      // Se o usuário já estiver logado, redireciona para o dashboard
       navigate('/dashboard');
     }
   }, [session, isLoading, navigate]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Carregando...</div>;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">Entrar ou Cadastrar</h2>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md bg-card p-8 rounded-lg shadow-lg border border-border">
+        <h2 className="text-2xl font-bold text-center mb-6 text-foreground">Entrar ou Cadastrar</h2>
         <Auth
           supabaseClient={supabase}
-          providers={[]} // Você pode adicionar provedores como 'google', 'github' aqui
+          providers={[]}
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -36,12 +35,29 @@ const Login: React.FC = () => {
                 colors: {
                   brand: 'hsl(var(--primary))',
                   brandAccent: 'hsl(var(--primary-foreground))',
+                  defaultButtonBackground: 'hsl(var(--secondary))',
+                  defaultButtonBackgroundHover: 'hsl(var(--secondary-foreground))',
+                  defaultButtonBorder: 'hsl(var(--border))',
+                  defaultButtonText: 'hsl(var(--foreground))',
+                  inputBackground: 'hsl(var(--input))',
+                  inputBorder: 'hsl(var(--border))',
+                  inputBorderHover: 'hsl(var(--ring))',
+                  inputBorderFocus: 'hsl(var(--ring))',
+                  inputText: 'hsl(var(--foreground))',
+                  messageText: 'hsl(var(--foreground))',
+                  anchorTextColor: 'hsl(var(--primary))',
+                  anchorTextHoverColor: 'hsl(var(--primary-foreground))',
+                },
+                radii: {
+                  borderRadiusButton: 'var(--radius)',
+                  buttonBorderRadius: 'var(--radius)',
+                  inputBorderRadius: 'var(--radius)',
                 },
               },
             },
           }}
-          theme="light" // Ou "dark" dependendo do seu tema principal
-          redirectTo={window.location.origin + '/dashboard'} // Redireciona para o dashboard após o login
+          theme="dark" // Usar tema escuro para o Auth UI para melhor contraste com o fundo claro/escuro do app
+          redirectTo={window.location.origin + '/dashboard'}
         />
       </div>
     </div>

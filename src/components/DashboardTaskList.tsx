@@ -162,13 +162,13 @@ const DashboardTaskList: React.FC = () => {
   const todayTasks = tasks ? getTodayTasks(tasks) : [];
 
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <ListTodo className="h-5 w-5" /> Tarefas de Hoje
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
+          <ListTodo className="h-5 w-5 text-primary" /> Tarefas de Hoje
         </CardTitle>
         <Link to="/tasks">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
             Ver Todas <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </Link>
@@ -181,18 +181,19 @@ const DashboardTaskList: React.FC = () => {
         )}
         <div className="space-y-3">
           {todayTasks.map((task) => (
-            <div key={task.id} className="flex items-center justify-between p-3 border rounded-md bg-background">
+            <div key={task.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-background shadow-sm">
               <div className="flex items-center gap-3">
                 <Checkbox
                   id={`dashboard-task-${task.id}`}
                   checked={task.is_completed}
                   onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
                 <div className="grid gap-1.5">
                   <label
                     htmlFor={`dashboard-task-${task.id}`}
                     className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                      task.is_completed ? "line-through text-muted-foreground" : ""
+                      task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
                     }`}
                   >
                     {task.title}

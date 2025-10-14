@@ -21,6 +21,7 @@ interface Task {
   is_completed: boolean;
   due_date?: string;
   recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
+  recurrence_details?: string;
 }
 
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
@@ -38,7 +39,7 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type");
+  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details");
   if (error) {
     console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
@@ -118,45 +119,45 @@ const Dashboard: React.FC = () => {
       <DashboardTaskList />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold">Tarefas Diárias</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">Tarefas Diárias</CardTitle>
             <ListTodo className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoadingTasks ? (
-              <div className="text-3xl font-bold">Carregando...</div>
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
             ) : (
-              <div className="text-3xl font-bold">{todayTasksStats.completed}/{todayTasksStats.total} Concluídas</div>
+              <div className="text-3xl font-bold text-foreground">{todayTasksStats.completed}/{todayTasksStats.total} Concluídas</div>
             )}
             <p className="text-sm text-muted-foreground mt-1">
               Você está no caminho certo!
             </p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold">Pontuação Total</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">Pontuação Total</CardTitle>
             <Award className="h-5 w-5 text-yellow-500" />
           </CardHeader>
           <CardContent>
             {isLoadingProfile ? (
-              <div className="text-3xl font-bold">Carregando...</div>
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
             ) : (
-              <div className="text-3xl font-bold">+{profile?.points || 0} Pontos</div>
+              <div className="text-3xl font-bold text-foreground">+{profile?.points || 0} Pontos</div>
             )}
             <p className="text-sm text-muted-foreground mt-1">
               Continue assim para subir de nível!
             </p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold">Próxima Meta</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">Próxima Meta</CardTitle>
             <Target className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">Ler 10 páginas</div>
+            <div className="text-3xl font-bold text-foreground">Ler 10 páginas</div>
             <p className="text-sm text-muted-foreground mt-1">
               Faltam 5 páginas para hoje.
             </p>

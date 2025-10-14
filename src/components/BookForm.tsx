@@ -18,13 +18,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 
-// Definindo o esquema de validação para o formulário de livro
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),
   author: z.string().optional(),
   cover_image_url: z.string().url("URL da capa inválida.").optional().or(z.literal("")),
   description: z.string().optional(),
-  // O campo 'content' foi removido, pois agora usaremos PDF
   read_status: z.enum(["unread", "reading", "finished"]).default("unread"),
   pdf_file: z
     .instanceof(File)
@@ -58,10 +56,10 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
 
       if (values.pdf_file) {
         const file = values.pdf_file;
-        const filePath = `public/${Date.now()}-${file.name}`; // Caminho único para o arquivo
+        const filePath = `public/${Date.now()}-${file.name}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("book-pdfs") // Nome do bucket no Supabase Storage
+          .from("book-pdfs")
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false,
@@ -71,7 +69,6 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
           throw new Error("Erro ao fazer upload do PDF: " + uploadError.message);
         }
 
-        // Obter a URL pública do arquivo
         const { data: publicUrlData } = supabase.storage
           .from("book-pdfs")
           .getPublicUrl(filePath);
@@ -79,15 +76,13 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         pdfUrl = publicUrlData.publicUrl;
       }
 
-      // Inserir os dados do livro no banco de dados
       const { error: insertError } = await supabase.from("books").insert({
         title: values.title,
         author: values.author || null,
         cover_image_url: values.cover_image_url || null,
         description: values.description || null,
-        pdf_url: pdfUrl, // Salvar a URL do PDF
+        pdf_url: pdfUrl,
         read_status: values.read_status,
-        // user_id: auth.uid() // Descomentar quando a autenticação for reativada
       });
 
       if (insertError) throw insertError;
@@ -102,13 +97,14 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
       <div>
-        <Label htmlFor="title">Título</Label>
+        <Label htmlFor="title" className="text-foreground">Título</Label>
         <Input
           id="title"
           {...form.register("title")}
           placeholder="Ex: O Senhor dos Anéis"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -117,19 +113,21 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         )}
       </div>
       <div>
-        <Label htmlFor="author">Autor (Opcional)</Label>
+        <Label htmlFor="author" className="text-foreground">Autor (Opcional)</Label>
         <Input
           id="author"
           {...form.register("author")}
           placeholder="Ex: J.R.R. Tolkien"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
-        <Label htmlFor="cover_image_url">URL da Imagem de Capa (Opcional)</Label>
+        <Label htmlFor="cover_image_url" className="text-foreground">URL da Imagem de Capa (Opcional)</Label>
         <Input
           id="cover_image_url"
           {...form.register("cover_image_url")}
           placeholder="Ex: https://exemplo.com/capa.jpg"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.cover_image_url && (
           <p className="text-red-500 text-sm mt-1">
@@ -138,20 +136,22 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         )}
       </div>
       <div>
-        <Label htmlFor="description">Descrição (Opcional)</Label>
+        <Label htmlFor="description" className="text-foreground">Descrição (Opcional)</Label>
         <Textarea
           id="description"
           {...form.register("description")}
           placeholder="Uma breve descrição do livro..."
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
-        <Label htmlFor="pdf_file">Arquivo PDF (Opcional)</Label>
+        <Label htmlFor="pdf_file" className="text-foreground">Arquivo PDF (Opcional)</Label>
         <Input
           id="pdf_file"
           type="file"
           accept="application/pdf"
           onChange={(e) => form.setValue("pdf_file", e.target.files?.[0])}
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.pdf_file && (
           <p className="text-red-500 text-sm mt-1">
@@ -160,24 +160,24 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         )}
       </div>
       <div>
-        <Label htmlFor="read_status">Status de Leitura</Label>
+        <Label htmlFor="read_status" className="text-foreground">Status de Leitura</Label>
         <Select
           onValueChange={(value: "unread" | "reading" | "finished") =>
             form.setValue("read_status", value)
           }
           value={form.watch("read_status")}
         >
-          <SelectTrigger id="read_status">
+          <SelectTrigger id="read_status" className="bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="unread">Não Lido</SelectItem>
             <SelectItem value="reading">Lendo</SelectItem>
             <SelectItem value="finished">Concluído</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      <Button type="submit" className="w-full">Adicionar Livro</Button>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Adicionar Livro</Button>
     </form>
   );
 };

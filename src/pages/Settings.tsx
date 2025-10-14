@@ -15,7 +15,7 @@ import { showSuccess, showError } from "@/utils/toast";
 const settingsSchema = z.object({
   evolution_api_key: z.string().optional(),
   telegram_api_key: z.string().optional(),
-  telegram_chat_id: z.string().optional(), // Novo campo
+  telegram_chat_id: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -27,21 +27,19 @@ const Settings: React.FC = () => {
     defaultValues: {
       evolution_api_key: "",
       telegram_api_key: "",
-      telegram_chat_id: "", // Valor padrão
+      telegram_chat_id: "",
     },
   });
 
   useEffect(() => {
     const fetchSettings = async () => {
-      // Por enquanto, como não há autenticação, vamos buscar a primeira configuração disponível.
-      // Em um cenário com autenticação, você buscaria as configurações do usuário logado.
       const { data, error } = await supabase
         .from("settings")
         .select("*")
         .limit(1)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+      if (error && error.code !== 'PGRST116') {
         showError("Erro ao carregar configurações: " + error.message);
       } else if (data) {
         form.reset(data);
@@ -55,13 +53,12 @@ const Settings: React.FC = () => {
   const onSubmit = async (values: SettingsFormValues) => {
     try {
       if (settingsId) {
-        // Atualizar configurações existentes
         const { error } = await supabase
           .from("settings")
           .update({
             evolution_api_key: values.evolution_api_key,
             telegram_api_key: values.telegram_api_key,
-            telegram_chat_id: values.telegram_chat_id, // Salvar novo campo
+            telegram_chat_id: values.telegram_chat_id,
             updated_at: new Date().toISOString(),
           })
           .eq("id", settingsId);
@@ -69,14 +66,12 @@ const Settings: React.FC = () => {
         if (error) throw error;
         showSuccess("Configurações atualizadas com sucesso!");
       } else {
-        // Inserir novas configurações
         const { data, error } = await supabase
           .from("settings")
           .insert({
             evolution_api_key: values.evolution_api_key,
             telegram_api_key: values.telegram_api_key,
-            telegram_chat_id: values.telegram_chat_id, // Inserir novo campo
-            // user_id: auth.uid() // Adicionar user_id aqui quando a autenticação for reativada
+            telegram_chat_id: values.telegram_chat_id,
           })
           .select()
           .single();
@@ -92,27 +87,28 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold">Configurações</h1>
       <p className="text-lg text-muted-foreground">
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>
 
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
         <CardHeader>
-          <CardTitle>Chaves de API</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">Chaves de API</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Insira suas chaves de API para integrar com outros serviços.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="evolution_api_key">Evolution API Key</Label>
+              <Label htmlFor="evolution_api_key" className="text-foreground">Evolution API Key</Label>
               <Input
                 id="evolution_api_key"
                 {...form.register("evolution_api_key")}
                 placeholder="Sua chave da Evolution API"
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
               />
               {form.formState.errors.evolution_api_key && (
                 <p className="text-red-500 text-sm mt-1">
@@ -121,11 +117,12 @@ const Settings: React.FC = () => {
               )}
             </div>
             <div>
-              <Label htmlFor="telegram_api_key">Telegram API Key</Label>
+              <Label htmlFor="telegram_api_key" className="text-foreground">Telegram API Key</Label>
               <Input
                 id="telegram_api_key"
                 {...form.register("telegram_api_key")}
                 placeholder="Sua chave da Telegram API"
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
               />
               {form.formState.errors.telegram_api_key && (
                 <p className="text-red-500 text-sm mt-1">
@@ -134,11 +131,12 @@ const Settings: React.FC = () => {
               )}
             </div>
             <div>
-              <Label htmlFor="telegram_chat_id">Telegram Chat ID</Label>
+              <Label htmlFor="telegram_chat_id" className="text-foreground">Telegram Chat ID</Label>
               <Input
                 id="telegram_chat_id"
                 {...form.register("telegram_chat_id")}
                 placeholder="Seu ID de Chat do Telegram"
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
               />
               {form.formState.errors.telegram_chat_id && (
                 <p className="text-red-500 text-sm mt-1">
@@ -146,7 +144,7 @@ const Settings: React.FC = () => {
                 </p>
               )}
             </div>
-            <Button type="submit">Salvar Configurações</Button>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Salvar Configurações</Button>
           </form>
         </CardContent>
       </Card>

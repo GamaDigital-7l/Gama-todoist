@@ -102,7 +102,7 @@ const Goals: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-muted-foreground">Carregando suas metas...</p>
         <div className="flex-1 flex items-end justify-center">
           <MadeWithDyad />
@@ -115,7 +115,7 @@ const Goals: React.FC = () => {
     showError("Erro ao carregar metas: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas: {error.message}</p>
         <div className="flex-1 flex items-end justify-center">
           <MadeWithDyad />
@@ -127,22 +127,22 @@ const Goals: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
             setIsFormOpen(open);
-            if (!open) setEditingGoal(undefined); // Limpa a meta de edição ao fechar
+            if (!open) setEditingGoal(undefined);
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingGoal(undefined)}>
+            <Button onClick={() => setEditingGoal(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle>{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
+              <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
             </DialogHeader>
             <GoalForm
               initialData={editingGoal}
@@ -159,27 +159,27 @@ const Goals: React.FC = () => {
       {goals && goals.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {goals.map((goal) => (
-            <Card key={goal.id} className="flex flex-col h-full hover:shadow-lg transition-shadow duration-200">
+            <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold">{goal.title}</CardTitle>
+                <CardTitle className="text-xl font-semibold text-foreground">{goal.title}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)}>
-                    <Edit className="h-4 w-4 text-blue-500" />
+                  <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
+                    <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Meta</span>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)} className="text-red-500 hover:bg-red-500/10">
+                    <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Deletar Meta</span>
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="flex-grow">
                 {goal.description && (
-                  <CardDescription className="mb-2">{goal.description}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground">{goal.description}</CardDescription>
                 )}
                 {goal.target_date && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                    <CalendarIcon className="h-4 w-4" /> Data Alvo: {format(parseISO(goal.target_date as string), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date as string), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
