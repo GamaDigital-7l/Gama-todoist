@@ -377,7 +377,8 @@ const Tasks: React.FC = () => {
                 {task.description && (
                   <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                 )}
-                {task.tags?.length > 0 && ( {/* Usando encadeamento opcional */}
+                {/* Usando encadeamento opcional para tags */}
+                {task.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
                       <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
