@@ -172,9 +172,6 @@ serve(async (req) => {
     const sendPromises = notificationsToSend.map(async (notification) => {
       if (NOTIFICATION_CHANNEL === "telegram") {
         const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-        // Para Telegram, podemos manter os botões se desejado, mas para simplificar, vou remover por enquanto
-        // e focar na funcionalidade de alternar canais.
-        // Se precisar de botões no Telegram, a lógica original pode ser reintroduzida aqui.
         const response = await fetch(telegramApiUrl, {
           method: "POST",
           headers: {
@@ -184,15 +181,17 @@ serve(async (req) => {
             chat_id: TELEGRAM_CHAT_ID,
             text: notification.message,
             parse_mode: "Markdown",
-            // reply_markup: keyboard, // Removido para simplificar a transição
           }),
         });
+        const telegramResponseData = await response.json(); // Captura a resposta JSON
+        console.log("Telegram API Response OK:", response.ok); // Loga se a resposta HTTP foi 2xx
+        console.log("Telegram API Full Response:", telegramResponseData); // Loga a resposta completa da API do Telegram
+
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Erro ao enviar notificação para o Telegram:", errorData);
-          throw new Error(`Telegram API error: ${errorData.description}`);
+          console.error("Erro ao enviar notificação para o Telegram:", telegramResponseData);
+          throw new Error(`Telegram API error: ${telegramResponseData.description || JSON.stringify(telegramResponseData)}`);
         }
-        return response.json();
+        return telegramResponseData;
       } else if (NOTIFICATION_CHANNEL === "whatsapp") {
         const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`; // Substitua 'instanceName' e o domínio se necessário
         const response = await fetch(evolutionApiUrl, {
@@ -213,14 +212,17 @@ serve(async (req) => {
             }
           }),
         });
+        const whatsappResponseData = await response.json(); // Captura a resposta JSON
+        console.log("Evolution API Response OK:", response.ok); // Loga se a resposta HTTP foi 2xx
+        console.log("Evolution API Full Response:", whatsappResponseData); // Loga a resposta completa da Evolution API
+
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", errorData);
-          throw new Error(`Evolution API error: ${errorData.message || JSON.stringify(errorData)}`);
+          console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", whatsappResponseData);
+          throw new Error(`Evolution API error: ${whatsappResponseData.message || JSON.stringify(whatsappResponseData)}`);
         }
-        return response.json();
+        return whatsappResponseData;
       }
-      return Promise.resolve(null); // Caso NOTIFICATION_CHANNEL seja 'none'
+      return Promise.resolve(null);
     });
 
     await Promise.all(sendPromises);
