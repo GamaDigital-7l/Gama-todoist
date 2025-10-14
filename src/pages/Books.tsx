@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, BookOpen, Edit, Trash2, Target } from "lucide-react"; // Adicionado Target
+import { PlusCircle, BookOpen, Edit, Trash2, Target } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
@@ -23,10 +23,10 @@ interface Book {
   read_status: "unread" | "reading" | "finished";
   created_at: string;
   updated_at: string;
-  total_pages?: number; // Novo campo
-  current_page?: number; // Novo campo
-  daily_reading_target_pages?: number; // Novo campo
-  last_read_date?: string; // Novo campo
+  total_pages?: number;
+  current_page?: number;
+  daily_reading_target_pages?: number;
+  last_read_date?: string;
 }
 
 const fetchBooks = async (userId: string): Promise<Book[]> => {
@@ -73,7 +73,7 @@ const Books: React.FC = () => {
         .from("books")
         .update({ 
           current_page: newPage, 
-          last_read_date: new Date().toISOString().split('T')[0], // Atualiza a data da última leitura
+          last_read_date: new Date().toISOString().split('T')[0],
           updated_at: new Date().toISOString() 
         })
         .eq("id", bookId)
@@ -179,7 +179,7 @@ const Books: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
             <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-              <Link to={`/books/${book.id}`} className="block">
+              <Link to={`/books/${book.id}`} className="block"> {/* Link para a página de detalhes */}
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}
                   alt={book.title}

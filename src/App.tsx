@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client"; // Importação corrigida
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
@@ -12,7 +12,8 @@ import Goals from "./pages/Goals";
 import Motivation from "./pages/Motivation";
 import Settings from "./pages/Settings";
 import Books from "./pages/Books";
-import BookReader from "./pages/BookReader";
+import BookDetails from "./pages/BookDetails"; // Renomeado de BookReader
+import BookReaderFullScreen from "./pages/BookReaderFullScreen"; // Novo componente
 import AIChat from "./pages/AIChat";
 import Study from "./pages/Study";
 import Health from "./pages/Health";
@@ -20,7 +21,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
 import { ThemeProvider } from "./components/ThemeProvider";
-import PushNotificationManager from "./components/PushNotificationManager"; // Importar o novo componente
+import PushNotificationManager from "./components/PushNotificationManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,7 +56,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   return (
     <>
-      <PushNotificationManager /> {/* Adicionar o gerenciador de notificações aqui */}
+      <PushNotificationManager />
       {children}
     </>
   );
@@ -71,6 +72,8 @@ const App = () => (
           <SessionContextProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
+              {/* Rota para o leitor de PDF em tela cheia, fora do Layout */}
+              <Route path="/books/:id/read" element={<ProtectedRoute><BookReaderFullScreen /></ProtectedRoute>} />
               <Route
                 path="/"
                 element={
@@ -84,7 +87,7 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/books" element={<Books />} />
-                <Route path="/books/:id" element={<BookReader />} />
+                <Route path="/books/:id" element={<BookDetails />} /> {/* Rota para detalhes do livro */}
                 <Route path="/motivation" element={<Motivation />} />
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/study" element={<Study />} />
