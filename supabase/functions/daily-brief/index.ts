@@ -19,7 +19,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
