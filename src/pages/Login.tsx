@@ -4,32 +4,37 @@ import React from 'react';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/integrations/supabase/client';
-import { useSupabase } from '@/integrations/supabase/supabaseContext';
-import { useNavigate } from 'react-router-dom';
+import { useSession } from '@/contexts/SessionContext';
+import { MadeWithDyad } from '@/components/made-with-dyad';
 
 const Login: React.FC = () => {
-  const { session, isLoading } = useSupabase();
-  const navigate = useNavigate();
-
-  React.useEffect(() => {
-    if (!isLoading && session) {
-      navigate('/dashboard');
-    }
-  }, [session, isLoading, navigate]);
+  const { isLoading, session } = useSession();
 
   if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <p className="text-lg text-gray-700 dark:text-gray-300">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (session) {
+    // This case should be handled by the SessionContext redirect, but as a fallback
+    return null;
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-          Faça login na sua Netflix da Vida Pessoal
-        </h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+          Bem-vindo à Minha Netflix da Vida Pessoal
+        </h1>
+        <p className="text-center text-gray-600 dark:text-gray-400">
+          Faça login ou crie uma conta para começar a organizar sua vida.
+        </p>
         <Auth
           supabaseClient={supabase}
-          providers={[]} // No third-party providers unless specified
+          providers={[]} // You can add 'google', 'github', etc. here if desired
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -41,9 +46,12 @@ const Login: React.FC = () => {
               },
             },
           }}
-          theme="light" // Default to light theme
+          theme="light" // You can make this dynamic based on theme context
           redirectTo={window.location.origin + '/dashboard'}
         />
+      </div>
+      <div className="mt-8">
+        <MadeWithDyad />
       </div>
     </div>
   );

@@ -3,13 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SessionContextProvider } from "./contexts/SessionContext"; // Import SessionContextProvider
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
-import NotFound from "./pages/NotFound";
 import Login from "./pages/Login"; // Import the new Login page
-import { SessionContextProvider } from "./integrations/supabase/supabaseContext"; // Import the SessionContextProvider
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SessionContextProvider> {/* Wrap the app with SessionContextProvider */}
+        <SessionContextProvider> {/* Wrap the entire app with SessionContextProvider */}
           <Routes>
             <Route path="/login" element={<Login />} /> {/* New route for Login */}
             <Route path="/" element={<Layout />}>

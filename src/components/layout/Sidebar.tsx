@@ -1,29 +1,24 @@
 "use client";
 
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Home, ListTodo, Target, Sparkles, Settings, LogOut, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSupabase } from "@/integrations/supabase/supabaseContext";
-import { useEffect } from "react";
+import { useSession } from "@/contexts/SessionContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface SidebarProps {
   className?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
-  const { session, isLoading } = useSupabase();
-  const navigate = useNavigate();
+  const { user } = useSession();
 
-  useEffect(() => {
-    if (!isLoading && !session) {
-      navigate('/login');
-    }
-  }, [session, isLoading, navigate]);
-
-  if (isLoading || !session) {
-    return null; // Don't render sidebar if loading or not authenticated
-  }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <div className={cn("hidden border-r bg-muted/40 md:block", className)}>
@@ -71,6 +66,28 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               Configurações
             </Link>
           </nav>
+        </div>
+        <div className="mt-auto p-4 border-t">
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "User"} />
+                <AvatarFallback>
+                  <UserCircle className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium truncate">{user.email}</span>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="ml-auto">
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only">Sair</span>
+              </Button>
+            </div>
+          ) : (
+            <Link to="/login" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+              <LogOut className="h-4 w-4" />
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </div>
