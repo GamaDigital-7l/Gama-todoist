@@ -7,6 +7,8 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
+import Motivation from "./pages/Motivation"; // Importando a nova página
+import Settings from "./pages/Settings";     // Importando a nova página
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +25,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/goals" element={<Goals />} />
-            {/* Futuras rotas como /motivation, /settings irão aqui */}
+            <Route path="/motivation" element={<Motivation />} /> {/* Nova rota */}
+            <Route path="/settings" element={<Settings />} />     {/* Nova rota */}
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
