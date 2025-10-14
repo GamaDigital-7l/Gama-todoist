@@ -16,16 +16,19 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Progress } from "@/components/ui/progress"; // Importar componente de progresso
 import { Label } from "@/components/ui/label"; // Importar Label
 
-interface HealthMetric extends HealthMetricFormValues {
+interface HealthMetric extends Omit<HealthMetricFormValues, 'date'> { // Omitir date do HealthMetricFormValues
   id: string;
   created_at: string;
   updated_at: string;
+  date: string; // Definir date como string para corresponder ao DB
 }
 
-interface HealthGoal extends HealthGoalFormValues {
+interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_date'> { // Omitir datas do HealthGoalFormValues
   id: string;
   created_at: string;
   updated_at: string;
+  start_date: string; // Definir start_date como string para corresponder ao DB
+  target_date: string; // Definir target_date como string para corresponder ao DB
 }
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
@@ -184,7 +187,11 @@ const Health: React.FC = () => {
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
               </DialogHeader>
               <HealthGoalForm
-                initialData={editingGoal}
+                initialData={editingGoal ? {
+                  ...editingGoal,
+                  start_date: parseISO(editingGoal.start_date),
+                  target_date: parseISO(editingGoal.target_date),
+                } : undefined}
                 onGoalSaved={refetchGoals}
                 onClose={() => setIsGoalFormOpen(false)}
               />
@@ -208,7 +215,7 @@ const Health: React.FC = () => {
                 <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
               </DialogHeader>
               <HealthMetricForm
-                initialData={editingMetric}
+                initialData={editingMetric ? { ...editingMetric, date: parseISO(editingMetric.date) } : undefined}
                 onMetricSaved={refetchMetrics}
                 onClose={() => setIsMetricFormOpen(false)}
               />
@@ -228,7 +235,7 @@ const Health: React.FC = () => {
             const currentWeightLost = latestWeight ? (goal.initial_weight_kg - latestWeight) : 0;
             const remainingToLose = totalToLose - currentWeightLost;
             const progressPercentage = totalToLose > 0 ? (currentWeightLost / totalToLose) * 100 : 0;
-            const daysRemaining = differenceInDays(parseISO(goal.target_date as string), new Date());
+            const daysRemaining = differenceInDays(parseISO(goal.target_date), new Date());
 
             return (
               <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
@@ -256,7 +263,7 @@ const Health: React.FC = () => {
                     <Target className="h-4 w-4 text-primary" /> Peso Alvo: {goal.target_weight_kg} kg
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date as string), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <CalendarIcon className="h-4 w-4 text-primary" /> Dias Restantes: {daysRemaining > 0 ? daysRemaining : 0}
@@ -316,7 +323,7 @@ const Health: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <CalendarIcon className="h-4 w-4 text-primary" /> Data: {format(parseISO(metric.date as string), "PPP", { locale: ptBR })}
+                  <CalendarIcon className="h-4 w-4 text-primary" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
                   <p className="text-sm text-muted-foreground flex items-start gap-1">

@@ -23,11 +23,12 @@ interface Tag {
   color: string;
 }
 
-interface Task extends TaskFormValues {
+interface Task extends Omit<TaskFormValues, 'due_date'> { // Omitir due_date do TaskFormValues
   id: string;
   is_completed: boolean;
   created_at: string;
   updated_at: string;
+  due_date?: string; // Definir due_date como string para corresponder ao DB
   tags: Tag[];
 }
 
@@ -153,15 +154,15 @@ const Tasks: React.FC = () => {
 
     // Lógica para tarefas com data de vencimento única
     if (!task.due_date) return false;
-    const dueDate = parseISO(task.due_date);
+    const dueDate = parseISO(task.due_date); // task.due_date é string do DB
 
     switch (filterType) {
       case "daily":
         return isToday(dueDate);
       case "weekly":
-        return isThisWeek(dueDate, { locale: ptBR });
+        return isThisWeek(dueDate); // Removido { locale: ptBR }
       case "monthly":
-        return isThisMonth(dueDate, { locale: ptBR });
+        return isThisMonth(dueDate); // Removido { locale: ptBR }
       case "all":
       default:
         return true;
@@ -270,7 +271,7 @@ const Tasks: React.FC = () => {
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
             </DialogHeader>
             <TaskForm
-              initialData={editingTask}
+              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
               onTaskSaved={refetch}
               onClose={() => setIsFormOpen(false)}
             />

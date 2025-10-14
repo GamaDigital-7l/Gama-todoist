@@ -44,7 +44,7 @@ const taskSchema = z.object({
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  initialData?: TaskFormValues & { id: string; tags?: { id: string; name: string; color: string }[] };
+  initialData?: Omit<TaskFormValues, 'due_date'> & { id: string; due_date?: string | Date | null; tags?: { id: string; name: string; color: string }[] };
   onTaskSaved: () => void;
   onClose: () => void;
 }
@@ -58,7 +58,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     resolver: zodResolver(taskSchema),
     defaultValues: initialData ? {
       ...initialData,
-      due_date: initialData.due_date ? new Date(initialData.due_date) : undefined,
+      due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
       recurrence_details: initialData.recurrence_details || undefined,
       task_type: initialData.task_type || "general",

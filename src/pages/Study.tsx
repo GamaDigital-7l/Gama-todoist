@@ -14,10 +14,11 @@ import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface StudySession extends StudySessionFormValues {
+interface StudySession extends Omit<StudySessionFormValues, 'session_date'> { // Omitir session_date do StudySessionFormValues
   id: string;
   created_at: string;
   updated_at: string;
+  session_date: string; // Definir session_date como string para corresponder ao DB
 }
 
 const fetchStudySessions = async (userId: string): Promise<StudySession[]> => {
@@ -135,7 +136,7 @@ const Study: React.FC = () => {
               <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
             </DialogHeader>
             <StudySessionForm
-              initialData={editingSession}
+              initialData={editingSession ? { ...editingSession, session_date: parseISO(editingSession.session_date) } : undefined}
               onSessionSaved={refetch}
               onClose={() => setIsFormOpen(false)}
             />
@@ -178,7 +179,7 @@ const Study: React.FC = () => {
                   <CardDescription className="mb-2 text-muted-foreground">{session.notes}</CardDescription>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <BookOpen className="h-4 w-4 text-primary" /> Data: {format(parseISO(session.session_date as string), "PPP", { locale: ptBR })}
+                  <BookOpen className="h-4 w-4 text-primary" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
                 </p>
                 {session.duration_minutes && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">

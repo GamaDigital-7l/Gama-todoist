@@ -13,10 +13,11 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 
-interface Goal extends GoalFormValues {
+interface Goal extends Omit<GoalFormValues, 'target_date'> { // Omitir target_date do GoalFormValues
   id: string;
   created_at: string;
   updated_at: string;
+  target_date?: string | null; // Definir target_date como string | null para corresponder ao DB
 }
 
 const fetchGoals = async (userId: string): Promise<Goal[]> => {
@@ -140,7 +141,7 @@ const Goals: React.FC = () => {
               <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
             </DialogHeader>
             <GoalForm
-              initialData={editingGoal}
+              initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? parseISO(editingGoal.target_date) : undefined } : undefined}
               onGoalSaved={refetch}
               onClose={() => setIsFormOpen(false)}
             />
@@ -174,7 +175,7 @@ const Goals: React.FC = () => {
                 )}
                 {goal.target_date && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date as string), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1">

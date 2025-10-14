@@ -9,7 +9,7 @@ import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format } from "date-fns";
+import { isToday, parseISO, differenceInDays, format, getDay, subDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -47,7 +47,7 @@ interface HealthGoal {
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
-    .select("points")
+    .select("id, points") // Incluir 'id' na seleção
     .eq("id", userId)
     .single();
 
@@ -70,7 +70,7 @@ const fetchUserTasks = async (): Promise<Task[]> => {
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
     .from("health_metrics")
-    .select("weight_kg")
+    .select("id, date, weight_kg") // Incluir 'id' e 'date' na seleção
     .eq("user_id", userId)
     .order("date", { ascending: false })
     .limit(1)
