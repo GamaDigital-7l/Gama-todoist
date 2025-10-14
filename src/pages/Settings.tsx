@@ -17,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BellRing } from "lucide-react";
-import { useSession } from "@/integrations/supabase/auth"; // Importar useSession
+import { BellRing, Sun } from "lucide-react"; // Adicionado Sun
+import { useSession } from "@/integrations/supabase/auth";
 
 const settingsSchema = z.object({
   evolution_api_key: z.string().nullable().optional(),
@@ -27,17 +27,18 @@ const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
-  notification_channel: z.enum(["telegram", "whatsapp", "web_push", "none"]).default("telegram"), // Adicionado "web_push"
+  notification_channel: z.enum(["telegram", "whatsapp", "web_push", "none"]).default("telegram"),
   whatsapp_phone_number: z.string().nullable().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const Settings: React.FC = () => {
-  const { session } = useSession(); // Obter a sessão do usuário
+  const { session } = useSession();
   const userId = session?.user?.id;
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [isSendingBriefTest, setIsSendingBriefTest] = useState(false); // Novo estado para o brief
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -54,12 +55,12 @@ const Settings: React.FC = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      if (!userId) return; // Não buscar configurações se o userId não estiver disponível
+      if (!userId) return;
 
       const { data, error } = await supabase
         .from("settings")
         .select("*")
-        .eq("user_id", userId) // Filtrar por user_id
+        .eq("user_id", userId)
         .limit(1)
         .single();
 
@@ -72,7 +73,7 @@ const Settings: React.FC = () => {
     };
 
     fetchSettings();
-  }, [form, userId]); // Adicionar userId como dependência
+  }, [form, userId]);
 
   const onSubmit = async (values: SettingsFormValues) => {
     if (!userId) {
@@ -91,7 +92,7 @@ const Settings: React.FC = () => {
         notification_channel: values.notification_channel,
         whatsapp_phone_number: values.whatsapp_phone_number || null,
         updated_at: new Date().toISOString(),
-        user_id: userId, // Garantir que o user_id seja salvo
+        user_id: userId,
       };
 
       if (settingsId) {
@@ -99,7 +100,7 @@ const Settings: React.FC = () => {
           .from("settings")
           .update(updateData)
           .eq("id", settingsId)
-          .eq("user_id", userId); // Garantir que só o próprio usuário possa atualizar
+          .eq("user_id", userId);
 
         if (error) throw error;
         showSuccess("Configurações atualizadas com sucesso!");
@@ -127,10 +128,10 @@ const Settings: React.FC = () => {
     }
     setIsSendingTest(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-notifications', { // Chamar a nova função genérica
-        body: {}, // O corpo pode ser vazio, a função buscará as tarefas
+      const { data, error } = await supabase.functions.invoke('send-notifications', {
+        body: {},
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`, // Passar o token de acesso para autenticar a chamada
+          'Authorization': `Bearer ${session?.access_token}`,
         },
       });
 
@@ -144,6 +145,33 @@ const Settings: React.FC = () => {
       console.error("Erro ao enviar notificação de teste:", err);
     } finally {
       setIsSendingTest(false);
+    }
+  };
+
+  const handleSendDailyBriefTest = async () => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para enviar o brief da manhã.");
+      return;
+    }
+    setIsSendingBriefTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('daily-brief', {
+        body: { timeOfDay: 'morning' }, // Envia 'morning' para o brief
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+      showSuccess("Brief da manhã enviado com sucesso! Verifique seu canal.");
+      console.log("Resposta do brief da manhã:", data);
+    } catch (err: any) {
+      showError("Erro ao enviar brief da manhã: " + err.message);
+      console.error("Erro ao enviar brief da manhã:", err);
+    } finally {
+      setIsSendingBriefTest(false);
     }
   };
 
@@ -184,7 +212,7 @@ const Settings: React.FC = () => {
               <div>
                 <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
                 <Select
-                  onValueChange={(value: "telegram" | "whatsapp" | "web_push" | "none") => // Adicionado "web_push"
+                  onValueChange={(value: "telegram" | "whatsapp" | "web_push" | "none") =>
                     form.setValue("notification_channel", value)
                   }
                   value={notificationChannel}
@@ -195,7 +223,7 @@ const Settings: React.FC = () => {
                   <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
                     <SelectItem value="telegram">Telegram</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp (via Evolution API)</SelectItem>
-                    <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem> {/* Novo item */}
+                    <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem>
                     <SelectItem value="none">Nenhum</SelectItem>
                   </SelectContent>
                 </Select>
@@ -253,15 +281,26 @@ const Settings: React.FC = () => {
                 </>
               )}
               {notificationChannel !== "none" && (
-                <Button
-                  type="button"
-                  onClick={handleSendTestNotification}
-                  disabled={isSendingTest}
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700 mt-4"
-                >
-                  <BellRing className="mr-2 h-4 w-4" />
-                  {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    onClick={handleSendTestNotification}
+                    disabled={isSendingTest}
+                    className="w-full bg-blue-600 text-white hover:bg-blue-700 mt-4"
+                  >
+                    <BellRing className="mr-2 h-4 w-4" />
+                    {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSendDailyBriefTest}
+                    disabled={isSendingBriefTest}
+                    className="w-full bg-green-600 text-white hover:bg-green-700 mt-2"
+                  >
+                    <Sun className="mr-2 h-4 w-4" />
+                    {isSendingBriefTest ? "Enviando Brief..." : "Enviar Brief da Manhã (Teste)"}
+                  </Button>
+                </>
               )}
             </div>
 

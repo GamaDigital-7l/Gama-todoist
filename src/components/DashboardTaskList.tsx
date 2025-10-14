@@ -9,10 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, parseISO, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell } from "lucide-react";
+import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain } from "lucide-react"; // Adicionado Brain
 import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
-import { Badge } from "@/components/ui/badge"; // Importar Badge
+import { Badge } from "@/components/ui/badge";
+import TaskObstacleCoach from "@/components/TaskObstacleCoach"; // Importar o novo componente
 
 interface Tag {
   id: string;
@@ -59,6 +60,9 @@ const DashboardTaskList: React.FC = () => {
     queryKey: ["dashboardTasks"],
     queryFn: fetchTasks,
   });
+
+  const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
+  const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
@@ -122,6 +126,11 @@ const DashboardTaskList: React.FC = () => {
 
   const handleToggleComplete = (taskId: string, currentStatus: boolean) => {
     updateTaskMutation.mutate({ taskId, currentStatus });
+  };
+
+  const handleOpenObstacleCoach = (task: Task) => {
+    setSelectedTaskForCoach(task);
+    setIsObstacleCoachOpen(true);
   };
 
   const getRecurrenceText = (task: Task) => {
@@ -251,10 +260,24 @@ const DashboardTaskList: React.FC = () => {
                   )}
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
+                  <Brain className="h-4 w-4" />
+                  <span className="sr-only">Obter Ajuda da IA</span>
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       </CardContent>
+      {selectedTaskForCoach && (
+        <TaskObstacleCoach
+          isOpen={isObstacleCoachOpen}
+          onClose={() => setIsObstacleCoachOpen(false)}
+          taskTitle={selectedTaskForCoach.title}
+          taskDescription={selectedTaskForCoach.description}
+        />
+      )}
     </Card>
   );
 };

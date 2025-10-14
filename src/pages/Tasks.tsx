@@ -11,10 +11,11 @@ import { format, isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle } from "lucide-react";
+import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain } from "lucide-react"; // Adicionado Brain
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
-import { Badge } from "@/components/ui/badge"; // Importar Badge
+import { Badge } from "@/components/ui/badge";
+import TaskObstacleCoach from "@/components/TaskObstacleCoach"; // Importar o novo componente
 
 interface Tag {
   id: string;
@@ -27,7 +28,7 @@ interface Task extends TaskFormValues {
   is_completed: boolean;
   created_at: string;
   updated_at: string;
-  tags: Tag[]; // Adicionar tags à interface da tarefa
+  tags: Tag[];
 }
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
@@ -57,6 +58,8 @@ const Tasks: React.FC = () => {
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
+  const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
+  const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
 
   const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
     if (!userId) {
@@ -108,6 +111,11 @@ const Tasks: React.FC = () => {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsFormOpen(true);
+  };
+
+  const handleOpenObstacleCoach = (task: Task) => {
+    setSelectedTaskForCoach(task);
+    setIsObstacleCoachOpen(true);
   };
 
   const getRecurrenceText = (task: Task) => {
@@ -214,6 +222,10 @@ const Tasks: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
+                <Brain className="h-4 w-4" />
+                <span className="sr-only">Obter Ajuda da IA</span>
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Editar Tarefa</span>
@@ -293,7 +305,14 @@ const Tasks: React.FC = () => {
         </Card>
       </div>
 
-      {/* MadeWithDyad removido */}
+      {selectedTaskForCoach && (
+        <TaskObstacleCoach
+          isOpen={isObstacleCoachOpen}
+          onClose={() => setIsObstacleCoachOpen(false)}
+          taskTitle={selectedTaskForCoach.title}
+          taskDescription={selectedTaskForCoach.description}
+        />
+      )}
     </div>
   );
 };
