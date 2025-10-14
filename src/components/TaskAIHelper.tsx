@@ -17,9 +17,14 @@ interface Task {
   due_date?: string; // ISO string
   time?: string; // Formato "HH:mm"
   is_completed: boolean;
-  recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
+  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
   recurrence_details?: string;
 }
+
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
 
 const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -37,18 +42,21 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
   const currentDayOfMonth = today.getDate().toString();
 
+  // Helper to check if a day is included in recurrence_details (for 'weekly')
+  const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+    if (!details) return false;
+    const days = details.split(',');
+    return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+  };
+
   return (data || []).filter(task => {
     // Tarefas recorrentes
     if (task.recurrence_type !== "none") {
-      if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
+      if (task.recurrence_type === "daily") { // New 'daily' type
         return true;
       }
       if (task.recurrence_type === "weekly" && task.recurrence_details) {
-        const dayMap: { [key: string]: number } = {
-          "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-          "Thursday": 4, "Friday": 5, "Saturday": 6
-        };
-        if (dayMap[task.recurrence_details] === currentDayOfWeek) {
+        if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
           return true;
         }
       }
@@ -94,7 +102,9 @@ const TaskAIHelper: React.FC = () => {
         let taskString = `- ${task.title}`;
         if (task.description) taskString += `: ${task.description}`;
         if (task.time) taskString += ` (Horário: ${task.time})`;
-        if (task.recurrence_type !== "none") taskString += ` (Recorrência: ${task.recurrence_type})`;
+        if (task.recurrence_type !== "none") {
+          taskString += ` (Recorrência: ${task.recurrence_type === "daily" ? "Diariamente" : task.recurrence_type === "weekly" ? `Semanalmente nos dias ${task.recurrence_details}` : `Mensalmente no dia ${task.recurrence_details}`})`;
+        }
         return taskString;
       }).join("\n");
 

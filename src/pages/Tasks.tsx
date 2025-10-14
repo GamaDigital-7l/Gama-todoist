@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
+import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Added startOfWeek, endOfWeek, startOfMonth, endOfMonth
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -23,14 +23,27 @@ interface Tag {
   color: string;
 }
 
-interface Task extends Omit<TaskFormValues, 'due_date'> { // Omitir due_date do TaskFormValues
+interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> { // Omitir due_date e recurrence_details do TaskFormValues
   id: string;
   is_completed: boolean;
   created_at: string;
   updated_at: string;
   due_date?: string; // Definir due_date como string para corresponder ao DB
+  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
+  recurrence_details?: string | null; // Will store comma-separated days for 'weekly'
   tags: Tag[];
 }
+
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
+
+const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
+  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
+  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
+};
+
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -121,10 +134,11 @@ const Tasks: React.FC = () => {
 
   const getRecurrenceText = (task: Task) => {
     switch (task.recurrence_type) {
-      case "daily_weekday":
-        return "Recorre de Segunda a Sexta";
+      case "daily":
+        return "Recorre Diariamente";
       case "weekly":
-        return `Recorre Semanalmente às ${task.recurrence_details}`;
+        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        return `Recorre Semanalmente nos dias: ${days}`;
       case "monthly":
         return `Recorre Mensalmente no dia ${task.recurrence_details}`;
       case "none":
@@ -134,21 +148,31 @@ const Tasks: React.FC = () => {
   };
 
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
+    const today = new Date();
+    const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
+    const currentDayOfMonth = today.getDate().toString();
+
+    // Helper to check if a day is included in recurrence_details (for 'weekly')
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
+
     // Lógica para tarefas recorrentes
     if (task.recurrence_type !== "none") {
-      const today = new Date();
-      const currentDayOfWeek = format(today, "EEEE", { locale: ptBR }); // Ex: "Segunda-feira"
-      const currentDayOfMonth = today.getDate().toString();
-
       switch (filterType) {
         case "daily":
-          return task.recurrence_type === "daily_weekday" && today.getDay() >= 1 && today.getDay() <= 5; // Seg-Sex
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "weekly":
-          return task.recurrence_type === "weekly" && task.recurrence_details?.toLowerCase() === currentDayOfWeek.toLowerCase();
+          // For weekly tab, show tasks that recur weekly and are due this week, or daily tasks
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
         case "monthly":
-          return task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth;
+          // For monthly tab, show tasks that recur monthly and are due this month, or daily/weekly tasks
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
+        case "all":
         default:
-          return true; // Para "all", todas as recorrentes são incluídas
+          return true;
       }
     }
 
@@ -160,7 +184,7 @@ const Tasks: React.FC = () => {
       case "daily":
         return isToday(dueDate);
       case "weekly":
-        return isThisWeek(dueDate);
+        return isThisWeek(dueDate, { weekStartsOn: 0 }); // Sunday is the start of the week
       case "monthly":
         return isThisMonth(dueDate);
       case "all":

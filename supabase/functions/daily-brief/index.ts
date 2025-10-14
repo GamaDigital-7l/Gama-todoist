@@ -9,6 +9,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -114,17 +119,20 @@ serve(async (req) => {
       throw tasksError;
     }
 
+    // Helper to check if a day is included in recurrence_details (for 'weekly')
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
+
     const todayTasks = (tasks || []).filter(task => {
       if (task.recurrence_type !== "none") {
-        if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
+        if (task.recurrence_type === "daily") { // New 'daily' type
           return true;
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
-          const dayMap: { [key: string]: number } = {
-            "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-            "Thursday": 4, "Friday": 5, "Saturday": 6
-          };
-          if (dayMap[task.recurrence_details] === currentDayOfWeek) {
+          if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
             return true;
           }
         }

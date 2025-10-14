@@ -25,26 +25,42 @@ import {
 import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector"; // Importar o TagSelector
+import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
+
+const DAYS_OF_WEEK = [
+  { value: "Sunday", label: "Domingo" },
+  { value: "Monday", label: "Segunda-feira" },
+  { value: "Tuesday", label: "Terça-feira" },
+  { value: "Wednesday", label: "Quarta-feira" },
+  { value: "Thursday", label: "Quinta-feira" },
+  { value: "Friday", label: "Sexta-feira" },
+  { value: "Saturday", label: "Sábado" },
+];
 
 const taskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
   description: z.string().optional(),
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
-  recurrence_type: z.enum(["none", "daily_weekday", "weekly", "monthly"]).default("none"),
-  recurrence_details: z.string().optional().nullable(),
+  recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"), // Updated enum
+  recurrence_details: z.string().optional().nullable(), // Will store comma-separated days for 'weekly'
   task_type: z.enum(["general", "reading", "exercise"]).default("general"),
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
   ),
-  selected_tag_ids: z.array(z.string()).optional(), // Novo campo para IDs de tags selecionadas
+  selected_tag_ids: z.array(z.string()).optional(),
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  initialData?: Omit<TaskFormValues, 'due_date'> & { id: string; due_date?: string | Date | null; tags?: { id: string; name: string; color: string }[] };
+  initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_details'> & {
+    id: string;
+    due_date?: string | Date | null;
+    recurrence_details?: string | null; // Ensure this is string for initialData
+    tags?: { id: string; name: string; color: string }[];
+  };
   onTaskSaved: () => void;
   onClose: () => void;
 }
@@ -60,10 +76,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       ...initialData,
       due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
-      recurrence_details: initialData.recurrence_details || undefined,
+      recurrence_details: initialData.recurrence_details || undefined, // Keep as string
       task_type: initialData.task_type || "general",
       target_value: initialData.target_value || undefined,
-      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [], // Preencher tags selecionadas
+      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
     } : {
       title: "",
       description: "",
@@ -80,6 +96,28 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
   const recurrenceType = form.watch("recurrence_type");
   const taskType = form.watch("task_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
+  const watchedRecurrenceDetails = form.watch("recurrence_details"); // Watch recurrence_details
+
+  // State for selected days for weekly recurrence
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
+      setSelectedDays(watchedRecurrenceDetails.split(','));
+    } else {
+      setSelectedDays([]);
+    }
+  }, [recurrenceType, watchedRecurrenceDetails]);
+
+  const handleDayToggle = (dayValue: string) => {
+    setSelectedDays(prev => {
+      const newDays = prev.includes(dayValue)
+        ? prev.filter(d => d !== dayValue)
+        : [...prev, dayValue];
+      form.setValue("recurrence_details", newDays.join(','), { shouldDirty: true });
+      return newDays;
+    });
+  };
 
   const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
     form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
@@ -100,7 +138,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         recurrence_type: values.recurrence_type,
-        recurrence_details: values.recurrence_details || null,
+        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null, // Use selectedDays for weekly
         task_type: values.task_type,
         target_value: values.target_value || null,
         current_daily_target: values.target_value || null,
@@ -132,10 +170,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       }
 
       // Lidar com as tags
-      // Primeiro, deletar todas as associações existentes para esta tarefa
       await supabase.from("task_tags").delete().eq("task_id", taskId);
 
-      // Em seguida, inserir as novas associações
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
         const taskTagsToInsert = values.selected_tag_ids.map(tagId => ({
           task_id: taskId,
@@ -165,7 +201,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
     setIsGeneratingAISuggestions(true);
     try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily_weekday, weekly, monthly) com detalhes se aplicável (ex: 'Monday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise) e um valor alvo (numeric, se aplicável, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise) e um valor alvo (numeric, se aplicável, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
 
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [{ role: "user", content: prompt }] },
@@ -190,7 +226,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       }
       if (aiSuggestions.time) form.setValue("time", aiSuggestions.time); else form.setValue("time", null);
       if (aiSuggestions.recurrence_type) form.setValue("recurrence_type", aiSuggestions.recurrence_type);
-      if (aiSuggestions.recurrence_details) form.setValue("recurrence_details", aiSuggestions.recurrence_details); else form.setValue("recurrence_details", null);
+      if (aiSuggestions.recurrence_details) {
+        form.setValue("recurrence_details", aiSuggestions.recurrence_details);
+        if (aiSuggestions.recurrence_type === "weekly") {
+          setSelectedDays(aiSuggestions.recurrence_details.split(','));
+        }
+      } else {
+        form.setValue("recurrence_details", null);
+        setSelectedDays([]);
+      }
       if (aiSuggestions.task_type) form.setValue("task_type", aiSuggestions.task_type);
       if (aiSuggestions.target_value) form.setValue("target_value", aiSuggestions.target_value); else form.setValue("target_value", null);
 
@@ -323,9 +367,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="recurrence_type" className="text-foreground">Recorrência</Label>
         <Select
-          onValueChange={(value: "none" | "daily_weekday" | "weekly" | "monthly") => {
+          onValueChange={(value: "none" | "daily" | "weekly" | "monthly") => { // Updated values
             form.setValue("recurrence_type", value);
             form.setValue("recurrence_details", null); // Reset details when type changes
+            setSelectedDays([]); // Reset selected days for weekly
           }}
           value={recurrenceType}
         >
@@ -334,8 +379,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="none">Nenhuma</SelectItem>
-            <SelectItem value="daily_weekday">Dias de Semana (Seg-Sex)</SelectItem>
-            <SelectItem value="weekly">Semanal</SelectItem>
+            <SelectItem value="daily">Diário</SelectItem> {/* New daily option */}
+            <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem> {/* Updated weekly option */}
             <SelectItem value="monthly">Mensal</SelectItem>
           </SelectContent>
         </Select>
@@ -343,24 +388,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
       {recurrenceType === "weekly" && (
         <div>
-          <Label htmlFor="recurrence_details_weekly" className="text-foreground">Dia da Semana</Label>
-          <Select
-            onValueChange={(value: string) => form.setValue("recurrence_details", value)}
-            value={form.watch("recurrence_details") || ""}
-          >
-            <SelectTrigger id="recurrence_details_weekly" className="bg-input border-border text-foreground focus-visible:ring-ring">
-              <SelectValue placeholder="Selecionar dia" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-              <SelectItem value="Sunday">Domingo</SelectItem>
-              <SelectItem value="Monday">Segunda-feira</SelectItem>
-              <SelectItem value="Tuesday">Terça-feira</SelectItem>
-              <SelectItem value="Wednesday">Quarta-feira</SelectItem>
-              <SelectItem value="Thursday">Quinta-feira</SelectItem>
-              <SelectItem value="Friday">Sexta-feira</SelectItem>
-              <SelectItem value="Saturday">Sábado</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label className="text-foreground">Dias da Semana</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            {DAYS_OF_WEEK.map((day) => (
+              <div key={day.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`day-${day.value}`}
+                  checked={selectedDays.includes(day.value)}
+                  onCheckedChange={() => handleDayToggle(day.value)}
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                />
+                <Label htmlFor={`day-${day.value}`} className="text-foreground">
+                  {day.label}
+                </Label>
+              </div>
+            ))}
+          </div>
           {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
               {form.formState.errors.recurrence_details.message}

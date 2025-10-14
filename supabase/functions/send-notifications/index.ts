@@ -7,6 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
+
+const DAYS_OF_WEEK_LABELS_SHORT: { [key: string]: string } = {
+  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
+  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -98,6 +108,13 @@ serve(async (req) => {
     const notificationsToSend = [];
     const tasksToUpdate = [];
 
+    // Helper to check if a day is included in recurrence_details (for 'weekly')
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
+
     for (const task of tasks) {
       let taskDueDate: Date | null = null;
       let taskTime: Date | null = null;
@@ -126,14 +143,10 @@ serve(async (req) => {
         const currentDayOfWeek = getDay(now); // 0 for Sunday, 1 for Monday, etc.
         const currentDayOfMonth = now.getDate();
 
-        if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
+        if (task.recurrence_type === "daily") { // New 'daily' type
           taskDueDate = now; // Treat as due today
         } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
-          const dayMap: { [key: string]: number } = {
-            "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-            "Thursday": 4, "Friday": 5, "Saturday": 6
-          };
-          if (dayMap[task.recurrence_details] === currentDayOfWeek) {
+          if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
             taskDueDate = now; // Treat as due today
           }
         } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
@@ -191,7 +204,7 @@ serve(async (req) => {
           message += `\nÀs ${task.time}`;
         }
         if (task.recurrence_type !== "none") {
-          message += `\n(Recorrente: ${task.recurrence_type === "daily_weekday" ? "Dias de Semana" : task.recurrence_type === "weekly" ? `Semanalmente às ${task.recurrence_details}` : `Mensalmente no dia ${task.recurrence_details}`})`;
+          message += `\n(Recorrente: ${task.recurrence_type === "daily" ? "Diariamente" : task.recurrence_type === "weekly" ? `Semanalmente nos dias ${task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS_SHORT[day] || day).join(', ')}` : `Mensalmente no dia ${task.recurrence_details}`})`;
         } else if (task.due_date) {
           message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
         }

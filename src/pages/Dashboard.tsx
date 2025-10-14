@@ -24,8 +24,8 @@ interface Task {
   id: string;
   is_completed: boolean;
   due_date?: string;
-  recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
-  recurrence_details?: string;
+  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
+  recurrence_details?: string; // Will store comma-separated days for 'weekly'
 }
 
 interface HealthMetric {
@@ -43,6 +43,11 @@ interface HealthGoal {
   target_date: string;
   is_completed: boolean;
 }
+
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
 
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
@@ -134,24 +139,26 @@ const Dashboard: React.FC = () => {
     const today = new Date();
     let completedToday = 0;
     let totalToday = 0;
+    const currentDayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const currentDayOfMonth = today.getDate().toString();
+
+    // Helper to check if a day is included in recurrence_details (for 'weekly')
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
 
     allTasks.forEach(task => {
       let isTaskDueToday = false;
 
       // Check for recurring tasks
       if (task.recurrence_type !== "none") {
-        const currentDayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-        const currentDayOfMonth = today.getDate().toString();
-
-        if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
-          isTaskDueToday = true;
+        if (task.recurrence_type === "daily") {
+          isTaskDueToday = true; // Daily tasks are always due today
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
-          const dayMap: { [key: string]: number } = {
-            "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-            "Thursday": 4, "Friday": 5, "Saturday": 6
-          };
-          if (dayMap[task.recurrence_details] === currentDayOfWeek) {
+          if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
             isTaskDueToday = true;
           }
         }

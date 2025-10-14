@@ -62,9 +62,32 @@ serve(async (req) => {
 
     const { messages } = await req.json(); // Array de mensagens no formato { role: "user" | "assistant", content: string }
 
+    // Check if the prompt is for task suggestions (heuristic: check for specific keywords or structure)
+    const isTaskSuggestionPrompt = messages.some((msg: any) =>
+      typeof msg.content === 'string' && msg.content.includes("sugira uma descrição mais detalhada") && msg.content.includes("tipo de recorrência")
+    );
+
+    let modelToUse = AI_PROVIDER === "groq" ? "llama3-8b-8192" : "gpt-3.5-turbo";
+    let responseFormat: { type: "json_object" } | undefined = undefined;
+
+    if (isTaskSuggestionPrompt) {
+      // For task suggestions, we want JSON output
+      responseFormat = { type: "json_object" };
+      // Adjust the prompt to reflect the new recurrence types for AI
+      messages[0].content = messages[0].content.replace(
+        /tipo de recorrência \(none, daily_weekday, weekly, monthly\)/,
+        "tipo de recorrência (none, daily, weekly, monthly)"
+      );
+      messages[0].content = messages[0].content.replace(
+        /ex: 'Monday' para semanal, '15' para mensal, caso contrário null/,
+        "ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null"
+      );
+    }
+
     const chatCompletion = await aiClient.chat.completions.create({
       messages: messages,
-      model: AI_PROVIDER === "groq" ? "llama3-8b-8192" : "gpt-3.5-turbo", // Escolha o modelo apropriado
+      model: modelToUse,
+      response_format: responseFormat, // Apply response_format conditionally
     });
 
     return new Response(JSON.stringify({ response: chatCompletion.choices[0].message.content }), {
@@ -76,7 +99,7 @@ serve(async (req) => {
     console.error("Erro na Edge Function ai-chat:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 });

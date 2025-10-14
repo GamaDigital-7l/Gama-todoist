@@ -28,8 +28,8 @@ interface Task {
   due_date?: string; // ISO string
   time?: string; // Formato "HH:mm"
   is_completed: boolean;
-  recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
-  recurrence_details?: string;
+  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
+  recurrence_details?: string; // Will store comma-separated days for 'weekly'
   task_type: "general" | "reading" | "exercise"; // Novo campo
   target_value?: number; // Novo campo
   current_daily_target?: number; // Novo campo
@@ -38,6 +38,16 @@ interface Task {
 }
 
 const POINTS_PER_TASK = 10; // Pontos ganhos por tarefa concluída
+
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
+
+const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
+  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
+  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
+};
 
 const fetchTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -135,10 +145,11 @@ const DashboardTaskList: React.FC = () => {
 
   const getRecurrenceText = (task: Task) => {
     switch (task.recurrence_type) {
-      case "daily_weekday":
-        return "Recorre de Seg. a Sex.";
+      case "daily":
+        return "Recorre Diariamente";
       case "weekly":
-        return `Recorre Semanalmente às ${task.recurrence_details}`;
+        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        return `Recorre Semanalmente nos dias: ${days}`;
       case "monthly":
         return `Recorre Mensalmente no dia ${task.recurrence_details}`;
       case "none":
@@ -152,18 +163,21 @@ const DashboardTaskList: React.FC = () => {
     const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
     const currentDayOfMonth = today.getDate().toString();
 
+    // Helper to check if a day is included in recurrence_details (for 'weekly')
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
+
     return allTasks.filter(task => {
       // Tarefas recorrentes
       if (task.recurrence_type !== "none") {
-        if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
-          return true;
+        if (task.recurrence_type === "daily") { // New 'daily' type
+          return true; // Daily tasks are always due today
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
-          const dayMap: { [key: string]: number } = {
-            "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-            "Thursday": 4, "Friday": 5, "Saturday": 6
-          };
-          if (dayMap[task.recurrence_details] === currentDayOfWeek) {
+          if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
             return true;
           }
         }
