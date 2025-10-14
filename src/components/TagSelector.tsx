@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import TagForm from "./TagForm";
+import { Label } from "@/components/ui/label"; // Importar Label
 
 interface Tag {
   id: string;
