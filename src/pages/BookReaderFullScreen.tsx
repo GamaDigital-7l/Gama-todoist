@@ -43,6 +43,7 @@ const BookReaderFullScreen: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [touchStartX, setTouchStartX] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number | null>(null); // Estado para a largura do contêiner
+  const [containerHeight, setContainerHeight] = useState<number | null>(null); // Novo estado para a altura do contêiner
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -59,15 +60,16 @@ const BookReaderFullScreen: React.FC = () => {
 
   // Observar o redimensionamento do contêiner para ajustar a largura do PDF
   useEffect(() => {
-    const updateContainerWidth = () => {
+    const updateContainerDimensions = () => {
       if (readerRef.current) {
         setContainerWidth(readerRef.current.clientWidth);
+        setContainerHeight(readerRef.current.clientHeight); // Atualiza a altura também
       }
     };
 
-    updateContainerWidth(); // Define a largura inicial
+    updateContainerDimensions(); // Define a largura e altura iniciais
 
-    const resizeObserver = new ResizeObserver(updateContainerWidth);
+    const resizeObserver = new ResizeObserver(updateContainerDimensions);
     if (readerRef.current) {
       resizeObserver.observe(readerRef.current);
     }
@@ -174,10 +176,8 @@ const BookReaderFullScreen: React.FC = () => {
     );
   }
 
-  // Calcula a largura da página do PDF
-  const pageRenderWidth = containerWidth
-    ? (isMobile ? containerWidth * 0.9 : containerWidth)
-    : undefined;
+  // Calcula a largura da página do PDF para preencher o contêiner
+  const pageRenderWidth = containerWidth || undefined;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
@@ -220,8 +220,8 @@ const BookReaderFullScreen: React.FC = () => {
               renderTextLayer={true}
               renderAnnotationLayer={true}
               className="shadow-lg border border-border"
-              width={pageRenderWidth} // Usa a largura calculada
-              // Removido o height fixo para mobile, permitindo que a altura seja calculada automaticamente
+              width={pageRenderWidth} // Usa a largura calculada para preencher o contêiner
+              // A altura será calculada automaticamente para manter o aspecto
             />
           </Document>
         )}
