@@ -3,7 +3,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import *s z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,14 @@ const bookSchema = z.object({
     .instanceof(File)
     .optional()
     .refine((file) => !file || file.type === "application/pdf", "Apenas arquivos PDF são permitidos."),
+  total_pages: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int().min(1, "O total de páginas deve ser um número positivo.").nullable().optional(),
+  ), // Novo campo
+  daily_reading_target_pages: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int().min(1, "A meta diária deve ser um número positivo.").nullable().optional(),
+  ), // Novo campo
 });
 
 type BookFormValues = z.infer<typeof bookSchema>;
@@ -35,18 +43,24 @@ type BookFormValues = z.infer<typeof bookSchema>;
 interface BookFormProps {
   onBookAdded: () => void;
   onClose: () => void;
+  initialData?: BookFormValues & { id: string }; // Adicionado para edição futura, se necessário
 }
 
-const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
+const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }) => {
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      ...initialData,
+      pdf_file: undefined, // PDF file cannot be pre-filled
+    } : {
       title: "",
       author: "",
       cover_image_url: "",
       description: "",
       read_status: "unread",
       pdf_file: undefined,
+      total_pages: undefined,
+      daily_reading_target_pages: undefined,
     },
   });
 
@@ -76,17 +90,29 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         pdfUrl = publicUrlData.publicUrl;
       }
 
-      const { error: insertError } = await supabase.from("books").insert({
+      const dataToSave = {
         title: values.title,
         author: values.author || null,
         cover_image_url: values.cover_image_url || null,
         description: values.description || null,
         pdf_url: pdfUrl,
         read_status: values.read_status,
-      });
+        total_pages: values.total_pages || null, // Salvar total de páginas
+        daily_reading_target_pages: values.daily_reading_target_pages || null, // Salvar meta diária
+        current_page: 0, // Iniciar na página 0
+      };
 
-      if (insertError) throw insertError;
-      showSuccess("Livro adicionado com sucesso!");
+      if (initialData) {
+        // Lógica de atualização se houver initialData
+        const { error: updateError } = await supabase.from("books").update(dataToSave).eq("id", initialData.id);
+        if (updateError) throw updateError;
+        showSuccess("Livro atualizado com sucesso!");
+      } else {
+        const { error: insertError } = await supabase.from("books").insert(dataToSave);
+        if (insertError) throw insertError;
+        showSuccess("Livro adicionado com sucesso!");
+      }
+      
       form.reset();
       onBookAdded();
       onClose();
@@ -143,6 +169,36 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
           placeholder="Uma breve descrição do livro..."
           className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
+      </div>
+      <div>
+        <Label htmlFor="total_pages" className="text-foreground">Total de Páginas (Opcional)</Label>
+        <Input
+          id="total_pages"
+          type="number"
+          {...form.register("total_pages", { valueAsNumber: true })}
+          placeholder="Ex: 500"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.total_pages && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.total_pages.message}
+          </p>
+        )}
+      </div>
+      <div>
+        <Label htmlFor="daily_reading_target_pages" className="text-foreground">Meta Diária de Leitura (Páginas, Opcional)</Label>
+        <Input
+          id="daily_reading_target_pages"
+          type="number"
+          {...form.register("daily_reading_target_pages", { valueAsNumber: true })}
+          placeholder="Ex: 10"
+          className="bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.daily_reading_target_pages && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.daily_reading_target_pages.message}
+          </p>
+        )}
       </div>
       <div>
         <Label htmlFor="pdf_file" className="text-foreground">Arquivo PDF (Opcional)</Label>

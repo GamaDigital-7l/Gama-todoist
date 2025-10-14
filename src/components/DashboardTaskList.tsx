@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, parseISO, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ListTodo, Repeat, Clock } from "lucide-react";
+import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
 
@@ -22,6 +22,10 @@ interface Task {
   is_completed: boolean;
   recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
   recurrence_details?: string;
+  task_type: "general" | "reading" | "exercise"; // Novo campo
+  target_value?: number; // Novo campo
+  current_daily_target?: number; // Novo campo
+  last_successful_completion_date?: string; // Novo campo
 }
 
 const POINTS_PER_TASK = 10; // Pontos ganhos por tarefa concluída
@@ -46,7 +50,12 @@ const DashboardTaskList: React.FC = () => {
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
       const { error: updateError } = await supabase
         .from("tasks")
-        .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          is_completed: !currentStatus, 
+          updated_at: new Date().toISOString(),
+          last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null, // Define a data de conclusão se for marcada como completa
+          current_daily_target: !currentStatus ? null : undefined, // Reseta o target diário ao completar
+        })
         .eq("id", taskId);
 
       if (updateError) throw updateError;
@@ -89,7 +98,7 @@ const DashboardTaskList: React.FC = () => {
       }
     },
     onSuccess: () => {
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] }); // Invalida o cache para refetch
     },
     onError: (err: any) => {
       showError("Erro ao atualizar tarefa: " + err.message);
@@ -209,6 +218,12 @@ const DashboardTaskList: React.FC = () => {
                   {task.recurrence_type !== "none" && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
+                    </p>
+                  )}
+                  {(task.task_type === "reading" || task.task_type === "exercise") && task.current_daily_target !== null && task.current_daily_target !== undefined && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      {task.task_type === "reading" ? <BookOpen className="h-3 w-3" /> : <Dumbbell className="h-3 w-3" />}
+                      Meta: {task.current_daily_target} {task.task_type === "reading" ? "páginas" : "minutos/reps"}
                     </p>
                   )}
                 </div>

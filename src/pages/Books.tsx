@@ -3,13 +3,16 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { PlusCircle, BookOpen, Edit, Trash2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import BookForm from "@/components/BookForm";
 import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useSession } from "@/integrations/supabase/auth";
 
 interface Book {
   id: string;
@@ -20,10 +23,18 @@ interface Book {
   read_status: "unread" | "reading" | "finished";
   created_at: string;
   updated_at: string;
+  total_pages?: number; // Novo campo
+  current_page?: number; // Novo campo
+  daily_reading_target_pages?: number; // Novo campo
+  last_read_date?: string; // Novo campo
 }
 
-const fetchBooks = async (): Promise<Book[]> => {
-  const { data, error } = await supabase.from("books").select("*").order("created_at", { ascending: false });
+const fetchBooks = async (userId: string): Promise<Book[]> => {
+  const { data, error } = await supabase
+    .from("books")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
@@ -31,19 +42,93 @@ const fetchBooks = async (): Promise<Book[]> => {
 };
 
 const Books: React.FC = () => {
+  const { session } = useSession();
+  const userId = session?.user?.id;
+  const queryClient = useQueryClient();
+
   const { data: books, isLoading, error, refetch } = useQuery<Book[], Error>({
-    queryKey: ["books"],
-    queryFn: fetchBooks,
+    queryKey: ["books", userId],
+    queryFn: () => fetchBooks(userId!),
+    enabled: !!userId,
   });
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [editingBook, setEditingBook] = React.useState<Book | undefined>(undefined);
+  const [currentPageInput, setCurrentPageInput] = React.useState<{ [key: string]: number }>({});
+
+  React.useEffect(() => {
+    if (books) {
+      const initialPageInputs: { [key: string]: number } = {};
+      books.forEach(book => {
+        initialPageInputs[book.id] = book.current_page || 0;
+      });
+      setCurrentPageInput(initialPageInputs);
+    }
+  }, [books]);
+
+  const updateBookPageMutation = useMutation({
+    mutationFn: async ({ bookId, newPage }: { bookId: string; newPage: number }) => {
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { error: updateError } = await supabase
+        .from("books")
+        .update({ 
+          current_page: newPage, 
+          last_read_date: new Date().toISOString().split('T')[0], // Atualiza a data da última leitura
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", bookId)
+        .eq("user_id", userId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
+      showSuccess("Página atualizada com sucesso!");
+    },
+    onError: (err: any) => {
+      showError("Erro ao atualizar página: " + err.message);
+      console.error("Erro ao atualizar página:", err);
+    },
+  });
+
+  const handleDeleteBook = useMutation({
+    mutationFn: async (bookId: string) => {
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { error: deleteError } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", bookId)
+        .eq("user_id", userId);
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
+      showSuccess("Livro deletado com sucesso!");
+    },
+    onError: (err: any) => {
+      showError("Erro ao deletar livro: " + err.message);
+      console.error("Erro ao deletar livro:", err);
+    },
+  });
+
+  const handleUpdatePage = (bookId: string) => {
+    const newPage = currentPageInput[bookId];
+    if (newPage !== undefined && newPage >= 0) {
+      updateBookPageMutation.mutate({ bookId, newPage });
+    } else {
+      showError("Página inválida.");
+    }
+  };
+
+  const handleEditBook = (book: Book) => {
+    setEditingBook(book);
+    setIsFormOpen(true);
+  };
 
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-muted-foreground">Carregando seus livros...</p>
-        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -54,7 +139,6 @@ const Books: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-red-500">Erro ao carregar livros: {error.message}</p>
-        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -63,17 +147,27 @@ const Books: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog
+          open={isFormOpen}
+          onOpenChange={(open) => {
+            setIsFormOpen(open);
+            if (!open) setEditingBook(undefined);
+          }}
+        >
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingBook(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle className="text-foreground">Adicionar Novo Livro</DialogTitle>
+              <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
             </DialogHeader>
-            <BookForm onBookAdded={refetch} onClose={() => setIsFormOpen(false)} />
+            <BookForm
+              initialData={editingBook}
+              onBookAdded={refetch}
+              onClose={() => setIsFormOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -84,18 +178,20 @@ const Books: React.FC = () => {
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
-            <Link to={`/books/${book.id}`} key={book.id} className="block">
-              <Card className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+              <Link to={`/books/${book.id}`} className="block">
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}
                   alt={book.title}
                   className="w-full h-48 object-cover"
                 />
-                <CardHeader>
-                  <CardTitle className="text-lg line-clamp-2 text-foreground">{book.title}</CardTitle>
-                  <CardDescription className="line-clamp-1 text-muted-foreground">{book.author}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
+              </Link>
+              <CardHeader>
+                <CardTitle className="text-lg line-clamp-2 text-foreground">{book.title}</CardTitle>
+                <CardDescription className="line-clamp-1 text-muted-foreground">{book.author}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col justify-between">
+                <div>
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
                       ${book.read_status === "reading" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" : ""}
@@ -107,9 +203,55 @@ const Books: React.FC = () => {
                     {book.read_status === "unread" && "Não Lido"}
                     {book.read_status === "finished" && "Concluído"}
                   </span>
-                </CardContent>
-              </Card>
-            </Link>
+                  {book.total_pages && (
+                    <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      Páginas: {book.current_page || 0} / {book.total_pages}
+                    </p>
+                  )}
+                  {book.daily_reading_target_pages && (
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                      <Target className="h-4 w-4 text-primary" />
+                      Meta Diária: {book.daily_reading_target_pages} páginas
+                    </p>
+                  )}
+                </div>
+                <div className="mt-4 space-y-2">
+                  {book.total_pages && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`current-page-${book.id}`} className="sr-only">Página Atual</Label>
+                      <Input
+                        id={`current-page-${book.id}`}
+                        type="number"
+                        min="0"
+                        max={book.total_pages}
+                        value={currentPageInput[book.id]}
+                        onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
+                        className="w-24 bg-input border-border text-foreground focus-visible:ring-ring"
+                      />
+                      <Button
+                        onClick={() => handleUpdatePage(book.id)}
+                        size="sm"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        disabled={updateBookPageMutation.isPending}
+                      >
+                        Atualizar
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleEditBook(book)} className="text-blue-500 hover:bg-blue-500/10">
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Editar Livro</span>
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDeleteBook.mutate(book.id)} className="text-red-500 hover:bg-red-500/10">
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Deletar Livro</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       ) : (

@@ -32,6 +32,11 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily_weekday", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
+  task_type: z.enum(["general", "reading", "exercise"]).default("general"), // Novo campo
+  target_value: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
+  ), // Novo campo
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
@@ -54,6 +59,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       due_date: initialData.due_date ? new Date(initialData.due_date) : undefined,
       time: initialData.time || undefined,
       recurrence_details: initialData.recurrence_details || undefined,
+      task_type: initialData.task_type || "general",
+      target_value: initialData.target_value || undefined,
     } : {
       title: "",
       description: "",
@@ -61,10 +68,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       time: undefined,
       recurrence_type: "none",
       recurrence_details: undefined,
+      task_type: "general",
+      target_value: undefined,
     },
   });
 
   const recurrenceType = form.watch("recurrence_type");
+  const taskType = form.watch("task_type");
 
   const onSubmit = async (values: TaskFormValues) => {
     if (!userId) {
@@ -73,18 +83,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     }
 
     try {
+      const dataToSave = {
+        title: values.title,
+        description: values.description,
+        due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
+        time: values.time || null,
+        recurrence_type: values.recurrence_type,
+        recurrence_details: values.recurrence_details || null,
+        task_type: values.task_type, // Salvar o tipo de tarefa
+        target_value: values.target_value || null, // Salvar o valor alvo
+        current_daily_target: values.target_value || null, // Inicializar current_daily_target com target_value
+        updated_at: new Date().toISOString(),
+      };
+
       if (initialData) {
         const { error } = await supabase
           .from("tasks")
-          .update({
-            title: values.title,
-            description: values.description,
-            due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
-            time: values.time || null,
-            recurrence_type: values.recurrence_type,
-            recurrence_details: values.recurrence_details || null,
-            updated_at: new Date().toISOString(),
-          })
+          .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
 
@@ -92,13 +107,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         showSuccess("Tarefa atualizada com sucesso!");
       } else {
         const { error } = await supabase.from("tasks").insert({
-          title: values.title,
-          description: values.description,
-          due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
-          time: values.time || null,
+          ...dataToSave,
           is_completed: false,
-          recurrence_type: values.recurrence_type,
-          recurrence_details: values.recurrence_details || null,
           user_id: userId,
         });
 
@@ -125,7 +135,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
     setIsGeneratingAISuggestions(true);
     try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), e um tipo de recorrência (none, daily_weekday, weekly, monthly) com detalhes se aplicável (ex: 'Monday' para semanal, '15' para mensal, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details".`;
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily_weekday, weekly, monthly) com detalhes se aplicável (ex: 'Monday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise) e um valor alvo (numeric, se aplicável, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
 
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [{ role: "user", content: prompt }] },
@@ -151,6 +161,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       if (aiSuggestions.time) form.setValue("time", aiSuggestions.time); else form.setValue("time", null);
       if (aiSuggestions.recurrence_type) form.setValue("recurrence_type", aiSuggestions.recurrence_type);
       if (aiSuggestions.recurrence_details) form.setValue("recurrence_details", aiSuggestions.recurrence_details); else form.setValue("recurrence_details", null);
+      if (aiSuggestions.task_type) form.setValue("task_type", aiSuggestions.task_type);
+      if (aiSuggestions.target_value) form.setValue("target_value", aiSuggestions.target_value); else form.setValue("target_value", null);
 
       showSuccess("Sugestões da IA aplicadas!");
 
@@ -201,6 +213,44 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         )}
         Gerar Sugestões com IA
       </Button>
+
+      <div>
+        <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
+        <Select
+          onValueChange={(value: "general" | "reading" | "exercise") =>
+            form.setValue("task_type", value)
+          }
+          value={taskType}
+        >
+          <SelectTrigger id="task_type" className="bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Selecionar tipo" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="general">Geral</SelectItem>
+            <SelectItem value="reading">Leitura</SelectItem>
+            <SelectItem value="exercise">Exercício</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {(taskType === "reading" || taskType === "exercise") && (
+        <div>
+          <Label htmlFor="target_value" className="text-foreground">Valor Alvo (Ex: Páginas, Repetições, Minutos)</Label>
+          <Input
+            id="target_value"
+            type="number"
+            step="1"
+            {...form.register("target_value", { valueAsNumber: true })}
+            placeholder={taskType === "reading" ? "Ex: 10 páginas" : "Ex: 30 minutos"}
+            className="bg-input border-border text-foreground focus-visible:ring-ring"
+          />
+          {form.formState.errors.target_value && (
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.target_value.message}
+            </p>
+          )}
+        </div>
+      )}
 
       <div>
         <Label htmlFor="due_date" className="text-foreground">Data de Vencimento (Opcional)</Label>
@@ -276,7 +326,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
               <SelectItem value="Monday">Segunda-feira</SelectItem>
               <SelectItem value="Tuesday">Terça-feira</SelectItem>
               <SelectItem value="Wednesday">Quarta-feira</SelectItem>
-              <SelectItem value="Thursday">Quinta-feira</SelectItem>
               <SelectItem value="Friday">Sexta-feira</SelectItem>
               <SelectItem value="Saturday">Sábado</SelectItem>
             </SelectContent>

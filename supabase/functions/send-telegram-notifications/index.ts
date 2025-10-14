@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, addMinutes, subMinutes, isBefore, isAfter, parseISO, isToday, getDay } from "https://esm.sh/date-fns@2.30.0"; // Mantendo date-fns v2.x.x
+import { format, addMinutes, subMinutes, isBefore, isAfter, parseISO, isToday, getDay, subDays } from "https://esm.sh/date-fns@2.30.0"; // Mantendo date-fns v2.x.x
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,6 +60,7 @@ serve(async (req) => {
 
     // 2. Obter tarefas para hoje que não estão completas
     const today = format(new Date(), "yyyy-MM-dd");
+    const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
     const now = new Date(); // Current time in UTC
 
     const { data: tasks, error: tasksError } = await supabase
@@ -84,6 +85,24 @@ serve(async (req) => {
       let taskTime: Date | null = null;
       let shouldNotify = false;
       let notificationType = "";
+
+      // Lógica de "penalização" e atualização de current_daily_target
+      let currentTarget = task.current_daily_target || task.target_value;
+      const lastCompletionDate = task.last_successful_completion_date ? parseISO(task.last_successful_completion_date) : null;
+      const isCompletedYesterday = lastCompletionDate && format(lastCompletionDate, "yyyy-MM-dd") === yesterday;
+
+      if (task.task_type !== "general" && task.target_value !== null && task.target_value !== undefined) {
+        if (!isCompletedYesterday && currentTarget !== null && currentTarget !== undefined) {
+          // Se não foi completada ontem, dobra a meta
+          currentTarget = currentTarget * 2;
+        } else {
+          // Se foi completada ontem, reseta para o valor alvo
+          currentTarget = task.target_value;
+        }
+        // Atualiza o current_daily_target no banco de dados
+        tasksToUpdate.push({ id: task.id, current_daily_target: currentTarget });
+      }
+
 
       // Handle recurrence
       if (task.recurrence_type !== "none") {
@@ -159,12 +178,15 @@ serve(async (req) => {
         } else if (task.due_date) {
           message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
         }
+        if (task.task_type !== "general" && currentTarget !== null && currentTarget !== undefined) {
+          message += `\n*Meta de Hoje:* ${currentTarget} ${task.task_type === "reading" ? "páginas" : "minutos/reps"}`;
+        }
         
         notificationsToSend.push({
           task_id: task.id,
           message: message,
         });
-        tasksToUpdate.push(task.id);
+        // tasksToUpdate.push(task.id); // Já adicionado acima para current_daily_target
       }
     }
 
@@ -227,15 +249,20 @@ serve(async (req) => {
 
     await Promise.all(sendPromises);
 
-    // 4. Atualizar last_notified_at para as tarefas notificadas
+    // 4. Atualizar last_notified_at e current_daily_target para as tarefas notificadas
     if (tasksToUpdate.length > 0) {
-      const { error: updateError } = await supabase
-        .from("tasks")
-        .update({ last_notified_at: now.toISOString() })
-        .in("id", tasksToUpdate);
+      for (const taskUpdate of tasksToUpdate) {
+        const { error: updateError } = await supabase
+          .from("tasks")
+          .update({ 
+            last_notified_at: now.toISOString(),
+            current_daily_target: taskUpdate.current_daily_target // Atualiza o target diário
+          })
+          .eq("id", taskUpdate.id);
 
-      if (updateError) {
-        console.error("Erro ao atualizar last_notified_at:", updateError);
+        if (updateError) {
+          console.error("Erro ao atualizar last_notified_at ou current_daily_target:", updateError);
+        }
       }
     }
 
