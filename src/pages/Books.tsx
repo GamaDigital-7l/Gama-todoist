@@ -8,6 +8,8 @@ import { PlusCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import BookForm from "@/components/BookForm"; // Importar o BookForm
 
 interface Book {
   id: string;
@@ -33,6 +35,8 @@ const Books: React.FC = () => {
     queryKey: ["books"],
     queryFn: fetchBooks,
   });
+
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
 
   if (isLoading) {
     return (
@@ -63,9 +67,19 @@ const Books: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Sua Biblioteca de Livros</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
-        </Button>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Livro</DialogTitle>
+            </DialogHeader>
+            <BookForm onBookAdded={refetch} onClose={() => setIsFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
       <p className="text-lg text-muted-foreground">
         Explore e gerencie seus livros favoritos.
