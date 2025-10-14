@@ -14,6 +14,7 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Progress } from "@/components/ui/progress"; // Importar componente de progresso
+import { Label } from "@/components/ui/label"; // Importar Label
 
 interface HealthMetric extends HealthMetricFormValues {
   id: string;
