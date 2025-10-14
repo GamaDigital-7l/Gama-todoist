@@ -1,15 +1,30 @@
 "use client";
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, ListTodo, Target, Sparkles, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSupabase } from "@/integrations/supabase/supabaseContext";
+import { useEffect } from "react";
 
 interface SidebarProps {
   className?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+  const { session, isLoading } = useSupabase();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !session) {
+      navigate('/login');
+    }
+  }, [session, isLoading, navigate]);
+
+  if (isLoading || !session) {
+    return null; // Don't render sidebar if loading or not authenticated
+  }
+
   return (
     <div className={cn("hidden border-r bg-muted/40 md:block", className)}>
       <div className="flex h-full max-h-screen flex-col gap-2">

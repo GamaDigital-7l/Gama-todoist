@@ -1,35 +1,35 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/integrations/supabase/supabaseContext';
 import { useNavigate } from 'react-router-dom';
-import { useSession } from '@/components/auth/SessionContextProvider';
 
 const Login: React.FC = () => {
+  const { session, isLoading } = useSupabase();
   const navigate = useNavigate();
-  const { session, isLoading } = useSession();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isLoading && session) {
       navigate('/dashboard');
     }
   }, [session, isLoading, navigate]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+    return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-          Bem-vindo ao Minha Netflix da Vida Pessoal
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
+          Faça login na sua Netflix da Vida Pessoal
         </h2>
         <Auth
           supabaseClient={supabase}
-          providers={[]} // You can add 'google', 'github', etc. here if desired
+          providers={[]} // No third-party providers unless specified
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
               },
             },
           }}
-          theme="light" // Use 'dark' if your app primarily uses dark mode
+          theme="light" // Default to light theme
           redirectTo={window.location.origin + '/dashboard'}
         />
       </div>

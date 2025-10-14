@@ -3,13 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SessionContextProvider } from "./components/auth/SessionContextProvider"; // Import SessionContextProvider
-import AuthLayout from "./components/layout/AuthLayout"; // Import AuthLayout
+import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
-import Login from "./pages/Login"; // Import the new Login page
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login"; // Import the new Login page
+import { SessionContextProvider } from "./integrations/supabase/supabaseContext"; // Import the SessionContextProvider
 
 const queryClient = new QueryClient();
 
@@ -19,15 +19,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SessionContextProvider> {/* Wrap the entire app with SessionContextProvider */}
+        <SessionContextProvider> {/* Wrap the app with SessionContextProvider */}
           <Routes>
-            <Route path="/login" element={<Login />} /> {/* Public login route */}
-            <Route element={<AuthLayout />}> {/* Protected routes */}
-              <Route path="/" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} /> {/* New route for Login */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/goals" element={<Goals />} />
-              {/* Future protected routes like /motivation, /settings will go here */}
+              {/* Future routes like /motivation, /settings will go here */}
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
