@@ -1,364 +1,541 @@
 "use client";
 
-import React from "react";
-import TaskForm, { TaskFormValues } from "@/components/TaskForm";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { showError, showSuccess } from "@/utils/toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useSession } from "@/integrations/supabase/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { showSuccess, showError } from "@/utils/toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, PlusCircle, Edit, Trash2, Search, XCircle, Tag as TagIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import TaskObstacleCoach from "@/components/TaskObstacleCoach";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
+// Definição da interface Tag
 interface Tag {
   id: string;
   name: string;
   color: string;
 }
 
-interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
+// Definição da interface Task
+interface Task {
   id: string;
-  is_completed: boolean;
-  created_at: string;
-  updated_at: string;
-  due_date?: string;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly";
-  recurrence_details?: string | null;
-  task_type: "general" | "reading" | "exercise" | "study";
-  target_value?: number | null;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  completed: boolean;
+  priority: 'low' | 'medium' | 'high';
+  tags: Tag[]; // Adicionando a propriedade tags
 }
 
-const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
-  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-  "Thursday": 4, "Friday": 5, "Saturday": 6
-};
+const taskSchema = z.object({
+  title: z.string().min(1, "O título é obrigatório."),
+  description: z.string().optional(),
+  due_date: z.string().nullable().optional(),
+  completed: z.boolean().default(false),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  tag_ids: z.array(z.string()).optional(), // Para enviar IDs de tags
+});
 
-const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
-  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
-  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
-};
-
-
-const fetchTasks = async (userId: string): Promise<Task[]> => {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(`
-      *,
-      tags (id, name, color)
-    `)
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) {
-    throw error;
-  }
-  return data || [];
-};
+type TaskFormValues = z.infer<typeof taskSchema>;
 
 const Tasks: React.FC = () => {
-  const { session } = useSession();
-  const userId = session?.user?.id;
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterCompleted, setFilterCompleted] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>("all");
 
-  const { data: tasks, isLoading, error, refetch } = useQuery<Task[], Error>({
-    queryKey: ["tasks", userId],
-    queryFn: () => fetchTasks(userId!),
-    enabled: !!userId,
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      due_date: null,
+      completed: false,
+      priority: "medium",
+      tag_ids: [],
+    },
   });
 
-  const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
-  const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
-  const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
+  const fetchTasks = useCallback(async () => {
+    let query = supabase
+      .from("tasks")
+      .select(`
+        *,
+        task_tags(
+          tags(id, name, color)
+        )
+      `)
+      .order("due_date", { ascending: true })
+      .order("created_at", { ascending: false });
 
-  const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
+    if (searchTerm) {
+      query = query.ilike("title", `%${searchTerm}%`);
     }
+
+    if (filterPriority !== "all") {
+      query = query.eq("priority", filterPriority);
+    }
+
+    if (filterCompleted !== "all") {
+      query = query.eq("completed", filterCompleted === "true");
+    }
+
+    if (filterTag !== "all") {
+      query = query.filter("task_tags.tag_id", "eq", filterTag);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      showError("Erro ao carregar tarefas: " + error.message);
+    } else {
+      const formattedTasks: Task[] = data.map((task: any) => ({
+        ...task,
+        tags: task.task_tags.map((tt: any) => tt.tags),
+      }));
+      setTasks(formattedTasks);
+    }
+  }, [searchTerm, filterPriority, filterCompleted, filterTag]);
+
+  const fetchTags = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("tags")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) {
+      showError("Erro ao carregar tags: " + error.message);
+    } else {
+      setTags(data || []);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+    fetchTags();
+  }, [fetchTasks, fetchTags]);
+
+  const openModal = (task?: Task) => {
+    if (task) {
+      setEditingTask(task);
+      form.reset({
+        title: task.title,
+        description: task.description || "",
+        due_date: task.due_date,
+        completed: task.completed,
+        priority: task.priority,
+        tag_ids: task.tags.map(tag => tag.id),
+      });
+      setSelectedDate(task.due_date ? new Date(task.due_date) : undefined);
+    } else {
+      setEditingTask(null);
+      form.reset({
+        title: "",
+        description: "",
+        due_date: null,
+        completed: false,
+        priority: "medium",
+        tag_ids: [],
+      });
+      setSelectedDate(undefined);
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingTask(null);
+    form.reset();
+    setSelectedDate(undefined);
+  };
+
+  const onSubmit = async (values: TaskFormValues) => {
+    try {
+      const taskData = {
+        title: values.title,
+        description: values.description || null,
+        due_date: values.due_date,
+        completed: values.completed,
+        priority: values.priority,
+      };
+
+      if (editingTask) {
+        const { error } = await supabase
+          .from("tasks")
+          .update(taskData)
+          .eq("id", editingTask.id);
+
+        if (error) throw error;
+
+        // Update task_tags
+        await supabase.from("task_tags").delete().eq("task_id", editingTask.id);
+        if (values.tag_ids && values.tag_ids.length > 0) {
+          const taskTagsToInsert = values.tag_ids.map(tagId => ({
+            task_id: editingTask.id,
+            tag_id: tagId,
+          }));
+          const { error: tagError } = await supabase.from("task_tags").insert(taskTagsToInsert);
+          if (tagError) throw tagError;
+        }
+
+        showSuccess("Tarefa atualizada com sucesso!");
+      } else {
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert(taskData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Insert task_tags
+        if (values.tag_ids && values.tag_ids.length > 0) {
+          const taskTagsToInsert = values.tag_ids.map(tagId => ({
+            task_id: data.id,
+            tag_id: tagId,
+          }));
+          const { error: tagError } = await supabase.from("task_tags").insert(taskTagsToInsert);
+          if (tagError) throw tagError;
+        }
+
+        showSuccess("Tarefa criada com sucesso!");
+      }
+      closeModal();
+      fetchTasks();
+    } catch (error: any) {
+      showError("Erro ao salvar tarefa: " + error.message);
+      console.error("Erro ao salvar tarefa:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+    try {
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
+      showSuccess("Tarefa excluída com sucesso!");
+      fetchTasks();
+    } catch (error: any) {
+      showError("Erro ao excluir tarefa: " + error.message);
+      console.error("Erro ao excluir tarefa:", error);
+    }
+  };
+
+  const handleToggleComplete = async (task: Task) => {
     try {
       const { error } = await supabase
         .from("tasks")
-        .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
-        .eq("id", taskId)
-        .eq("user_id", userId);
-
+        .update({ completed: !task.completed })
+        .eq("id", task.id);
       if (error) throw error;
-      showSuccess("Tarefa atualizada com sucesso!");
-      refetch();
-    } catch (err: any) {
-      showError("Erro ao atualizar tarefa: " + err.message);
-      console.error("Erro ao atualizar tarefa:", err);
+      showSuccess("Status da tarefa atualizado!");
+      fetchTasks();
+    } catch (error: any) {
+      showError("Erro ao atualizar status da tarefa: " + error.message);
+      console.error("Erro ao atualizar status da tarefa:", error);
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
-      try {
-        await supabase.from("task_tags").delete().eq("task_id", taskId);
-
-        const { error } = await supabase
-          .from("tasks")
-          .delete()
-          .eq("id", taskId)
-          .eq("user_id", userId);
-
-        if (error) throw error;
-        showSuccess("Tarefa deletada com sucesso!");
-        refetch();
-      } catch (err: any) {
-        showError("Erro ao deletar tarefa: " + err.message);
-        console.error("Erro ao deletar tarefa:", err);
-      }
+  const getPriorityColor = (priority: 'low' | 'medium' | 'high') => {
+    switch (priority) {
+      case 'low': return 'bg-green-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'high': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsFormOpen(true);
-  };
+  return (
+    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <h1 className="text-3xl font-bold">Minhas Tarefas</h1>
+      <p className="text-lg text-muted-foreground">
+        Gerencie suas tarefas diárias e projetos.
+      </p>
 
-  const handleOpenObstacleCoach = (task: Task) => {
-    setSelectedTaskForCoach(task);
-    setIsObstacleCoachOpen(true);
-  };
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <div className="relative flex-1">
+          <Input
+            type="text"
+            placeholder="Buscar tarefas..."
+            className="pl-10 bg-input border-border text-foreground focus-visible:ring-ring"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearchTerm("")}
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-full md:w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Filtrar por Prioridade" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="all">Todas as Prioridades</SelectItem>
+            <SelectItem value="low">Baixa</SelectItem>
+            <SelectItem value="medium">Média</SelectItem>
+            <SelectItem value="high">Alta</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCompleted} onValueChange={setFilterCompleted}>
+          <SelectTrigger className="w-full md:w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Filtrar por Concluído" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="true">Concluídas</SelectItem>
+            <SelectItem value="false">Pendentes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterTag} onValueChange={setFilterTag}>
+          <SelectTrigger className="w-full md:w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Filtrar por Tag" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="all">Todas as Tags</SelectItem>
+            {tags.map((tag) => (
+              <SelectItem key={tag.id} value={tag.id}>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }}></span>
+                  {tag.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={() => openModal()} className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+        </Button>
+      </div>
 
-  const getRecurrenceText = (task: Task) => {
-    switch (task.recurrence_type) {
-      case "daily":
-        return "Recorre Diariamente";
-      case "weekly":
-        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
-        return `Recorre Semanalmente nos dias: ${days}`;
-      case "monthly":
-        return `Recorre Mensalmente no dia ${task.recurrence_details}`;
-      case "none":
-      default:
-        return null;
-    }
-  };
-
-  const getTaskTypeIcon = (taskType: Task['task_type']) => {
-    switch (taskType) {
-      case "reading": return <BookOpen className="h-3 w-3" />;
-      case "exercise": return <Dumbbell className="h-3 w-3" />;
-      case "study": return <GraduationCap className="h-3 w-3" />;
-      default: return null;
-    }
-  };
-
-  const getTaskTypeLabel = (taskType: Task['task_type'], targetValue: number | null | undefined) => {
-    if (targetValue === null || targetValue === undefined) return null;
-    switch (taskType) {
-      case "reading": return `Meta: ${targetValue} páginas`;
-      case "exercise": return `Meta: ${targetValue} minutos/reps`;
-      case "study": return `Meta: ${targetValue} minutos de estudo`;
-      default: return null;
-    }
-  };
-
-  const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
-    const today = new Date();
-    const currentDayOfWeek = getDay(today);
-    const currentDayOfMonth = today.getDate().toString();
-
-    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-      if (!details) return false;
-      const days = details.split(',');
-      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
-    };
-
-    if (task.recurrence_type !== "none") {
-      switch (filterType) {
-        case "daily":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
-        case "weekly":
-          // Para tarefas semanais, incluir as diárias e as da semana atual
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
-        case "monthly":
-          // Para tarefas mensais, incluir as diárias, semanais e as do mês atual
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
-        case "all":
-        default:
-          return true;
-      }
-    }
-
-    if (!task.due_date) return false;
-    const dueDate = parseISO(task.due_date);
-
-    switch (filterType) {
-      case "daily":
-        return isToday(dueDate);
-      case "weekly":
-        return isThisWeek(dueDate, { weekStartsOn: 0 });
-      case "monthly":
-        return isThisMonth(dueDate);
-      case "all":
-      default:
-        return true;
-    }
-  };
-
-  const renderTaskList = (filteredTasks: Task[]) => {
-    if (filteredTasks.length === 0) {
-      return <p className="text-muted-foreground">Nenhuma tarefa encontrada para esta categoria.</p>;
-    }
-    return (
-      <div className="space-y-3">
-        {filteredTasks.map((task) => (
-          <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-            <div className="flex items-center gap-3 flex-grow min-w-0">
-              <Checkbox
-                id={`task-${task.id}`}
-                checked={task.is_completed}
-                onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
-                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-              />
-              <div className="grid gap-1.5 flex-grow min-w-0">
-                <label
-                  htmlFor={`task-${task.id}`}
-                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                    task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
-                  }`}
-                >
-                  {task.title}
-                </label>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {tasks.length === 0 ? (
+          <p className="col-span-full text-center text-muted-foreground">Nenhuma tarefa encontrada.</p>
+        ) : (
+          tasks.map((task) => (
+            <Card key={task.id} className="bg-card border border-border rounded-lg shadow-sm flex flex-col">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                <div className="space-y-1">
+                  <CardTitle className={cn("text-lg font-semibold", task.completed && "line-through text-muted-foreground")}>
+                    {task.title}
+                  </CardTitle>
+                  {task.due_date && (
+                    <CardDescription className="text-sm text-muted-foreground">
+                      Vence em: {format(new Date(task.due_date), "dd/MM/yyyy")}
+                    </CardDescription>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn("text-xs", getPriorityColor(task.priority))}>
+                    {task.priority === 'low' ? 'Baixa' : task.priority === 'medium' ? 'Média' : 'Alta'}
+                  </Badge>
+                  <Checkbox
+                    checked={task.completed}
+                    onCheckedChange={() => handleToggleComplete(task)}
+                    aria-label="Marcar como concluída"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
                 {task.description && (
-                  <p className="text-sm text-muted-foreground break-words">{task.description}</p>
-                )}
-                {task.due_date && task.recurrence_type === "none" && (
-                  <p className="text-xs text-muted-foreground">
-                    Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
-                  </p>
-                )}
-                {task.time && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {task.time}
-                  </p>
-                )}
-                {task.recurrence_type !== "none" && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
-                  </p>
-                )}
-                {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                 )}
                 {task.tags && task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
                       <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
-                        {tag.name}
+                        <TagIcon className="h-3 w-3 mr-1" /> {tag.name}
                       </Badge>
                     ))}
                   </div>
                 )}
+              </CardContent>
+              <div className="flex justify-end gap-2 p-4 pt-0">
+                <Button variant="outline" size="sm" onClick={() => openModal(task)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(task.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-card text-foreground border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {editingTask ? "Faça alterações na sua tarefa aqui." : "Crie uma nova tarefa para organizar seu dia."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title" className="text-foreground">Título</Label>
+              <Input
+                id="title"
+                {...form.register("title")}
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
+              />
+              {form.formState.errors.title && (
+                <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description" className="text-foreground">Descrição</Label>
+              <Textarea
+                id="description"
+                {...form.register("description")}
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="due_date" className="text-foreground">Data de Vencimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-input border-border text-foreground focus-visible:ring-ring",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "dd/MM/yyyy") : <span>Escolha uma data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date);
+                      form.setValue("due_date", date ? format(date, "yyyy-MM-dd") : null);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="priority" className="text-foreground">Prioridade</Label>
+              <Select
+                onValueChange={(value: "low" | "medium" | "high") => form.setValue("priority", value)}
+                value={form.watch("priority")}
+              >
+                <SelectTrigger id="priority" className="bg-input border-border text-foreground focus-visible:ring-ring">
+                  <SelectValue placeholder="Selecionar prioridade" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="medium">Média</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="tags" className="text-foreground">Tags</Label>
+              <Select
+                onValueChange={(value) => {
+                  const currentTags = form.getValues("tag_ids") || [];
+                  if (currentTags.includes(value)) {
+                    form.setValue("tag_ids", currentTags.filter(id => id !== value));
+                  } else {
+                    form.setValue("tag_ids", [...currentTags, value]);
+                  }
+                }}
+                value="" // Reset value after selection
+              >
+                <SelectTrigger id="tags" className="bg-input border-border text-foreground focus-visible:ring-ring">
+                  <SelectValue placeholder="Adicionar Tags" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+                  {tags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }}></span>
+                        {tag.name}
+                        {form.watch("tag_ids")?.includes(tag.id) && <CheckIcon className="ml-auto h-4 w-4" />}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {form.watch("tag_ids")?.map(tagId => {
+                  const tag = tags.find(t => t.id === tagId);
+                  return tag ? (
+                    <Badge
+                      key={tag.id}
+                      style={{ backgroundColor: tag.color, color: '#FFFFFF' }}
+                      className="text-xs cursor-pointer"
+                      onClick={() => {
+                        const currentTags = form.getValues("tag_ids") || [];
+                        form.setValue("tag_ids", currentTags.filter(id => id !== tag.id));
+                      }}
+                    >
+                      <TagIcon className="h-3 w-3 mr-1" /> {tag.name} <XCircle className="ml-1 h-3 w-3" />
+                    </Badge>
+                  ) : null;
+                })}
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
-                <Brain className="h-4 w-4" />
-                <span className="sr-only">Obter Ajuda da IA</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Editar Tarefa</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Deletar Tarefa</span>
-              </Button>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="completed"
+                checked={form.watch("completed")}
+                onCheckedChange={(checked) => form.setValue("completed", checked as boolean)}
+              />
+              <Label htmlFor="completed" className="text-foreground">Concluída</Label>
             </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  if (isLoading) return <p className="text-muted-foreground">Carregando tarefas...</p>;
-  if (error) return <p className="text-red-500">Erro ao carregar tarefas: {error.message}</p>;
-
-  const dailyTasks = tasks?.filter((task) => filterTasks(task, "daily")) || [];
-  const weeklyTasks = tasks?.filter((task) => filterTasks(task, "weekly")) || [];
-  const monthlyTasks = tasks?.filter((task) => filterTasks(task, "monthly")) || [];
-  const allTasks = tasks || [];
-
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) setEditingTask(undefined);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
-            </DialogHeader>
-            <TaskForm
-              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
-              onTaskSaved={refetch}
-              onClose={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <p className="text-lg text-muted-foreground">
-        Organize suas tarefas diárias, semanais e mensais aqui.
-      </p>
-
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-foreground">Minhas Tarefas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="daily" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
-                <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
-                <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
-                <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
-                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
-              </TabsList>
-              <div className="mt-4">
-                <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
-                <TabsContent value="weekly">{renderTaskList(weeklyTasks)}</TabsContent>
-                <TabsContent value="monthly">{renderTaskList(monthlyTasks)}</TabsContent>
-                <TabsContent value="all">{renderTaskList(allTasks)}</TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-
-      {selectedTaskForCoach && (
-        <TaskObstacleCoach
-          isOpen={isObstacleCoachOpen}
-          onClose={() => setIsObstacleCoachOpen(false)}
-          taskTitle={selectedTaskForCoach.title}
-          taskDescription={selectedTaskForCoach.description}
-        />
-      )}
+            <DialogFooter>
+              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {editingTask ? "Salvar Alterações" : "Criar Tarefa"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
