@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,11 +15,20 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const taskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
   description: z.string().optional(),
   due_date: z.date().optional(),
+  recurrence_type: z.enum(["none", "daily_weekday", "weekly", "monthly"]).default("none"),
+  recurrence_details: z.string().optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -35,8 +44,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
       title: "",
       description: "",
       due_date: undefined,
+      recurrence_type: "none",
+      recurrence_details: "",
     },
   });
+
+  const recurrenceType = form.watch("recurrence_type");
 
   const onSubmit = async (values: TaskFormValues) => {
     try {
@@ -45,12 +58,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
         description: values.description,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         is_completed: false,
+        recurrence_type: values.recurrence_type,
+        recurrence_details: values.recurrence_details,
         // user_id: auth.uid() // Adicionar user_id aqui quando a autenticação for reativada
       });
 
       if (error) throw error;
       showSuccess("Tarefa adicionada com sucesso!");
-      form.reset();
+      form.reset({
+        title: "",
+        description: "",
+        due_date: undefined,
+        recurrence_type: "none",
+        recurrence_details: "",
+      });
       onTaskAdded(); // Notifica o componente pai que uma tarefa foi adicionada
     } catch (error: any) {
       showError("Erro ao adicionar tarefa: " + error.message);
@@ -111,6 +132,70 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
           </PopoverContent>
         </Popover>
       </div>
+
+      <div>
+        <Label htmlFor="recurrence_type">Recorrência</Label>
+        <Select
+          onValueChange={(value: "none" | "daily_weekday" | "weekly" | "monthly") => {
+            form.setValue("recurrence_type", value);
+            form.setValue("recurrence_details", ""); // Limpa detalhes ao mudar o tipo
+          }}
+          value={recurrenceType}
+        >
+          <SelectTrigger id="recurrence_type">
+            <SelectValue placeholder="Selecionar tipo de recorrência" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhuma</SelectItem>
+            <SelectItem value="daily_weekday">Dias de Semana (Seg-Sex)</SelectItem>
+            <SelectItem value="weekly">Semanal</SelectItem>
+            <SelectItem value="monthly">Mensal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {recurrenceType === "weekly" && (
+        <div>
+          <Label htmlFor="recurrence_details_weekly">Dia da Semana</Label>
+          <Select
+            onValueChange={(value) => form.setValue("recurrence_details", value)}
+            value={form.watch("recurrence_details")}
+          >
+            <SelectTrigger id="recurrence_details_weekly">
+              <SelectValue placeholder="Selecionar dia da semana" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Sunday">Domingo</SelectItem>
+              <SelectItem value="Monday">Segunda-feira</SelectItem>
+              <SelectItem value="Tuesday">Terça-feira</SelectItem>
+              <SelectItem value="Wednesday">Quarta-feira</SelectItem>
+              <SelectItem value="Thursday">Quinta-feira</SelectItem>
+              <SelectItem value="Friday">Sexta-feira</SelectItem>
+              <SelectItem value="Saturday">Sábado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {recurrenceType === "monthly" && (
+        <div>
+          <Label htmlFor="recurrence_details_monthly">Dia do Mês</Label>
+          <Input
+            id="recurrence_details_monthly"
+            type="number"
+            min="1"
+            max="31"
+            {...form.register("recurrence_details", { valueAsNumber: true })}
+            placeholder="Ex: 15"
+          />
+          {form.formState.errors.recurrence_details && (
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.recurrence_details.message}
+            </p>
+          )}
+        </div>
+      )}
+
       <Button type="submit" className="w-full">Adicionar Tarefa</Button>
     </form>
   );
