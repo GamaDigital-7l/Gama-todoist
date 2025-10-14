@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import TaskForm from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,16 +9,17 @@ import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale"; // Importar locale para formatação em português
+import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat } from "lucide-react"; // Importar ícone de repetição
+import { Trash2, Repeat, Clock } from "lucide-react"; // Importar ícone de relógio
 
 interface Task {
   id: string;
   title: string;
   description?: string;
   due_date?: string; // ISO string
+  time?: string; // Formato "HH:mm"
   is_completed: boolean;
   recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
   recurrence_details?: string;
@@ -46,7 +47,7 @@ const Tasks: React.FC = () => {
         .eq("id", taskId);
 
       if (error) throw error;
-      refetch(); // Recarrega as tarefas para atualizar a UI
+      refetch();
     } catch (err: any) {
       showError("Erro ao atualizar tarefa: " + err.message);
       console.error("Erro ao atualizar tarefa:", err);
@@ -61,7 +62,7 @@ const Tasks: React.FC = () => {
         .eq("id", taskId);
 
       if (error) throw error;
-      refetch(); // Recarrega as tarefas para atualizar a UI
+      refetch();
     } catch (err: any) {
       showError("Erro ao deletar tarefa: " + err.message);
       console.error("Erro ao deletar tarefa:", err);
@@ -83,39 +84,25 @@ const Tasks: React.FC = () => {
   };
 
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
-    // Se a tarefa tem recorrência, ela pode aparecer em múltiplas categorias
+    // Lógica para tarefas recorrentes
     if (task.recurrence_type !== "none") {
-      switch (filterType) {
-        case "daily":
-          // Para tarefas diárias de segunda a sexta, verificar se hoje é um dia de semana
-          if (task.recurrence_type === "daily_weekday") {
-            const dayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-            return dayOfWeek >= 1 && dayOfWeek <= 5;
-          }
-          // Para tarefas semanais, verificar se o dia da semana atual corresponde
-          if (task.recurrence_type === "weekly" && task.recurrence_details) {
-            const currentDayName = format(new Date(), "EEEE", { locale: ptBR });
-            return currentDayName.toLowerCase() === task.recurrence_details.toLowerCase();
-          }
-          // Para tarefas mensais, verificar se o dia do mês atual corresponde
-          if (task.recurrence_type === "monthly" && task.recurrence_details) {
-            const currentDayOfMonth = new Date().getDate().toString();
-            return currentDayOfMonth === task.recurrence_details;
-          }
-          return false; // Recorrências não diárias não aparecem em "Diárias" por data de vencimento
+      const today = new Date();
+      const currentDayOfWeek = format(today, "EEEE", { locale: ptBR }); // Ex: "Segunda-feira"
+      const currentDayOfMonth = today.getDate().toString();
+
+      switch (task.recurrence_type) {
+        case "daily_weekday":
+          return filterType === "daily" && today.getDay() >= 1 && today.getDay() <= 5; // Seg-Sex
         case "weekly":
-          // Todas as tarefas recorrentes podem ser consideradas "semanais" em um sentido amplo
-          // Ou podemos refinar para apenas as que têm recorrência semanal explícita
-          return task.recurrence_type !== "none"; // Simplificado: todas as recorrentes aparecem aqui
+          return filterType === "weekly" && task.recurrence_details?.toLowerCase() === currentDayOfWeek.toLowerCase();
         case "monthly":
-          // Todas as tarefas recorrentes podem ser consideradas "mensais" em um sentido amplo
-          return task.recurrence_type !== "none"; // Simplificado: todas as recorrentes aparecem aqui
-        case "all":
-          return true;
+          return filterType === "monthly" && task.recurrence_details === currentDayOfMonth;
+        default:
+          return filterType === "all";
       }
     }
 
-    // Lógica original para tarefas com data de vencimento única
+    // Lógica para tarefas com data de vencimento única
     if (!task.due_date) return false;
     const dueDate = parseISO(task.due_date);
 
@@ -163,6 +150,11 @@ const Tasks: React.FC = () => {
                     Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
+                {task.time && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {task.time}
+                  </p>
+                )}
                 {task.recurrence_type !== "none" && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
@@ -183,8 +175,6 @@ const Tasks: React.FC = () => {
   if (isLoading) return <p>Carregando tarefas...</p>;
   if (error) return <p className="text-red-500">Erro ao carregar tarefas: {error.message}</p>;
 
-  // Filtragem de tarefas:
-  // Para as abas "Diárias", "Semanais", "Mensais", incluímos tanto tarefas com due_date quanto tarefas recorrentes
   const dailyTasks = tasks?.filter((task) => filterTasks(task, "daily")) || [];
   const weeklyTasks = tasks?.filter((task) => filterTasks(task, "weekly")) || [];
   const monthlyTasks = tasks?.filter((task) => filterTasks(task, "monthly")) || [];

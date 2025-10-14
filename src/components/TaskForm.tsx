@@ -22,11 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import TimePicker from "./TimePicker"; // Importar o novo componente TimePicker
 
 const taskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
   description: z.string().optional(),
   due_date: z.date().optional(),
+  time: z.string().optional(), // Novo campo para o horário
   recurrence_type: z.enum(["none", "daily_weekday", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional(),
 });
@@ -44,6 +46,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
       title: "",
       description: "",
       due_date: undefined,
+      time: undefined, // Valor padrão para o horário
       recurrence_type: "none",
       recurrence_details: "",
     },
@@ -57,6 +60,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
         title: values.title,
         description: values.description,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
+        time: values.time || null, // Salvar o horário
         is_completed: false,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_details,
@@ -69,6 +73,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
         title: "",
         description: "",
         due_date: undefined,
+        time: undefined,
         recurrence_type: "none",
         recurrence_details: "",
       });
@@ -131,6 +136,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskAdded }) => {
             />
           </PopoverContent>
         </Popover>
+      </div>
+
+      <div>
+        <Label htmlFor="time">Horário (Opcional)</Label>
+        <TimePicker
+          value={form.watch("time")}
+          onChange={(time) => form.setValue("time", time)}
+        />
       </div>
 
       <div>
