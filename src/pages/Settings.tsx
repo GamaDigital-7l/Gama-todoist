@@ -15,6 +15,7 @@ import { showSuccess, showError } from "@/utils/toast";
 const settingsSchema = z.object({
   evolution_api_key: z.string().optional(),
   telegram_api_key: z.string().optional(),
+  telegram_chat_id: z.string().optional(), // Novo campo
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -26,6 +27,7 @@ const Settings: React.FC = () => {
     defaultValues: {
       evolution_api_key: "",
       telegram_api_key: "",
+      telegram_chat_id: "", // Valor padrão
     },
   });
 
@@ -59,6 +61,7 @@ const Settings: React.FC = () => {
           .update({
             evolution_api_key: values.evolution_api_key,
             telegram_api_key: values.telegram_api_key,
+            telegram_chat_id: values.telegram_chat_id, // Salvar novo campo
             updated_at: new Date().toISOString(),
           })
           .eq("id", settingsId);
@@ -72,6 +75,7 @@ const Settings: React.FC = () => {
           .insert({
             evolution_api_key: values.evolution_api_key,
             telegram_api_key: values.telegram_api_key,
+            telegram_chat_id: values.telegram_chat_id, // Inserir novo campo
             // user_id: auth.uid() // Adicionar user_id aqui quando a autenticação for reativada
           })
           .select()
@@ -126,6 +130,19 @@ const Settings: React.FC = () => {
               {form.formState.errors.telegram_api_key && (
                 <p className="text-red-500 text-sm mt-1">
                   {form.formState.errors.telegram_api_key.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="telegram_chat_id">Telegram Chat ID</Label>
+              <Input
+                id="telegram_chat_id"
+                {...form.register("telegram_chat_id")}
+                placeholder="Seu ID de Chat do Telegram"
+              />
+              {form.formState.errors.telegram_chat_id && (
+                <p className="text-red-500 text-sm mt-1">
+                  {form.formState.errors.telegram_chat_id.message}
                 </p>
               )}
             </div>
