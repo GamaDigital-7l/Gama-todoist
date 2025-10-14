@@ -9,28 +9,31 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/Page/AnnotationLayer.css"; // Caminho corrigido
-import "react-pdf/dist/Page/TextLayer.css"; // Caminho corrigido
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+// Importa o worker do pdf.js diretamente, permitindo que o Vite lide com o caminho
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.js?url";
 
 // Configura o worker do pdf.js
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface Book {
   id: string;
   title: string;
   author?: string;
   content?: string;
-  pdf_url?: string; // Adicionando pdf_url à interface
+  pdf_url?: string;
 }
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
     .from("books")
-    .select("id, title, author, content, pdf_url") // Incluir pdf_url na seleção
+    .select("id, title, author, content, pdf_url")
     .eq("id", bookId)
     .single();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+  if (error && error.code !== 'PGRST116') {
     throw error;
   }
   return data || null;
@@ -46,12 +49,12 @@ const BookReader: React.FC = () => {
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book", id],
     queryFn: () => fetchBookById(id!),
-    enabled: !!id, // Só executa a query se o ID estiver disponível
+    enabled: !!id,
   });
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-    setPageNumber(1); // Reset para a primeira página ao carregar um novo documento
+    setPageNumber(1);
   };
 
   const changePage = (offset: number) => {
