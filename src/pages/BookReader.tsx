@@ -12,11 +12,11 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Importa o worker do pdf.js diretamente, permitindo que o Vite lide com o caminho
-import pdfWorker from "pdfjs-dist/build/pdf.worker.min.js?url";
-
-// Configura o worker do pdf.js
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+// Configura o worker do pdf.js usando new URL para que o Vite resolva o caminho corretamente
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 interface Book {
   id: string;
