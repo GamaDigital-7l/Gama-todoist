@@ -122,29 +122,31 @@ const Goals: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) setEditingGoal(undefined);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingGoal(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
-            </DialogHeader>
-            <GoalForm
-              initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? parseISO(editingGoal.target_date) : undefined } : undefined}
-              onGoalSaved={refetch}
-              onClose={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2 flex-wrap justify-end"> {/* Adicionado flex-wrap e justify-end */}
+          <Dialog
+            open={isFormOpen}
+            onOpenChange={(open) => {
+              setIsFormOpen(open);
+              if (!open) setEditingGoal(undefined);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingGoal(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
+              </DialogHeader>
+              <GoalForm
+                initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? parseISO(editingGoal.target_date) : undefined } : undefined}
+                onGoalSaved={refetch}
+                onClose={() => setIsFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
       <p className="text-lg text-muted-foreground">
         Defina e acompanhe suas metas de vida aqui.
