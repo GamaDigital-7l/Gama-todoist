@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
+import TagSelector from "./TagSelector"; // Importar o TagSelector
 
 const taskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
@@ -32,17 +33,18 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily_weekday", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
-  task_type: z.enum(["general", "reading", "exercise"]).default("general"), // Novo campo
+  task_type: z.enum(["general", "reading", "exercise"]).default("general"),
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
-  ), // Novo campo
+  ),
+  selected_tag_ids: z.array(z.string()).optional(), // Novo campo para IDs de tags selecionadas
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  initialData?: TaskFormValues & { id: string };
+  initialData?: TaskFormValues & { id: string; tags?: { id: string; name: string; color: string }[] };
   onTaskSaved: () => void;
   onClose: () => void;
 }
@@ -61,6 +63,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       recurrence_details: initialData.recurrence_details || undefined,
       task_type: initialData.task_type || "general",
       target_value: initialData.target_value || undefined,
+      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [], // Preencher tags selecionadas
     } : {
       title: "",
       description: "",
@@ -70,11 +73,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       recurrence_details: undefined,
       task_type: "general",
       target_value: undefined,
+      selected_tag_ids: [],
     },
   });
 
   const recurrenceType = form.watch("recurrence_type");
   const taskType = form.watch("task_type");
+  const selectedTagIds = form.watch("selected_tag_ids") || [];
+
+  const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
+    form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
+  };
 
   const onSubmit = async (values: TaskFormValues) => {
     if (!userId) {
@@ -83,6 +92,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     }
 
     try {
+      let taskId: string;
+
       const dataToSave = {
         title: values.title,
         description: values.description,
@@ -90,31 +101,50 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         time: values.time || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_details || null,
-        task_type: values.task_type, // Salvar o tipo de tarefa
-        target_value: values.target_value || null, // Salvar o valor alvo
-        current_daily_target: values.target_value || null, // Inicializar current_daily_target com target_value
+        task_type: values.task_type,
+        target_value: values.target_value || null,
+        current_daily_target: values.target_value || null,
         updated_at: new Date().toISOString(),
       };
 
       if (initialData) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("tasks")
           .update(dataToSave)
           .eq("id", initialData.id)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select("id")
+          .single();
 
         if (error) throw error;
+        taskId = data.id;
         showSuccess("Tarefa atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("tasks").insert({
+        const { data, error } = await supabase.from("tasks").insert({
           ...dataToSave,
           is_completed: false,
           user_id: userId,
-        });
+        }).select("id").single();
 
         if (error) throw error;
+        taskId = data.id;
         showSuccess("Tarefa adicionada com sucesso!");
       }
+
+      // Lidar com as tags
+      // Primeiro, deletar todas as associações existentes para esta tarefa
+      await supabase.from("task_tags").delete().eq("task_id", taskId);
+
+      // Em seguida, inserir as novas associações
+      if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
+        const taskTagsToInsert = values.selected_tag_ids.map(tagId => ({
+          task_id: taskId,
+          tag_id: tagId,
+        }));
+        const { error: tagInsertError } = await supabase.from("task_tags").insert(taskTagsToInsert);
+        if (tagInsertError) throw tagInsertError;
+      }
+
       form.reset();
       onTaskSaved();
       onClose();
@@ -306,26 +336,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily_weekday">Dias de Semana (Seg-Sex)</SelectItem>
             <SelectItem value="weekly">Semanal</SelectItem>
-            <SelectItem value="monthly">Mensal</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {recurrenceType === "weekly" && (
-        <div>
-          <Label htmlFor="recurrence_details_weekly" className="text-foreground">Dia da Semana</Label>
-          <Select
-            onValueChange={(value) => form.setValue("recurrence_details", value)}
-            value={form.watch("recurrence_details") || undefined}
-          >
-            <SelectTrigger id="recurrence_details_weekly" className="bg-input border-border text-foreground focus-visible:ring-ring">
-              <SelectValue placeholder="Selecionar dia da semana" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-              <SelectItem value="Sunday">Domingo</SelectItem>
-              <SelectItem value="Monday">Segunda-feira</SelectItem>
-              <SelectItem value="Tuesday">Terça-feira</SelectItem>
-              <SelectItem value="Wednesday">Quarta-feira</SelectItem>
+            <SelectItem value="Wednesday">Quarta-feira</SelectItem>
+              <SelectItem value="Thursday">Quinta-feira</SelectItem>
               <SelectItem value="Friday">Sexta-feira</SelectItem>
               <SelectItem value="Saturday">Sábado</SelectItem>
             </SelectContent>
@@ -352,6 +364,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
           )}
         </div>
       )}
+
+      <TagSelector
+        selectedTagIds={selectedTagIds}
+        onTagSelectionChange={handleTagSelectionChange}
+      />
 
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
     </form>

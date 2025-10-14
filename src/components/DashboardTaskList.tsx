@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
+import { Badge } from "@/components/ui/badge"; // Importar Badge
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface Task {
   id: string;
@@ -26,12 +33,19 @@ interface Task {
   target_value?: number; // Novo campo
   current_daily_target?: number; // Novo campo
   last_successful_completion_date?: string; // Novo campo
+  tags: Tag[]; // Adicionar tags à interface da tarefa
 }
 
 const POINTS_PER_TASK = 10; // Pontos ganhos por tarefa concluída
 
 const fetchTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
+    .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
@@ -225,6 +239,15 @@ const DashboardTaskList: React.FC = () => {
                       {task.task_type === "reading" ? <BookOpen className="h-3 w-3" /> : <Dumbbell className="h-3 w-3" />}
                       Meta: {task.current_daily_target} {task.task_type === "reading" ? "páginas" : "minutos/reps"}
                     </p>
+                  )}
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {task.tags.map((tag) => (
+                        <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

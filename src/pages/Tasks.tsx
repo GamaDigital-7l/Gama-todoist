@@ -14,18 +14,29 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Repeat, Clock, Edit, PlusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
+import { Badge } from "@/components/ui/badge"; // Importar Badge
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface Task extends TaskFormValues {
   id: string;
   is_completed: boolean;
   created_at: string;
   updated_at: string;
+  tags: Tag[]; // Adicionar tags à interface da tarefa
 }
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
-    .select("*")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
@@ -75,6 +86,9 @@ const Tasks: React.FC = () => {
     }
     if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
       try {
+        // Deletar associações de tags primeiro
+        await supabase.from("task_tags").delete().eq("task_id", taskId);
+
         const { error } = await supabase
           .from("tasks")
           .delete()
@@ -187,6 +201,15 @@ const Tasks: React.FC = () => {
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
                   </p>
+                )}
+                {task.tags && task.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {task.tags.map((tag) => (
+                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
