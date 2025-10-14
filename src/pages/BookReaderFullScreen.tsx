@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf"; // Importar pdfjs aqui
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
