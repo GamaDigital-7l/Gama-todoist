@@ -53,15 +53,32 @@ const DashboardTaskList: React.FC = () => {
 
       // Se a tarefa foi marcada como concluída e o usuário está logado, adicione pontos
       if (!currentStatus && session?.user?.id) {
-        const { data: profile, error: profileError } = await supabase
+        let currentPoints = 0;
+        const { data: existingProfile, error: fetchProfileError } = await supabase
           .from("profiles")
           .select("points")
           .eq("id", session.user.id)
           .single();
 
-        if (profileError) throw profileError;
+        if (fetchProfileError && fetchProfileError.code !== 'PGRST116') { // PGRST116 significa que nenhuma linha foi encontrada
+          throw fetchProfileError; // Re-lança outros erros
+        }
 
-        const newPoints = (profile?.points || 0) + POINTS_PER_TASK;
+        if (existingProfile) {
+          currentPoints = existingProfile.points || 0;
+        } else {
+          // O perfil não existe, cria um com pontos padrão
+          const { error: insertProfileError } = await supabase
+            .from("profiles")
+            .insert({ id: session.user.id, points: 0 }); // Insere com 0 pontos padrão
+
+          if (insertProfileError) {
+            throw insertProfileError;
+          }
+          // currentPoints permanece 0, pois é um novo perfil
+        }
+
+        const newPoints = currentPoints + POINTS_PER_TASK;
         const { error: pointsError } = await supabase
           .from("profiles")
           .update({ points: newPoints })
