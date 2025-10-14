@@ -3,8 +3,8 @@ self.addEventListener('push', function(event) {
   const title = data.title || 'Minha Vida';
   const options = {
     body: data.body || 'Você tem uma nova notificação!',
-    icon: data.icon || '/favicon.png', // Atualizado para favicon.png
-    badge: data.badge || '/favicon.png', // Atualizado para favicon.png
+    icon: data.icon || '/favicon.png', // Caminho absoluto
+    badge: data.badge || '/favicon.png', // Caminho absoluto
     data: {
       url: data.url || '/',
     }
