@@ -145,7 +145,8 @@ const Dashboard: React.FC = () => {
 
         if (task.recurrence_type === "daily_weekday" && (currentDayOfWeek >= 1 && currentDayOfWeek <= 5)) {
           isTaskDueToday = true;
-        } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
+        }
+        if (task.recurrence_type === "weekly" && task.recurrence_details) {
           const dayMap: { [key: string]: number } = {
             "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
             "Thursday": 4, "Friday": 5, "Saturday": 6
@@ -153,7 +154,8 @@ const Dashboard: React.FC = () => {
           if (dayMap[task.recurrence_details] === currentDayOfWeek) {
             isTaskDueToday = true;
           }
-        } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
+        }
+        if (task.recurrence_type === "monthly" && task.recurrence_details) {
           if (parseInt(task.recurrence_details) === parseInt(currentDayOfMonth)) {
             isTaskDueToday = true;
           }

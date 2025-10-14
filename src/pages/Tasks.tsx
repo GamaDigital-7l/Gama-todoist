@@ -140,15 +140,15 @@ const Tasks: React.FC = () => {
       const currentDayOfWeek = format(today, "EEEE", { locale: ptBR }); // Ex: "Segunda-feira"
       const currentDayOfMonth = today.getDate().toString();
 
-      switch (task.recurrence_type) {
-        case "daily_weekday":
-          return filterType === "daily" && today.getDay() >= 1 && today.getDay() <= 5; // Seg-Sex
+      switch (filterType) {
+        case "daily":
+          return task.recurrence_type === "daily_weekday" && today.getDay() >= 1 && today.getDay() <= 5; // Seg-Sex
         case "weekly":
-          return filterType === "weekly" && task.recurrence_details?.toLowerCase() === currentDayOfWeek.toLowerCase();
+          return task.recurrence_type === "weekly" && task.recurrence_details?.toLowerCase() === currentDayOfWeek.toLowerCase();
         case "monthly":
-          return filterType === "monthly" && task.recurrence_details === currentDayOfMonth;
+          return task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth;
         default:
-          return filterType === "all";
+          return true; // Para "all", todas as recorrentes são incluídas
       }
     }
 
