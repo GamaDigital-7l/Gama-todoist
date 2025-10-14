@@ -58,12 +58,6 @@ const WebPushToggle: React.FC = () => {
       showError("Usuário não autenticado. Faça login para ativar as notificações.");
       return;
     }
-    if (!VAPID_PUBLIC_KEY) {
-      showError("Chave pública VAPID não configurada. Verifique seu arquivo .env e os segredos do Supabase.");
-      setIsSubscribed(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const permission = await Notification.requestPermission();

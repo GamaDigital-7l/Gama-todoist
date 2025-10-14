@@ -25,7 +25,7 @@ const fetchDailyMotivation = async (userId: string | undefined): Promise<Motivat
 
   // Tenta buscar uma mensagem criada hoje
   const { data: todayMessage, error: todayError } = await supabase
-    .from("public.daily_motivations") // Especificando o esquema
+    .from("daily_motivations")
     .select("*")
     .gte("created_at", `${today}T00:00:00.000Z`)
     .lte("created_at", `${today}T23:59:59.999Z`)
@@ -43,7 +43,7 @@ const fetchDailyMotivation = async (userId: string | undefined): Promise<Motivat
 
   // Se não houver mensagem para hoje, busca a mais recente
   const { data: latestMessage, error: latestError } = await supabase
-    .from("public.daily_motivations") // Especificando o esquema
+    .from("daily_motivations")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(1)

@@ -1,148 +1,202 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-import { Document, Page, pdfjs } from "react-pdf";
-// Importação corrigida para PDFDocumentProxy - usando uma interface local para robustez
-// import { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Removido
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
-
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Document, Page, pdfjs, PDFDocumentProxy } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Book {
   id: string;
   title: string;
   pdf_url?: string;
+  current_page?: number;
 }
 
-// Interface local para o objeto retornado por onLoadSuccess
-interface LocalPDFDocumentProxy {
-  numPages: number;
-}
+const fetchBookById = async (bookId: string): Promise<Book | null> => {
+  const { data, error } = await supabase
+    .from("books")
+    .select("id, title, pdf_url, current_page")
+    .eq("id", bookId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
+  return data || null;
+};
 
 const BookReaderFullScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const readerRef = useRef<HTMLDivElement>(null);
+
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [isHovering, setIsHovering] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const [scale, setScale] = useState<number>(1.0);
-  const [rotation, setRotation] = useState<number>(0);
-  const [loadingPdf, setLoadingPdf] = useState<boolean>(true);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [initialScale, setInitialScale] = useState<number | null>(null);
+  const [pageInput, setPageInput] = useState<string>("");
+  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
 
-  const fetchBookById = async (bookId: string): Promise<Book | null> => {
-    const { data, error } = await supabase
-      .from("books")
-      .select("id, title, pdf_url")
-      .eq("id", bookId)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-    return data || null;
-  };
-
-  const { data: book, isLoading: isLoadingBook, error: bookFetchError } = useQuery<Book | null, Error>({
-    queryKey: ["bookPdf", id],
+  const { data: book, isLoading, error } = useQuery<Book | null, Error>({
+    queryKey: ["book-fullscreen", id],
     queryFn: () => fetchBookById(id!),
     enabled: !!id,
   });
 
-  const bookUrl = book?.pdf_url;
+  const pdfOptions = useMemo(() => ({
+    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+    cMapPacked: true,
+  }), []);
 
-  const onDocumentLoadSuccess = ({ numPages }: LocalPDFDocumentProxy) => {
-    setNumPages(numPages);
-    setLoadingPdf(false);
-    setPdfError(null);
+  useEffect(() => {
+    const updateContainerWidth = () => {
+      if (readerRef.current) {
+        setContainerWidth(readerRef.current.clientWidth);
+      }
+    };
+
+    updateContainerWidth();
+
+    const resizeObserver = new ResizeObserver(updateContainerWidth);
+    if (readerRef.current) {
+      resizeObserver.observe(readerRef.current);
+    }
+
+    return () => {
+      if (readerRef.current) {
+        resizeObserver.unobserve(readerRef.current);
+      }
+    };
+  }, [readerRef]);
+
+  useEffect(() => {
+    const initializeReaderState = async () => {
+      if (pdfDocument && readerRef.current && containerWidth && numPages !== null && initialScale === null) {
+        try {
+          const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
+          setPageNumber(initialPage);
+          setPageInput(String(initialPage));
+
+          const page = await pdfDocument.getPage(1);
+          const viewport = page.getViewport({ scale: 1 });
+          const calculatedScale = readerRef.current.clientWidth / viewport.width;
+          
+          setInitialScale(calculatedScale);
+          setScale(calculatedScale);
+
+        } catch (err) {
+          console.error("Erro ao inicializar leitor (página/escala):", err);
+          showError("Erro ao inicializar o leitor de PDF.");
+        }
+      }
+    };
+    initializeReaderState();
+  }, [pdfDocument, containerWidth, numPages, book?.current_page, initialScale]);
+
+  useEffect(() => {
+    if (initialScale !== null && containerWidth !== null && pdfDocument) {
+      const adjustScale = async () => {
+        try {
+          const page = await pdfDocument.getPage(1);
+          const viewport = page.getViewport({ scale: 1 });
+          const newInitialScale = containerWidth / viewport.width;
+          
+          if (initialScale !== newInitialScale) {
+            const currentZoomFactor = scale / initialScale;
+            setInitialScale(newInitialScale);
+            setScale(newInitialScale * currentZoomFactor);
+          }
+        } catch (err) {
+          console.error("Erro ao ajustar escala no redimensionamento:", err);
+        }
+      };
+      adjustScale();
+    }
+  }, [containerWidth, pdfDocument]);
+
+  const updateCurrentPageInDb = async (newPage: number) => {
+    if (!id) return;
+    try {
+      await supabase
+        .from("books")
+        .update({ current_page: newPage, last_read_date: new Date().toISOString().split('T')[0] })
+        .eq("id", id);
+    } catch (err) {
+      console.error("Erro ao atualizar página atual no DB:", err);
+    }
   };
 
-  const onDocumentLoadError = (err: Error) => {
-    console.error("Failed to load PDF:", err);
-    setPdfError("Não foi possível carregar o PDF. Verifique a URL ou tente novamente.");
-    setLoadingPdf(false);
-    toast({
-      title: "Erro ao carregar livro",
-      description: "Não foi possível carregar o PDF. Verifique a URL ou tente novamente.",
-      variant: "destructive",
-    });
+  const onDocumentLoadSuccess = (pdf: PDFDocumentProxy) => {
+    setNumPages(pdf.numPages);
+    setPdfDocument(pdf);
   };
 
   const changePage = (offset: number) => {
-    setPageNumber((prevPageNumber) => {
-      const newPage = prevPageNumber + offset;
-      if (numPages && newPage >= 1 && newPage <= numPages) {
-        return newPage;
+    setPageNumber(prevPageNumber => {
+      const newPage = Math.max(1, Math.min(prevPageNumber + offset, numPages || 1));
+      if (newPage !== prevPageNumber) {
+        updateCurrentPageInDb(newPage);
+        setPageInput(String(newPage));
       }
-      return prevPageNumber;
+      return newPage;
     });
   };
 
-  const goToPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const page = Number(e.target.value);
-    if (numPages && page >= 1 && page <= numPages) {
-      setPageNumber(page);
-    } else if (page < 1) {
-      setPageNumber(1);
-    } else if (numPages && page > numPages) {
-      setPageNumber(numPages);
+  const previousPage = () => changePage(-1);
+  const nextPage = () => changePage(1);
+
+  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0));
+  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale ? initialScale * 0.5 : 0.5));
+  const resetZoom = () => setScale(initialScale || 1.0);
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value);
+  };
+
+  const goToPage = () => {
+    const newPage = parseInt(pageInput, 10);
+    if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+      setPageNumber(newPage);
+      updateCurrentPageInDb(newPage);
+    } else {
+      showError(`Por favor, insira um número de página válido entre 1 e ${numPages || 1}.`);
+      setPageInput(String(pageNumber));
     }
   };
 
-  const zoomIn = () => setScale((prevScale) => Math.min(prevScale + 0.2, 3.0));
-  const zoomOut = () => setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
-  const rotate = () => setRotation((prevRotation) => (prevRotation + 90) % 360);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === "ArrowRight") {
-      changePage(1);
-    } else if (event.key === "ArrowLeft") {
-      changePage(-1);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX;
+    const swipeThreshold = 50;
+
+    if (swipeDistance > swipeThreshold) {
+      previousPage();
+    } else if (swipeDistance < -swipeThreshold) {
+      nextPage();
     }
-  }, [changePage]);
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
-      }
-    };
-
-    handleResize(); // Set initial width
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const handleClose = () => {
-    navigate(`/books/${id}`); // Navegar de volta para a página de detalhes do livro
   };
 
   if (!id) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-bold">Erro</h1>
-        <p className="text-lg text-muted-foreground">ID do livro não fornecido.</p>
+        <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
+        <p className="text-lg text-muted-foreground">O ID do livro não foi fornecido.</p>
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
@@ -150,34 +204,35 @@ const BookReaderFullScreen: React.FC = () => {
     );
   }
 
-  if (isLoadingBook) {
+  if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-3xl font-bold mt-4">Carregando detalhes do livro...</h1>
+        <h1 className="text-3xl font-bold mt-4">Carregando Livro...</h1>
+        <p className="text-lg text-muted-foreground">Preparando sua leitura.</p>
       </div>
     );
   }
 
-  if (bookFetchError) {
-    showError("Erro ao carregar detalhes do livro: " + bookFetchError.message);
+  if (error) {
+    showError("Erro ao carregar livro: " + error.message);
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
-        <h1 className="text-3xl font-bold text-red-500">Erro ao Carregar Livro</h1>
-        <p className="text-lg text-muted-foreground">Ocorreu um erro: {bookFetchError.message}</p>
-        <Button onClick={() => navigate("/books")} className="mt-4 w-fit bg-primary text-primary-foreground hover:bg-primary/90">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
+        <h1 className="text-3xl font-bold">Erro ao Carregar Livro</h1>
+        <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
+        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Detalhes do Livro
         </Button>
       </div>
     );
   }
 
-  if (!book || !bookUrl) {
+  if (!book || !book.pdf_url) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <h1 className="text-3xl font-bold">PDF Não Encontrado</h1>
-        <p className="text-lg text-muted-foreground">O PDF para este livro não está disponível.</p>
-        <Button onClick={handleClose} className="mt-4 w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+        <p className="text-lg text-muted-foreground">O livro não possui um PDF ou não foi encontrado.</p>
+        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Detalhes do Livro
         </Button>
       </div>
@@ -185,81 +240,122 @@ const BookReaderFullScreen: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between p-2 border-b border-border bg-card shadow-sm">
-        <Button variant="ghost" size="icon" onClick={handleClose}>
-          <ArrowLeft className="h-5 w-5" />
+    <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
+      <div className="flex items-center justify-between p-4 bg-card border-b border-border shadow-sm flex-wrap gap-2">
+        <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Voltar para Detalhes</span>
         </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={zoomOut}>
-            <ZoomOut className="h-5 w-5" />
+        <h1 className="text-xl font-bold text-foreground truncate flex-1 text-center sm:text-left">{book.title}</h1>
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+          <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+            <ZoomOut className="h-4 w-4" />
+            <span className="sr-only">Diminuir Zoom</span>
           </Button>
-          <Slider
-            value={[scale]}
-            onValueChange={(val) => setScale(val[0])}
-            min={0.5}
-            max={3.0}
-            step={0.1}
-            className="w-24"
-          />
-          <Button variant="ghost" size="icon" onClick={zoomIn}>
-            <ZoomIn className="h-5 w-5" />
+          <Button variant="outline" size="icon" onClick={zoomIn} disabled={scale >= 3.0} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+            <ZoomIn className="h-4 w-4" />
+            <span className="sr-only">Aumentar Zoom</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={rotate}>
-            <RotateCcw className="h-5 w-5" />
+          <Button variant="outline" size="icon" onClick={resetZoom} disabled={scale === initialScale} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+            <RotateCcw className="h-4 w-4" />
+            <span className="sr-only">Resetar Zoom</span>
           </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => changePage(-1)} disabled={pageNumber <= 1}>
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Input
-            type="number"
-            value={pageNumber}
-            onChange={goToPage}
-            className="w-16 text-center bg-input border-border text-foreground"
-            min={1}
-            max={numPages || 1}
-          />
-          <span className="text-muted-foreground">/ {numPages || "..."}</span>
-          <Button variant="ghost" size="icon" onClick={() => changePage(1)} disabled={numPages === null || pageNumber >= numPages}>
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              value={pageInput}
+              onChange={handlePageInputChange}
+              onKeyPress={(e) => e.key === "Enter" && goToPage()}
+              min="1"
+              max={numPages || 1}
+              className="w-16 text-center bg-input border-border text-foreground focus-visible:ring-ring"
+            />
+            {numPages && (
+              <span className="text-sm text-muted-foreground">
+                / {numPages}
+              </span>
+            )}
+            <Button onClick={goToPage} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Ir</Button>
+          </div>
         </div>
       </div>
 
-      {/* PDF Viewer Area */}
-      <div ref={containerRef} className="flex-1 overflow-auto flex justify-center items-center p-4">
-        {(isLoadingBook || loadingPdf) && (
-          <div className="flex flex-col items-center text-muted-foreground">
-            <Loader2 className="h-10 w-10 animate-spin mb-4" />
-            <p>Carregando livro...</p>
-          </div>
-        )}
-        {pdfError && (
-          <div className="text-center text-red-500">
-            <p>{pdfError}</p>
-            <Button onClick={handleClose} className="mt-4">Voltar</Button>
-          </div>
-        )}
-        {!isLoadingBook && !loadingPdf && !pdfError && bookUrl && (
+      <div
+        ref={readerRef}
+        className="flex-1 flex items-center justify-center overflow-hidden relative"
+        onMouseEnter={() => !isMobile && setIsHovering(true)}
+        onMouseLeave={() => !isMobile && setIsHovering(false)}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      >
+        {book.pdf_url && (
           <Document
-            file={bookUrl}
+            file={book.pdf_url}
             onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            className="flex justify-center items-center"
+            onLoadError={(error) => {
+              console.error("Erro ao carregar PDF:", error);
+              showError("Erro ao carregar PDF: " + error.message);
+            }}
+            className="flex justify-center items-center h-full w-full"
+            options={pdfOptions}
+            loading={<Loader2 className="h-12 w-12 animate-spin text-primary" />}
           >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              rotate={rotation}
-              width={containerWidth ? Math.min(containerWidth * 0.9, 1000) : undefined} // Adjust max width for better viewing
-              renderAnnotationLayer={true}
-              renderTextLayer={true}
-              className="shadow-lg border border-border"
-            />
+            {numPages && (
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                className="shadow-lg border border-border"
+                scale={scale}
+                loading={<Loader2 className="h-8 w-8 animate-spin text-primary" />}
+              />
+            )}
           </Document>
+        )}
+        {!book.pdf_url && !isLoading && !error && (
+          <p className="text-lg text-muted-foreground">Nenhum PDF disponível para este livro.</p>
+        )}
+
+        {!isMobile && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={previousPage}
+              disabled={pageNumber <= 1}
+              className={`absolute left-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
+                isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <ChevronLeft className="h-6 w-6" />
+              <span className="sr-only">Página Anterior</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={nextPage}
+              disabled={pageNumber >= (numPages || 1)}
+              className={`absolute right-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
+                isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <ChevronRight className="h-6 w-6" />
+              <span className="sr-only">Próxima Página</span>
+            </Button>
+          </>
+        )}
+
+        {isMobile && (
+          <>
+            <div
+              className="absolute left-0 top-0 h-full w-1/2 cursor-pointer z-10"
+              onClick={previousPage}
+            />
+            <div
+              className="absolute right-0 top-0 h-full w-1/2 cursor-pointer z-10"
+              onClick={nextPage}
+            />
+          </>
         )}
       </div>
     </div>
