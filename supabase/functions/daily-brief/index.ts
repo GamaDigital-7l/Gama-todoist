@@ -41,7 +41,6 @@ serve(async (req) => {
     }
     const userId = userAuth.user.id;
 
-    // 1. Obter configurações do usuário
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference, notification_channel, evolution_api_key, whatsapp_phone_number")
@@ -102,14 +101,13 @@ serve(async (req) => {
       aiClient = new OpenAI({ apiKey: settings!.openai_api_key! });
     }
 
-    // 2. Obter tarefas incompletas para hoje
     const today = format(new Date(), "yyyy-MM-dd");
     const now = new Date();
-    const currentDayOfWeek = getDay(now); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
+    const currentDayOfWeek = getDay(now);
 
     const { data: tasks, error: tasksError } = await supabase
       .from("tasks")
-      .select("title, description, due_date, time, recurrence_type, recurrence_details")
+      .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type") // Incluído task_type
       .eq("user_id", userId)
       .eq("is_completed", false)
       .or(`due_date.eq.${today},recurrence_type.neq.none`);
@@ -119,7 +117,6 @@ serve(async (req) => {
       throw tasksError;
     }
 
-    // Helper to check if a day is included in recurrence_details (for 'weekly')
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
       const days = details.split(',');
@@ -128,7 +125,7 @@ serve(async (req) => {
 
     const todayTasks = (tasks || []).filter(task => {
       if (task.recurrence_type !== "none") {
-        if (task.recurrence_type === "daily") { // New 'daily' type
+        if (task.recurrence_type === "daily") {
           return true;
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
@@ -149,7 +146,6 @@ serve(async (req) => {
 
     const taskList = todayTasks.map(task => `- ${task.title}${task.time ? ` às ${task.time}` : ''}`).join("\n");
 
-    // 3. Gerar o brief com IA
     const prompt = `Crie um breve resumo motivacional para a manhã. Inclua:
     - 3 pontos principais para focar hoje (baseado nas tarefas: ${taskList || 'Nenhuma tarefa importante.'}).
     - 1 hábito sagrado para praticar hoje.
@@ -180,7 +176,6 @@ serve(async (req) => {
     }
     briefMessage += `Tenha um dia produtivo!`;
 
-    // 4. Enviar notificação
     if (NOTIFICATION_CHANNEL === "telegram") {
       const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
       const response = await fetch(telegramApiUrl, {

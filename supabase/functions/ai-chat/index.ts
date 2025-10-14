@@ -19,7 +19,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Obter configurações do usuário para chaves de API de IA
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("groq_api_key, openai_api_key, ai_provider_preference")
@@ -60,9 +59,8 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json(); // Array de mensagens no formato { role: "user" | "assistant", content: string }
+    const { messages } = await req.json();
 
-    // Check if the prompt is for task suggestions (heuristic: check for specific keywords or structure)
     const isTaskSuggestionPrompt = messages.some((msg: any) =>
       typeof msg.content === 'string' && msg.content.includes("sugira uma descrição mais detalhada") && msg.content.includes("tipo de recorrência")
     );
@@ -71,9 +69,7 @@ serve(async (req) => {
     let responseFormat: { type: "json_object" } | undefined = undefined;
 
     if (isTaskSuggestionPrompt) {
-      // For task suggestions, we want JSON output
       responseFormat = { type: "json_object" };
-      // Adjust the prompt to reflect the new recurrence types for AI
       messages[0].content = messages[0].content.replace(
         /tipo de recorrência \(none, daily_weekday, weekly, monthly\)/,
         "tipo de recorrência (none, daily, weekly, monthly)"
@@ -82,12 +78,21 @@ serve(async (req) => {
         /ex: 'Monday' para semanal, '15' para mensal, caso contrário null/,
         "ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null"
       );
+      // Atualizar o prompt para incluir o novo tipo de tarefa 'study'
+      messages[0].content = messages[0].content.replace(
+        /tipo de tarefa \(general, reading, exercise\)/,
+        "tipo de tarefa (general, reading, exercise, study)"
+      );
+      messages[0].content = messages[0].content.replace(
+        /valor alvo \(numeric, se aplicável, caso contrário null\)/,
+        "valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos)"
+      );
     }
 
     const chatCompletion = await aiClient.chat.completions.create({
       messages: messages,
       model: modelToUse,
-      response_format: responseFormat, // Apply response_format conditionally
+      response_format: responseFormat,
     });
 
     return new Response(JSON.stringify({ response: chatCompletion.choices[0].message.content }), {

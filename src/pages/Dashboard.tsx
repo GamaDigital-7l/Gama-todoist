@@ -13,7 +13,7 @@ import { isToday, parseISO, differenceInDays, format, getDay, subDays } from "da
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import TaskForm from "@/components/TaskForm"; // Importar o TaskForm
+import TaskForm from "@/components/TaskForm";
 
 interface Profile {
   id: string;
@@ -24,8 +24,9 @@ interface Task {
   id: string;
   is_completed: boolean;
   due_date?: string;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
-  recurrence_details?: string; // Will store comma-separated days for 'weekly'
+  recurrence_type: "none" | "daily" | "weekly" | "monthly";
+  recurrence_details?: string;
+  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
 }
 
 interface HealthMetric {
@@ -52,7 +53,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, points") // Incluir 'id' na seleção
+    .select("id, points")
     .eq("id", userId)
     .single();
 
@@ -60,11 +61,11 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
     console.error("Erro ao buscar perfil do usuário:", error);
     throw error;
   }
-  return data as Profile | null; // Explicitamente tipar o retorno
+  return data as Profile | null;
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details");
+  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Incluído task_type
   if (error) {
     console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
@@ -75,7 +76,7 @@ const fetchUserTasks = async (): Promise<Task[]> => {
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
     .from("health_metrics")
-    .select("id, date, weight_kg") // Incluir 'id' e 'date' na seleção
+    .select("id, date, weight_kg")
     .eq("user_id", userId)
     .order("date", { ascending: false })
     .limit(1)
@@ -85,7 +86,7 @@ const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | n
     console.error("Erro ao buscar última métrica de saúde:", error);
     throw error;
   }
-  return data as HealthMetric | null; // Explicitamente tipar o retorno
+  return data as HealthMetric | null;
 };
 
 const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
@@ -102,7 +103,7 @@ const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null>
     console.error("Erro ao buscar meta de saúde ativa:", error);
     throw error;
   }
-  return data as HealthGoal | null; // Explicitamente tipar o retorno
+  return data as HealthGoal | null;
 };
 
 const Dashboard: React.FC = () => {
@@ -139,10 +140,9 @@ const Dashboard: React.FC = () => {
     const today = new Date();
     let completedToday = 0;
     let totalToday = 0;
-    const currentDayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const currentDayOfWeek = today.getDay();
     const currentDayOfMonth = today.getDate().toString();
 
-    // Helper to check if a day is included in recurrence_details (for 'weekly')
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
       const days = details.split(',');
@@ -152,10 +152,9 @@ const Dashboard: React.FC = () => {
     allTasks.forEach(task => {
       let isTaskDueToday = false;
 
-      // Check for recurring tasks
       if (task.recurrence_type !== "none") {
         if (task.recurrence_type === "daily") {
-          isTaskDueToday = true; // Daily tasks are always due today
+          isTaskDueToday = true;
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
           if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
@@ -168,7 +167,6 @@ const Dashboard: React.FC = () => {
           }
         }
       } else if (task.due_date) {
-        // Check for single due date tasks
         const dueDate = parseISO(task.due_date);
         if (isToday(dueDate)) {
           isTaskDueToday = true;
@@ -208,7 +206,7 @@ const Dashboard: React.FC = () => {
       totalToLose,
       currentWeightLost,
       remainingToLose,
-      progressPercentage: Math.max(0, Math.min(100, progressPercentage)), // Clamp between 0 and 100
+      progressPercentage: Math.max(0, Math.min(100, progressPercentage)),
       daysRemaining: Math.max(0, daysRemaining),
     };
   }
@@ -229,7 +227,7 @@ const Dashboard: React.FC = () => {
             </DialogHeader>
             <TaskForm
               onTaskSaved={() => {
-                refetchTasks(); // Refetch tasks on dashboard after saving
+                refetchTasks();
                 setIsTaskFormOpen(false);
               }}
               onClose={() => setIsTaskFormOpen(false)}

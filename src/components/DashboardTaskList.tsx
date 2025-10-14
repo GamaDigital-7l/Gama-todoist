@@ -9,11 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, parseISO, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain } from "lucide-react"; // Adicionado Brain
+import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain, GraduationCap } from "lucide-react"; // Adicionado GraduationCap
 import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import TaskObstacleCoach from "@/components/TaskObstacleCoach"; // Importar o novo componente
+import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 
 interface Tag {
   id: string;
@@ -28,16 +28,16 @@ interface Task {
   due_date?: string; // ISO string
   time?: string; // Formato "HH:mm"
   is_completed: boolean;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
-  recurrence_details?: string; // Will store comma-separated days for 'weekly'
-  task_type: "general" | "reading" | "exercise"; // Novo campo
-  target_value?: number; // Novo campo
-  current_daily_target?: number; // Novo campo
-  last_successful_completion_date?: string; // Novo campo
-  tags: Tag[]; // Adicionar tags à interface da tarefa
+  recurrence_type: "none" | "daily" | "weekly" | "monthly";
+  recurrence_details?: string;
+  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
+  target_value?: number | null; // Pode ser nulo para tarefas gerais
+  current_daily_target?: number | null;
+  last_successful_completion_date?: string;
+  tags: Tag[];
 }
 
-const POINTS_PER_TASK = 10; // Pontos ganhos por tarefa concluída
+const POINTS_PER_TASK = 10;
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
   "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
@@ -81,14 +81,13 @@ const DashboardTaskList: React.FC = () => {
         .update({ 
           is_completed: !currentStatus, 
           updated_at: new Date().toISOString(),
-          last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null, // Define a data de conclusão se for marcada como completa
-          current_daily_target: !currentStatus ? null : undefined, // Reseta o target diário ao completar
+          last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null,
+          current_daily_target: !currentStatus ? null : undefined,
         })
         .eq("id", taskId);
 
       if (updateError) throw updateError;
 
-      // Se a tarefa foi marcada como concluída e o usuário está logado, adicione pontos
       if (!currentStatus && session?.user?.id) {
         let currentPoints = 0;
         const { data: existingProfile, error: fetchProfileError } = await supabase
@@ -97,22 +96,20 @@ const DashboardTaskList: React.FC = () => {
           .eq("id", session.user.id)
           .single();
 
-        if (fetchProfileError && fetchProfileError.code !== 'PGRST116') { // PGRST116 significa que nenhuma linha foi encontrada
-          throw fetchProfileError; // Re-lança outros erros
+        if (fetchProfileError && fetchProfileError.code !== 'PGRST116') {
+          throw fetchProfileError;
         }
 
         if (existingProfile) {
           currentPoints = existingProfile.points || 0;
         } else {
-          // O perfil não existe, cria um com pontos padrão
           const { error: insertProfileError } = await supabase
             .from("profiles")
-            .insert({ id: session.user.id, points: 0 }); // Insere com 0 pontos padrão
+            .insert({ id: session.user.id, points: 0 });
 
           if (insertProfileError) {
             throw insertProfileError;
           }
-          // currentPoints permanece 0, pois é um novo perfil
         }
 
         const newPoints = currentPoints + POINTS_PER_TASK;
@@ -122,11 +119,11 @@ const DashboardTaskList: React.FC = () => {
           .eq("id", session.user.id);
 
         if (pointsError) throw pointsError;
-        queryClient.invalidateQueries({ queryKey: ["userProfile"] }); // Invalida o cache do perfil para atualizar os pontos
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] }); // Invalida o cache para refetch
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] });
     },
     onError: (err: any) => {
       showError("Erro ao atualizar tarefa: " + err.message);
@@ -158,12 +155,30 @@ const DashboardTaskList: React.FC = () => {
     }
   };
 
+  const getTaskTypeIcon = (taskType: Task['task_type']) => {
+    switch (taskType) {
+      case "reading": return <BookOpen className="h-3 w-3" />;
+      case "exercise": return <Dumbbell className="h-3 w-3" />;
+      case "study": return <GraduationCap className="h-3 w-3" />;
+      default: return null;
+    }
+  };
+
+  const getTaskTypeLabel = (taskType: Task['task_type'], targetValue: number | null | undefined) => {
+    if (targetValue === null || targetValue === undefined) return null;
+    switch (taskType) {
+      case "reading": return `Meta: ${targetValue} páginas`;
+      case "exercise": return `Meta: ${targetValue} minutos/reps`;
+      case "study": return `Meta: ${targetValue} minutos de estudo`;
+      default: return null;
+    }
+  };
+
   const getTodayTasks = (allTasks: Task[]): Task[] => {
     const today = new Date();
-    const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
+    const currentDayOfWeek = getDay(today);
     const currentDayOfMonth = today.getDate().toString();
 
-    // Helper to check if a day is included in recurrence_details (for 'weekly')
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
       const days = details.split(',');
@@ -171,10 +186,9 @@ const DashboardTaskList: React.FC = () => {
     };
 
     return allTasks.filter(task => {
-      // Tarefas recorrentes
       if (task.recurrence_type !== "none") {
-        if (task.recurrence_type === "daily") { // New 'daily' type
-          return true; // Daily tasks are always due today
+        if (task.recurrence_type === "daily") {
+          return true;
         }
         if (task.recurrence_type === "weekly" && task.recurrence_details) {
           if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
@@ -188,18 +202,16 @@ const DashboardTaskList: React.FC = () => {
         }
       }
 
-      // Tarefas com data de vencimento única
       if (task.due_date) {
         const dueDate = parseISO(task.due_date);
         return isToday(dueDate);
       }
       return false;
     }).sort((a, b) => {
-      // Ordenar por horário, se disponível
       if (a.time && b.time) {
         return a.time.localeCompare(b.time);
       }
-      if (a.time) return -1; // Tarefas com horário primeiro
+      if (a.time) return -1;
       if (b.time) return 1;
       return 0;
     });
@@ -257,10 +269,9 @@ const DashboardTaskList: React.FC = () => {
                       <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
                     </p>
                   )}
-                  {(task.task_type === "reading" || task.task_type === "exercise") && task.current_daily_target !== null && task.current_daily_target !== undefined && (
+                  {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.current_daily_target !== null && task.current_daily_target !== undefined && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      {task.task_type === "reading" ? <BookOpen className="h-3 w-3" /> : <Dumbbell className="h-3 w-3" />}
-                      Meta: {task.current_daily_target} {task.task_type === "reading" ? "páginas" : "minutos/reps"}
+                      {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.current_daily_target)}
                     </p>
                   )}
                   {task.tags && task.tags.length > 0 && (

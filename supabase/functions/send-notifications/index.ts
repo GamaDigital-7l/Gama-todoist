@@ -28,7 +28,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Obter configurações do usuário (incluindo o ID do usuário da sessão)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response('Unauthorized', { status: 401, headers: corsHeaders });
@@ -48,11 +47,11 @@ serve(async (req) => {
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("telegram_api_key, telegram_chat_id, evolution_api_key, whatsapp_phone_number, notification_channel")
-      .eq("user_id", userId) // Filtrar configurações pelo user_id
+      .eq("user_id", userId)
       .limit(1)
       .single();
 
-    if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (settingsError && settingsError.code !== 'PGRST116') {
       console.error("Erro ao buscar configurações:", settingsError);
       return new Response(
         JSON.stringify({ error: "Erro ao buscar configurações." }),
@@ -85,17 +84,16 @@ serve(async (req) => {
       );
     }
 
-    // 2. Obter tarefas para hoje que não estão completas
     const today = format(new Date(), "yyyy-MM-dd");
     const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
-    const now = new Date(); // Current time in UTC
+    const now = new Date();
 
     const { data: tasks, error: tasksError } = await supabase
       .from("tasks")
       .select("*")
-      .eq("user_id", userId) // Filtrar tarefas pelo user_id
+      .eq("user_id", userId)
       .eq("is_completed", false)
-      .or(`due_date.eq.${today},recurrence_type.neq.none`); // Tasks due today OR recurring
+      .or(`due_date.eq.${today},recurrence_type.neq.none`);
 
     if (tasksError) {
       console.error("Erro ao buscar tarefas:", tasksError);
@@ -108,7 +106,6 @@ serve(async (req) => {
     const notificationsToSend = [];
     const tasksToUpdate = [];
 
-    // Helper to check if a day is included in recurrence_details (for 'weekly')
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
       const days = details.split(',');
@@ -121,41 +118,35 @@ serve(async (req) => {
       let shouldNotify = false;
       let notificationType = "";
 
-      // Lógica de "penalização" e atualização de current_daily_target
       let currentTarget = task.current_daily_target || task.target_value;
       const lastCompletionDate = task.last_successful_completion_date ? parseISO(task.last_successful_completion_date) : null;
       const isCompletedYesterday = lastCompletionDate && format(lastCompletionDate, "yyyy-MM-dd") === yesterday;
 
       if (task.task_type !== "general" && task.target_value !== null && task.target_value !== undefined) {
         if (!isCompletedYesterday && currentTarget !== null && currentTarget !== undefined) {
-          // Se não foi completada ontem, dobra a meta
           currentTarget = currentTarget * 2;
         } else {
-          // Se foi completada ontem, reseta para o valor alvo
           currentTarget = task.target_value;
         }
-        // Atualiza o current_daily_target no banco de dados
         tasksToUpdate.push({ id: task.id, current_daily_target: currentTarget });
       }
 
-      // Handle recurrence
       if (task.recurrence_type !== "none") {
-        const currentDayOfWeek = getDay(now); // 0 for Sunday, 1 for Monday, etc.
+        const currentDayOfWeek = getDay(now);
         const currentDayOfMonth = now.getDate();
 
-        if (task.recurrence_type === "daily") { // New 'daily' type
-          taskDueDate = now; // Treat as due today
+        if (task.recurrence_type === "daily") {
+          taskDueDate = now;
         } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
           if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
-            taskDueDate = now; // Treat as due today
+            taskDueDate = now;
           }
         } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
           if (parseInt(task.recurrence_details) === currentDayOfMonth) {
-            taskDueDate = now; // Treat as due today
+            taskDueDate = now;
           }
         }
       } else if (task.due_date) {
-        // Handle single due date
         const parsedDueDate = parseISO(task.due_date);
         if (isToday(parsedDueDate)) {
           taskDueDate = parsedDueDate;
@@ -179,17 +170,14 @@ serve(async (req) => {
 
       const lastNotifiedAt = task.last_notified_at ? parseISO(task.last_notified_at) : null;
 
-      // Check for 15 minutes before
       if (isAfter(now, time15Before) && isBefore(now, timeAt) && (!lastNotifiedAt || isBefore(lastNotifiedAt, time15Before))) {
         shouldNotify = true;
         notificationType = "15 minutos antes";
       }
-      // Check for at time
       else if (isAfter(now, subMinutes(timeAt, 5)) && isBefore(now, addMinutes(timeAt, 5)) && (!lastNotifiedAt || isBefore(lastNotifiedAt, subMinutes(timeAt, 5)))) {
         shouldNotify = true;
         notificationType = "na hora";
       }
-      // Check for 30 minutes after
       else if (isAfter(now, timeAt) && isBefore(now, time30After) && (!lastNotifiedAt || isBefore(lastNotifiedAt, timeAt))) {
         shouldNotify = true;
         notificationType = "30 minutos depois";
@@ -209,19 +197,22 @@ serve(async (req) => {
           message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
         }
         if (task.task_type !== "general" && currentTarget !== null && currentTarget !== undefined) {
-          message += `\n*Meta de Hoje:* ${currentTarget} ${task.task_type === "reading" ? "páginas" : "minutos/reps"}`;
+          let targetUnit = "";
+          if (task.task_type === "reading") targetUnit = "páginas";
+          else if (task.task_type === "exercise") targetUnit = "minutos/reps";
+          else if (task.task_type === "study") targetUnit = "minutos de estudo"; // Novo
+          message += `\n*Meta de Hoje:* ${currentTarget} ${targetUnit}`;
         }
         
         notificationsToSend.push({
           task_id: task.id,
           message: message,
-          title: `Lembrete: ${task.title}`, // Para Web Push
-          url: `/tasks`, // Para Web Push
+          title: `Lembrete: ${task.title}`,
+          url: `/tasks`,
         });
       }
     }
 
-    // 3. Enviar notificações para o canal preferido
     const sendPromises = notificationsToSend.map(async (notification) => {
       if (NOTIFICATION_CHANNEL === "telegram") {
         const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -275,18 +266,17 @@ serve(async (req) => {
         }
         return whatsappResponseData;
       } else if (NOTIFICATION_CHANNEL === "web_push") {
-        // Invocar a nova Edge Function para Web Push
         const { error: pushError } = await supabase.functions.invoke('send-web-push-notification', {
           body: {
             userId: userId,
             payload: {
               title: notification.title,
-              body: notification.message.replace(/\*/g, "").replace(/_/g, ""), // Remover Markdown para o corpo da notificação push
+              body: notification.message.replace(/\*/g, "").replace(/_/g, ""),
               url: notification.url,
             }
           },
           headers: {
-            'Authorization': `Bearer ${token}`, // Passar o token para autenticar a chamada
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -301,7 +291,6 @@ serve(async (req) => {
 
     await Promise.all(sendPromises);
 
-    // 4. Atualizar last_notified_at e current_daily_target para as tarefas notificadas
     if (tasksToUpdate.length > 0) {
       for (const taskUpdate of tasksToUpdate) {
         const { error: updateError } = await supabase

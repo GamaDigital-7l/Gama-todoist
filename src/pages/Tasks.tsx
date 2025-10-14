@@ -7,15 +7,15 @@ import { useQuery } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Added startOfWeek, endOfWeek, startOfMonth, endOfMonth
+import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain } from "lucide-react"; // Adicionado Brain
+import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react"; // Adicionado GraduationCap
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import TaskObstacleCoach from "@/components/TaskObstacleCoach"; // Importar o novo componente
+import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 
 interface Tag {
   id: string;
@@ -23,15 +23,16 @@ interface Tag {
   color: string;
 }
 
-interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> { // Omitir due_date e recurrence_details do TaskFormValues
+interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
   id: string;
   is_completed: boolean;
   created_at: string;
   updated_at: string;
-  due_date?: string; // Definir due_date como string para corresponder ao DB
-  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
-  recurrence_details?: string | null; // Will store comma-separated days for 'weekly'
-  tags: Tag[];
+  due_date?: string;
+  recurrence_type: "none" | "daily" | "weekly" | "monthly";
+  recurrence_details?: string | null;
+  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
+  target_value?: number | null; // Pode ser nulo para tarefas gerais
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
@@ -147,6 +148,25 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const getTaskTypeIcon = (taskType: Task['task_type']) => {
+    switch (taskType) {
+      case "reading": return <BookOpen className="h-3 w-3" />;
+      case "exercise": return <Dumbbell className="h-3 w-3" />;
+      case "study": return <GraduationCap className="h-3 w-3" />; // Novo ícone para estudos
+      default: return null;
+    }
+  };
+
+  const getTaskTypeLabel = (taskType: Task['task_type'], targetValue: number | null | undefined) => {
+    if (targetValue === null || targetValue === undefined) return null;
+    switch (taskType) {
+      case "reading": return `Meta: ${targetValue} páginas`;
+      case "exercise": return `Meta: ${targetValue} minutos/reps`;
+      case "study": return `Meta: ${targetValue} minutos de estudo`; // Novo label
+      default: return null;
+    }
+  };
+
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
     const today = new Date();
     const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
@@ -233,6 +253,11 @@ const Tasks: React.FC = () => {
                 {task.recurrence_type !== "none" && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
+                  </p>
+                )}
+                {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
                   </p>
                 )}
                 {task.tags && task.tags.length > 0 && (

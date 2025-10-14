@@ -42,12 +42,12 @@ const taskSchema = z.object({
   description: z.string().optional(),
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
-  recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"), // Updated enum
-  recurrence_details: z.string().optional().nullable(), // Will store comma-separated days for 'weekly'
-  task_type: z.enum(["general", "reading", "exercise"]).default("general"),
+  recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+  recurrence_details: z.string().optional().nullable(),
+  task_type: z.enum(["general", "reading", "exercise", "study"]).default("general"), // Adicionado 'study'
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
-    z.number().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
+    z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
   ),
   selected_tag_ids: z.array(z.string()).optional(),
 });
@@ -58,7 +58,7 @@ interface TaskFormProps {
   initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_details'> & {
     id: string;
     due_date?: string | Date | null;
-    recurrence_details?: string | null; // Ensure this is string for initialData
+    recurrence_details?: string | null;
     tags?: { id: string; name: string; color: string }[];
   };
   onTaskSaved: () => void;
@@ -76,7 +76,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       ...initialData,
       due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
-      recurrence_details: initialData.recurrence_details || undefined, // Keep as string
+      recurrence_details: initialData.recurrence_details || undefined,
       task_type: initialData.task_type || "general",
       target_value: initialData.target_value || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
@@ -96,9 +96,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
   const recurrenceType = form.watch("recurrence_type");
   const taskType = form.watch("task_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const watchedRecurrenceDetails = form.watch("recurrence_details"); // Watch recurrence_details
+  const watchedRecurrenceDetails = form.watch("recurrence_details");
 
-  // State for selected days for weekly recurrence
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   useEffect(() => {
@@ -132,16 +131,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     try {
       let taskId: string;
 
+      const isTargetValueRelevant = values.task_type !== "general";
+      const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
+
       const dataToSave = {
         title: values.title,
         description: values.description,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         recurrence_type: values.recurrence_type,
-        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null, // Use selectedDays for weekly
+        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         task_type: values.task_type,
-        target_value: values.target_value || null,
-        current_daily_target: values.target_value || null,
+        target_value: finalTargetValue, // Usar o valor final ajustado
+        current_daily_target: finalTargetValue, // current_daily_target também segue a mesma lógica
         updated_at: new Date().toISOString(),
       };
 
@@ -169,7 +171,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         showSuccess("Tarefa adicionada com sucesso!");
       }
 
-      // Lidar com as tags
       await supabase.from("task_tags").delete().eq("task_id", taskId);
 
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
@@ -201,7 +202,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
     setIsGeneratingAISuggestions(true);
     try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise) e um valor alvo (numeric, se aplicável, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise, study) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
 
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [{ role: "user", content: prompt }] },
@@ -213,7 +214,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
       const aiSuggestions = JSON.parse(data.response);
 
-      // Atualizar o formulário com as sugestões da IA
       if (aiSuggestions.description) form.setValue("description", aiSuggestions.description);
       if (aiSuggestions.due_date) {
         try {
@@ -291,7 +291,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
         <Select
-          onValueChange={(value: "general" | "reading" | "exercise") =>
+          onValueChange={(value: "general" | "reading" | "exercise" | "study") => // Adicionado 'study'
             form.setValue("task_type", value)
           }
           value={taskType}
@@ -303,19 +303,26 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             <SelectItem value="general">Geral</SelectItem>
             <SelectItem value="reading">Leitura</SelectItem>
             <SelectItem value="exercise">Exercício</SelectItem>
+            <SelectItem value="study">Estudos</SelectItem> {/* Novo item */}
           </SelectContent>
         </Select>
       </div>
 
-      {(taskType === "reading" || taskType === "exercise") && (
+      {(taskType === "reading" || taskType === "exercise" || taskType === "study") && ( // Incluído 'study'
         <div>
-          <Label htmlFor="target_value" className="text-foreground">Valor Alvo (Ex: Páginas, Repetições, Minutos)</Label>
+          <Label htmlFor="target_value" className="text-foreground">
+            Valor Alvo ({taskType === "reading" ? "Páginas" : taskType === "study" ? "Minutos de Estudo" : "Repetições/Minutos"})
+          </Label>
           <Input
             id="target_value"
             type="number"
             step="1"
             {...form.register("target_value", { valueAsNumber: true })}
-            placeholder={taskType === "reading" ? "Ex: 10 páginas" : "Ex: 30 minutos"}
+            placeholder={
+              taskType === "reading" ? "Ex: 10 páginas" :
+              taskType === "study" ? "Ex: 60 minutos" :
+              "Ex: 30 minutos"
+            }
             className="bg-input border-border text-foreground focus-visible:ring-ring"
           />
           {form.formState.errors.target_value && (
@@ -367,10 +374,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="recurrence_type" className="text-foreground">Recorrência</Label>
         <Select
-          onValueChange={(value: "none" | "daily" | "weekly" | "monthly") => { // Updated values
+          onValueChange={(value: "none" | "daily" | "weekly" | "monthly") => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_details", null); // Reset details when type changes
-            setSelectedDays([]); // Reset selected days for weekly
+            form.setValue("recurrence_details", null);
+            setSelectedDays([]);
           }}
           value={recurrenceType}
         >
@@ -379,8 +386,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="none">Nenhuma</SelectItem>
-            <SelectItem value="daily">Diário</SelectItem> {/* New daily option */}
-            <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem> {/* Updated weekly option */}
+            <SelectItem value="daily">Diário</SelectItem>
+            <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem>
             <SelectItem value="monthly">Mensal</SelectItem>
           </SelectContent>
         </Select>

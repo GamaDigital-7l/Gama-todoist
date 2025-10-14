@@ -17,8 +17,9 @@ interface Task {
   due_date?: string; // ISO string
   time?: string; // Formato "HH:mm"
   is_completed: boolean;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly"; // Updated enum
+  recurrence_type: "none" | "daily" | "weekly" | "monthly";
   recurrence_details?: string;
+  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
@@ -39,10 +40,9 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   }
 
   const today = new Date();
-  const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
+  const currentDayOfWeek = getDay(today);
   const currentDayOfMonth = today.getDate().toString();
 
-  // Helper to check if a day is included in recurrence_details (for 'weekly')
   const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
     if (!details) return false;
     const days = details.split(',');
@@ -50,9 +50,8 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   };
 
   return (data || []).filter(task => {
-    // Tarefas recorrentes
     if (task.recurrence_type !== "none") {
-      if (task.recurrence_type === "daily") { // New 'daily' type
+      if (task.recurrence_type === "daily") {
         return true;
       }
       if (task.recurrence_type === "weekly" && task.recurrence_details) {
@@ -67,7 +66,6 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
       }
     }
 
-    // Tarefas com data de vencimento única
     if (task.due_date) {
       const dueDate = parseISO(task.due_date);
       return isToday(dueDate);
