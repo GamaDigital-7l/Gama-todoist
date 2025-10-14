@@ -7,52 +7,56 @@ import { ListTodo, Award, Target } from "lucide-react"; // Importando ícones pa
 
 const Dashboard: React.FC = () => {
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h1 className="text-3xl font-bold">Bem-vindo à sua Netflix da Vida Pessoal!</h1>
-      <p className="text-lg text-muted-foreground">
-        Aqui você vai acompanhar suas tarefas, metas e progresso.
-      </p>
+    <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
+      <div className="text-center">
+        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-2">
+          Bem-vindo à sua Netflix da Vida Pessoal!
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Aqui você vai acompanhar suas tarefas, metas e progresso de forma inspiradora e organizada.
+        </p>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarefas Diárias</CardTitle>
-            <ListTodo className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-lg font-semibold">Tarefas Diárias</CardTitle>
+            <ListTodo className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3/5 Concluídas</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold">3/5 Concluídas</div>
+            <p className="text-sm text-muted-foreground mt-1">
               Você está no caminho certo!
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pontuação Total</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-lg font-semibold">Pontuação Total</CardTitle>
+            <Award className="h-5 w-5 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+1.250 Pontos</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold">+1.250 Pontos</div>
+            <p className="text-sm text-muted-foreground mt-1">
               Continue assim para subir de nível!
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Próxima Meta</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-lg font-semibold">Próxima Meta</CardTitle>
+            <Target className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Ler 10 páginas</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold">Ler 10 páginas</div>
+            <p className="text-sm text-muted-foreground mt-1">
               Faltam 5 páginas para hoje.
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex-1 flex items-end justify-center">
+      <div className="flex-1 flex items-end justify-center mt-8">
         <MadeWithDyad />
       </div>
     </div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { NavLink } from "react-router-dom"; // Importar NavLink para consistência
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -25,36 +26,46 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs">
             <nav className="grid gap-6 text-lg font-medium">
-              <a
-                href="/dashboard"
-                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
               >
                 Dashboard
-              </a>
-              <a
-                href="/tasks"
-                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              </NavLink>
+              <NavLink
+                to="/tasks"
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
               >
                 Tarefas
-              </a>
-              <a
-                href="/goals"
-                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              </NavLink>
+              <NavLink
+                to="/goals"
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
               >
                 Metas
-              </a>
-              <a
-                href="/motivation"
-                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              </NavLink>
+              <NavLink
+                to="/motivation"
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
               >
                 Motivação
-              </a>
-              <a
-                href="/settings"
-                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              </NavLink>
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
               >
                 Configurações
-              </a>
+              </NavLink>
             </nav>
           </SheetContent>
         </Sheet>
