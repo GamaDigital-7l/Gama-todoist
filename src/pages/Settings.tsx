@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BellRing } from "lucide-react";
+import { useSession } from "@/integrations/supabase/auth"; // Importar useSession
 
 const settingsSchema = z.object({
   evolution_api_key: z.string().nullable().optional(),
@@ -26,13 +27,15 @@ const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
-  notification_channel: z.enum(["telegram", "whatsapp", "none"]).default("telegram"), // Novo campo
-  whatsapp_phone_number: z.string().nullable().optional(), // Novo campo
+  notification_channel: z.enum(["telegram", "whatsapp", "web_push", "none"]).default("telegram"), // Adicionado "web_push"
+  whatsapp_phone_number: z.string().nullable().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const Settings: React.FC = () => {
+  const { session } = useSession(); // Obter a sessão do usuário
+  const userId = session?.user?.id;
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const form = useForm<SettingsFormValues>({
@@ -44,16 +47,19 @@ const Settings: React.FC = () => {
       groq_api_key: "",
       openai_api_key: "",
       ai_provider_preference: "groq",
-      notification_channel: "telegram", // Default
+      notification_channel: "telegram",
       whatsapp_phone_number: "",
     },
   });
 
   useEffect(() => {
     const fetchSettings = async () => {
+      if (!userId) return; // Não buscar configurações se o userId não estiver disponível
+
       const { data, error } = await supabase
         .from("settings")
         .select("*")
+        .eq("user_id", userId) // Filtrar por user_id
         .limit(1)
         .single();
 
@@ -66,9 +72,14 @@ const Settings: React.FC = () => {
     };
 
     fetchSettings();
-  }, [form]);
+  }, [form, userId]); // Adicionar userId como dependência
 
   const onSubmit = async (values: SettingsFormValues) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+
     try {
       const updateData = {
         evolution_api_key: values.evolution_api_key || null,
@@ -77,16 +88,18 @@ const Settings: React.FC = () => {
         groq_api_key: values.groq_api_key || null,
         openai_api_key: values.openai_api_key || null,
         ai_provider_preference: values.ai_provider_preference,
-        notification_channel: values.notification_channel, // Novo campo
-        whatsapp_phone_number: values.whatsapp_phone_number || null, // Novo campo
+        notification_channel: values.notification_channel,
+        whatsapp_phone_number: values.whatsapp_phone_number || null,
         updated_at: new Date().toISOString(),
+        user_id: userId, // Garantir que o user_id seja salvo
       };
 
       if (settingsId) {
         const { error } = await supabase
           .from("settings")
           .update(updateData)
-          .eq("id", settingsId);
+          .eq("id", settingsId)
+          .eq("user_id", userId); // Garantir que só o próprio usuário possa atualizar
 
         if (error) throw error;
         showSuccess("Configurações atualizadas com sucesso!");
@@ -108,10 +121,17 @@ const Settings: React.FC = () => {
   };
 
   const handleSendTestNotification = async () => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para enviar notificações de teste.");
+      return;
+    }
     setIsSendingTest(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-telegram-notifications', {
+      const { data, error } = await supabase.functions.invoke('send-notifications', { // Chamar a nova função genérica
         body: {}, // O corpo pode ser vazio, a função buscará as tarefas
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`, // Passar o token de acesso para autenticar a chamada
+        },
       });
 
       if (error) {
@@ -164,7 +184,7 @@ const Settings: React.FC = () => {
               <div>
                 <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
                 <Select
-                  onValueChange={(value: "telegram" | "whatsapp" | "none") =>
+                  onValueChange={(value: "telegram" | "whatsapp" | "web_push" | "none") => // Adicionado "web_push"
                     form.setValue("notification_channel", value)
                   }
                   value={notificationChannel}
@@ -175,6 +195,7 @@ const Settings: React.FC = () => {
                   <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
                     <SelectItem value="telegram">Telegram</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp (via Evolution API)</SelectItem>
+                    <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem> {/* Novo item */}
                     <SelectItem value="none">Nenhum</SelectItem>
                   </SelectContent>
                 </Select>

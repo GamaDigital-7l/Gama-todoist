@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, addMinutes, subMinutes, isBefore, isAfter, parseISO, isToday, getDay, subDays } from "https://esm.sh/date-fns@2.30.0"; // Mantendo date-fns v2.x.x
+import { format, addMinutes, subMinutes, isBefore, isAfter, parseISO, isToday, getDay, subDays } from "https://esm.sh/date-fns@2.30.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,17 +15,34 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, // Usar service role key para acesso total
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Obter configurações do Telegram e Evolution API
+    // 1. Obter configurações do usuário (incluindo o ID do usuário da sessão)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userAuth, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !userAuth.user) {
+      console.error("Erro de autenticação:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid or missing token." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userId = userAuth.user.id;
+
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("telegram_api_key, telegram_chat_id, evolution_api_key, whatsapp_phone_number, notification_channel")
+      .eq("user_id", userId) // Filtrar configurações pelo user_id
       .limit(1)
       .single();
 
-    if (settingsError) {
+    if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = no rows found
       console.error("Erro ao buscar configurações:", settingsError);
       return new Response(
         JSON.stringify({ error: "Erro ao buscar configurações." }),
@@ -66,6 +83,7 @@ serve(async (req) => {
     const { data: tasks, error: tasksError } = await supabase
       .from("tasks")
       .select("*")
+      .eq("user_id", userId) // Filtrar tarefas pelo user_id
       .eq("is_completed", false)
       .or(`due_date.eq.${today},recurrence_type.neq.none`); // Tasks due today OR recurring
 
@@ -102,7 +120,6 @@ serve(async (req) => {
         // Atualiza o current_daily_target no banco de dados
         tasksToUpdate.push({ id: task.id, current_daily_target: currentTarget });
       }
-
 
       // Handle recurrence
       if (task.recurrence_type !== "none") {
@@ -185,12 +202,13 @@ serve(async (req) => {
         notificationsToSend.push({
           task_id: task.id,
           message: message,
+          title: `Lembrete: ${task.title}`, // Para Web Push
+          url: `/tasks`, // Para Web Push
         });
-        // tasksToUpdate.push(task.id); // Já adicionado acima para current_daily_target
       }
     }
 
-    // 3. Enviar notificações
+    // 3. Enviar notificações para o canal preferido
     const sendPromises = notificationsToSend.map(async (notification) => {
       if (NOTIFICATION_CHANNEL === "telegram") {
         const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -205,9 +223,9 @@ serve(async (req) => {
             parse_mode: "Markdown",
           }),
         });
-        const telegramResponseData = await response.json(); // Captura a resposta JSON
-        console.log("Telegram API Response OK:", response.ok); // Loga se a resposta HTTP foi 2xx
-        console.log("Telegram API Full Response:", telegramResponseData); // Loga a resposta completa da API do Telegram
+        const telegramResponseData = await response.json();
+        console.log("Telegram API Response OK:", response.ok);
+        console.log("Telegram API Full Response:", telegramResponseData);
 
         if (!response.ok) {
           console.error("Erro ao enviar notificação para o Telegram:", telegramResponseData);
@@ -215,7 +233,7 @@ serve(async (req) => {
         }
         return telegramResponseData;
       } else if (NOTIFICATION_CHANNEL === "whatsapp") {
-        const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`; // Substitua 'instanceName' e o domínio se necessário
+        const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`;
         const response = await fetch(evolutionApiUrl, {
           method: "POST",
           headers: {
@@ -230,19 +248,40 @@ serve(async (req) => {
               linkPreview: false
             },
             textMessage: {
-              text: notification.message.replace(/\*/g, "").replace(/_/g, "") // Remover Markdown para WhatsApp simples
+              text: notification.message.replace(/\*/g, "").replace(/_/g, "")
             }
           }),
         });
-        const whatsappResponseData = await response.json(); // Captura a resposta JSON
-        console.log("Evolution API Response OK:", response.ok); // Loga se a resposta HTTP foi 2xx
-        console.log("Evolution API Full Response:", whatsappResponseData); // Loga a resposta completa da Evolution API
+        const whatsappResponseData = await response.json();
+        console.log("Evolution API Response OK:", response.ok);
+        console.log("Evolution API Full Response:", whatsappResponseData);
 
         if (!response.ok) {
           console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", whatsappResponseData);
           throw new Error(`Evolution API error: ${whatsappResponseData.message || JSON.stringify(whatsappResponseData)}`);
         }
         return whatsappResponseData;
+      } else if (NOTIFICATION_CHANNEL === "web_push") {
+        // Invocar a nova Edge Function para Web Push
+        const { error: pushError } = await supabase.functions.invoke('send-web-push-notification', {
+          body: {
+            userId: userId,
+            payload: {
+              title: notification.title,
+              body: notification.message.replace(/\*/g, "").replace(/_/g, ""), // Remover Markdown para o corpo da notificação push
+              url: notification.url,
+            }
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`, // Passar o token para autenticar a chamada
+          },
+        });
+
+        if (pushError) {
+          console.error("Erro ao invocar send-web-push-notification:", pushError);
+          throw new Error(`Web Push Function error: ${pushError.message}`);
+        }
+        return { message: "Web Push notification sent." };
       }
       return Promise.resolve(null);
     });
@@ -256,7 +295,7 @@ serve(async (req) => {
           .from("tasks")
           .update({ 
             last_notified_at: now.toISOString(),
-            current_daily_target: taskUpdate.current_daily_target // Atualiza o target diário
+            current_daily_target: taskUpdate.current_daily_target
           })
           .eq("id", taskUpdate.id);
 
