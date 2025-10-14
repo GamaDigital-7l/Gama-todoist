@@ -3,8 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "./components/layout/Layout"; // Import the new Layout
-import Dashboard from "./pages/Dashboard"; // Import the renamed Dashboard
+import Layout from "./components/layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import Tasks from "./pages/Tasks"; // Import the new Tasks page
+import Goals from "./pages/Goals"; // Import the new Goals page
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,10 +19,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} /> {/* Dashboard as default child of Layout */}
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route index element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* Future routes like /tasks, /goals, /motivation, /settings will go here */}
+            <Route path="/tasks" element={<Tasks />} /> {/* New route for Tasks */}
+            <Route path="/goals" element={<Goals />} /> {/* New route for Goals */}
+            {/* Future routes like /motivation, /settings will go here */}
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
