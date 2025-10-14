@@ -59,8 +59,8 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
     try {
       const dataToSave = {
         date: format(values.date, "yyyy-MM-dd"),
-        weight_kg: values.weight_kg || null,
-        notes: values.notes || null,
+        weight_kg: values.weight_kg || null, // Garante que seja null se vazio
+        notes: values.notes || null, // Garante que seja null se vazio
         updated_at: new Date().toISOString(),
       };
 

@@ -2,14 +2,18 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import Groq from "https://esm.sh/groq-sdk@0.4.0";
 import OpenAI from "https://esm.sh/openai@4.52.2";
+import { format, utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
+import webpush from "https://esm.sh/web-push@3.6.2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -19,14 +23,32 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Autenticação do usuário
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userAuth, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !userAuth.user) {
+      console.error("Erro de autenticação:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid or missing token." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userId = userAuth.user.id;
+
     // 1. Obter configurações do usuário
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference, notification_channel, evolution_api_key, whatsapp_phone_number")
+      .select("groq_api_key, openai_api_key, ai_provider_preference, notification_channel")
+      .eq("user_id", userId)
       .limit(1)
       .single();
 
-    if (settingsError) {
+    if (settingsError && settingsError.code !== 'PGRST116') {
       console.error("Erro ao buscar configurações:", settingsError);
       return new Response(
         JSON.stringify({ error: "Erro ao buscar configurações." }),
@@ -34,43 +56,49 @@ serve(async (req) => {
       );
     }
 
-    const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
-    const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
-    const EVOLUTION_API_KEY = settings?.evolution_api_key;
-    const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
-    const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
+    const NOTIFICATION_CHANNEL = settings?.notification_channel || "web_push";
     const AI_PROVIDER = settings?.ai_provider_preference || "groq";
 
-    if (NOTIFICATION_CHANNEL === "telegram" && (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID)) {
+    if (NOTIFICATION_CHANNEL === "none") {
       return new Response(
-        JSON.stringify({ error: "Telegram API Key or Chat ID not configured for Telegram notifications." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ message: "Nenhum canal de notificação selecionado. Nenhuma notificação enviada." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !WHATSAPP_PHONE_NUMBER)) {
+
+    // Configuração do web-push
+    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+
+    if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
       return new Response(
-        JSON.stringify({ error: "Evolution API Key or WhatsApp Phone Number not configured for WhatsApp notifications." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ error: "VAPID keys not configured in Supabase secrets for Web Push notifications." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (AI_PROVIDER === "groq" && !settings?.groq_api_key) {
-      return new Response(
-        JSON.stringify({ error: "Groq API Key not configured." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    if (AI_PROVIDER === "openai" && !settings?.openai_api_key) {
-      return new Response(
-        JSON.stringify({ error: "OpenAI API Key not configured." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    webpush.setVapidDetails(
+      'mailto: <gustavogama099@gmail.com>',
+      VAPID_PUBLIC_KEY!,
+      VAPID_PRIVATE_KEY!
+    );
 
     let aiClient;
     if (AI_PROVIDER === "groq") {
-      aiClient = new Groq({ apiKey: settings!.groq_api_key! });
+      if (!settings?.groq_api_key) {
+        return new Response(
+          JSON.stringify({ error: "Groq API Key not configured." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      aiClient = new Groq({ apiKey: settings.groq_api_key });
     } else { // AI_PROVIDER === "openai"
-      aiClient = new OpenAI({ apiKey: settings!.openai_api_key! });
+      if (!settings?.openai_api_key) {
+        return new Response(
+          JSON.stringify({ error: "OpenAI API Key not configured." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      aiClient = new OpenAI({ apiKey: settings.openai_api_key });
     }
 
     const { timeOfDay } = await req.json(); // 'morning' or 'evening'
@@ -82,7 +110,7 @@ serve(async (req) => {
 
     const chatCompletion = await aiClient.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: AI_PROVIDER === "groq" ? "llama3-8b-8192" : "gpt-3.5-turbo", // Escolha o modelo apropriado
+      model: AI_PROVIDER === "groq" ? "llama3-8b-8192" : "gpt-3.5-turbo",
       response_format: { type: "json_object" },
     });
 
@@ -102,57 +130,49 @@ serve(async (req) => {
       messageText += `💖 *Sugestão de Agradecimento:*\n_${aiResponse.gratitude_suggestion}_\n\n`;
     }
 
-    // 3. Enviar notificação para o canal preferido
-    if (NOTIFICATION_CHANNEL === "telegram") {
-      const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      const response = await fetch(telegramApiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: messageText,
-          parse_mode: "Markdown",
-        }),
-      });
+    // 3. Enviar notificação Web Push
+    const { data: subscriptions, error: fetchError } = await supabase
+      .from('user_subscriptions')
+      .select('subscription')
+      .eq('user_id', userId);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erro ao enviar notificação para o Telegram:", errorData);
-        throw new Error(`Telegram API error: ${errorData.description}`);
-      }
-    } else if (NOTIFICATION_CHANNEL === "whatsapp") {
-      // Assumindo um endpoint genérico da Evolution API para envio de texto
-      // Você pode precisar ajustar o URL e o corpo da requisição com base na sua documentação específica da Evolution API
-      const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`; // Substitua 'instanceName' e o domínio se necessário
-      const response = await fetch(evolutionApiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": EVOLUTION_API_KEY!, // A Evolution API geralmente usa 'apikey' no header
-        },
-        body: JSON.stringify({
-          number: WHATSAPP_PHONE_NUMBER!,
-          options: {
-            delay: 1200,
-            presence: "composing",
-            linkPreview: false
-          },
-          textMessage: {
-            text: messageText.replace(/\*/g, "").replace(/_/g, "") // Remover Markdown para WhatsApp simples
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", errorData);
-        throw new Error(`Evolution API error: ${errorData.message || JSON.stringify(errorData)}`);
-      }
+    if (fetchError) {
+      console.error("Erro ao buscar inscrições de usuário para web push:", fetchError);
+      throw new Error("Failed to fetch user subscriptions for web push.");
     }
 
+    if (!subscriptions || subscriptions.length === 0) {
+      console.log("Nenhuma inscrição de web push encontrada para este usuário.");
+      return new Response(
+        JSON.stringify({ message: "No web push subscriptions found." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const pushPromises = subscriptions.map(async (subRecord) => {
+      try {
+        await webpush.sendNotification(
+          subRecord.subscription as webpush.PushSubscription,
+          JSON.stringify({
+            title: `Motivação da ${timeOfDay === 'morning' ? 'Manhã' : 'Noite'}`,
+            body: messageText.replace(/\*/g, "").replace(/_/g, ""), // Remover Markdown para o corpo da notificação
+            url: `/motivation`,
+          })
+        );
+        console.log(`Notificação web push enviada para o usuário ${userId}.`);
+      } catch (pushError: any) {
+        console.error(`Erro ao enviar notificação web push para ${userId}:`, pushError);
+        if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+          console.warn(`Inscrição de web push inválida/expirada para o usuário ${userId}. Removendo...`);
+          await supabase.from('user_subscriptions').delete().eq('subscription', subRecord.subscription);
+        }
+      }
+    });
+    await Promise.all(pushPromises);
+
     // 4. Salvar a motivação gerada pela IA na tabela daily_motivations
+    const nowUtc = new Date();
+    const nowSaoPaulo = utcToZonedTime(nowUtc, SAO_PAULO_TIMEZONE);
     const { error: insertMotivationError } = await supabase
       .from("daily_motivations")
       .insert({
@@ -162,7 +182,7 @@ serve(async (req) => {
         prayer_suggestion: aiResponse.prayer_suggestion || null,
         motivational_message: aiResponse.motivational_message || null,
         gratitude_suggestion: aiResponse.gratitude_suggestion || null,
-        created_at: new Date().toISOString(),
+        created_at: nowSaoPaulo.toISOString(), // Salvar com o fuso horário de São Paulo
       });
 
     if (insertMotivationError) {

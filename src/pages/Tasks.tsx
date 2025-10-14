@@ -182,8 +182,10 @@ const Tasks: React.FC = () => {
         case "daily":
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "weekly":
+          // Para tarefas semanais, incluir as diárias e as da semana atual
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
         case "monthly":
+          // Para tarefas mensais, incluir as diárias, semanais e as do mês atual
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "all":
         default:
@@ -215,14 +217,14 @@ const Tasks: React.FC = () => {
       <div className="space-y-3">
         {filteredTasks.map((task) => (
           <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-            <div className="flex items-center gap-3 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
+            <div className="flex items-center gap-3 flex-grow min-w-0">
               <Checkbox
                 id={`task-${task.id}`}
                 checked={task.is_completed}
                 onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
                 className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
               />
-              <div className="grid gap-1.5 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
+              <div className="grid gap-1.5 flex-grow min-w-0">
                 <label
                   htmlFor={`task-${task.id}`}
                   className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
@@ -232,7 +234,7 @@ const Tasks: React.FC = () => {
                   {task.title}
                 </label>
                 {task.description && (
-                  <p className="text-sm text-muted-foreground break-words">{task.description}</p> // break-words para quebrar palavras longas
+                  <p className="text-sm text-muted-foreground break-words">{task.description}</p>
                 )}
                 {task.due_date && task.recurrence_type === "none" && (
                   <p className="text-xs text-muted-foreground">
@@ -265,7 +267,7 @@ const Tasks: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
+            <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
               <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
                 <Brain className="h-4 w-4" />
                 <span className="sr-only">Obter Ajuda da IA</span>
@@ -295,7 +297,7 @@ const Tasks: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}

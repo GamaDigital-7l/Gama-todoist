@@ -120,7 +120,7 @@ const Goals: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <Dialog
           open={isFormOpen}
@@ -155,7 +155,7 @@ const Goals: React.FC = () => {
           {goals.map((goal) => (
             <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold text-foreground break-words">{goal.title}</CardTitle> {/* break-words para títulos longos */}
+                <CardTitle className="text-xl font-semibold text-foreground break-words">{goal.title}</CardTitle>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />

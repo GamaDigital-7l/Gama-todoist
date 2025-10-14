@@ -158,7 +158,7 @@ const TaskAIHelper: React.FC = () => {
             {aiResponse && (
               <div className="mt-4 p-3 bg-secondary rounded-md text-secondary-foreground border border-border">
                 <p className="font-semibold mb-2">Dicas da IA:</p>
-                <p className="text-sm whitespace-pre-wrap">{aiResponse}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{aiResponse}</p> {/* break-words */}
               </div>
             )}
           </>

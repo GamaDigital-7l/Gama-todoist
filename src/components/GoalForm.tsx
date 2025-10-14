@@ -68,7 +68,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
           .from("goals")
           .update({
             title: values.title,
-            description: values.description,
+            description: values.description || null, // Garante que seja null se vazio
             target_date: values.target_date ? format(values.target_date, "yyyy-MM-dd") : null,
             status: values.status,
             updated_at: new Date().toISOString(),
@@ -81,7 +81,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
       } else {
         const { error } = await supabase.from("goals").insert({
           title: values.title,
-          description: values.description,
+          description: values.description || null, // Garante que seja null se vazio
           target_date: values.target_date ? format(values.target_date, "yyyy-MM-dd") : null,
           status: values.status,
           user_id: userId,

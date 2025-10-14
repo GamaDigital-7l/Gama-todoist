@@ -167,9 +167,9 @@ const Health: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
-        <div className="flex gap-2 flex-wrap justify-end"> {/* flex-wrap e justify-end para botões */}
+        <div className="flex gap-2 flex-wrap justify-end">
           <Dialog
             open={isGoalFormOpen}
             onOpenChange={(open) => {

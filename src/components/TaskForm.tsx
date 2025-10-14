@@ -131,19 +131,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     try {
       let taskId: string;
 
+      // Correção para tarefas gerais: target_value e current_daily_target devem ser null
       const isTargetValueRelevant = values.task_type !== "general";
       const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
 
       const dataToSave = {
         title: values.title,
-        description: values.description,
+        description: values.description || null, // Garante que seja null se vazio
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         task_type: values.task_type,
         target_value: finalTargetValue,
-        current_daily_target: finalTargetValue,
+        current_daily_target: finalTargetValue, // current_daily_target também deve ser null para tarefas gerais
         updated_at: new Date().toISOString(),
       };
 

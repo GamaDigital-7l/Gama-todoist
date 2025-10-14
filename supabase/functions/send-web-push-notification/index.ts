@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import webpush from "https://esm.sh/web-push@3.6.2"; // Importar a biblioteca web-push
+import webpush from "https://esm.sh/web-push@3.6.2";
+import { utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,7 +23,7 @@ serve(async (req) => {
 
     // Obter a chave privada VAPID dos segredos
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
-    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY"); // A chave pública também é necessária para web-push
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
 
     if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
       return new Response(
@@ -30,7 +33,7 @@ serve(async (req) => {
     }
 
     webpush.setVapidDetails(
-      'mailto: <gustavogama099@gmail.com>', // Seu e-mail de contato
+      'mailto: <gustavogama099@gmail.com>',
       VAPID_PUBLIC_KEY,
       VAPID_PRIVATE_KEY
     );

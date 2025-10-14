@@ -64,8 +64,8 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
     try {
       const dataToSave = {
         title: values.title,
-        duration_minutes: values.duration_minutes || null,
-        notes: values.notes || null,
+        duration_minutes: values.duration_minutes || null, // Garante que seja null se vazio
+        notes: values.notes || null, // Garante que seja null se vazio
         session_date: format(values.session_date, "yyyy-MM-dd"),
         is_completed: values.is_completed,
         updated_at: new Date().toISOString(),

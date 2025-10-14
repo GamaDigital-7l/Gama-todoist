@@ -22,15 +22,10 @@ import { useSession } from "@/integrations/supabase/auth";
 import WebPushToggle from "@/components/WebPushToggle"; // Importar o novo componente
 
 const settingsSchema = z.object({
-  evolution_api_key: z.string().nullable().optional(),
-  evolution_api_instance_name: z.string().nullable().optional(), // Novo campo
-  telegram_api_key: z.string().nullable().optional(),
-  telegram_chat_id: z.string().nullable().optional(),
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
-  notification_channel: z.enum(["telegram", "whatsapp", "web_push", "none"]).default("telegram"),
-  whatsapp_phone_number: z.string().nullable().optional(),
+  notification_channel: z.enum(["web_push", "none"]).default("web_push"), // Apenas web_push e none
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -44,15 +39,10 @@ const Settings: React.FC = () => {
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      evolution_api_key: "",
-      evolution_api_instance_name: "", // Valor padrão
-      telegram_api_key: "",
-      telegram_chat_id: "",
       groq_api_key: "",
       openai_api_key: "",
       ai_provider_preference: "groq",
-      notification_channel: "telegram",
-      whatsapp_phone_number: "",
+      notification_channel: "web_push", // Padrão para web_push
     },
   });
 
@@ -86,15 +76,10 @@ const Settings: React.FC = () => {
 
     try {
       const updateData = {
-        evolution_api_key: values.evolution_api_key || null,
-        evolution_api_instance_name: values.evolution_api_instance_name || null, // Salvar o novo campo
-        telegram_api_key: values.telegram_api_key || null,
-        telegram_chat_id: values.telegram_chat_id || null,
         groq_api_key: values.groq_api_key || null,
         openai_api_key: values.openai_api_key || null,
         ai_provider_preference: values.ai_provider_preference,
         notification_channel: values.notification_channel,
-        whatsapp_phone_number: values.whatsapp_phone_number || null,
         updated_at: new Date().toISOString(),
         user_id: userId,
       };
@@ -132,8 +117,9 @@ const Settings: React.FC = () => {
     }
     setIsSendingTest(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-notifications', {
-        body: {},
+      // Invoca a daily-brief com um payload de teste para web push
+      const { data, error } = await supabase.functions.invoke('daily-brief', {
+        body: { timeOfDay: 'test_notification' }, // Usar um tipo específico para teste
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
         },
@@ -142,7 +128,7 @@ const Settings: React.FC = () => {
       if (error) {
         throw error;
       }
-      showSuccess("Notificação de teste enviada com sucesso! Verifique seu canal.");
+      showSuccess("Notificação de teste enviada com sucesso! Verifique seu navegador/celular.");
       console.log("Resposta da notificação de teste:", data);
     } catch (err: any) {
       showError("Erro ao enviar notificação de teste: " + err.message);
@@ -169,7 +155,7 @@ const Settings: React.FC = () => {
       if (error) {
         throw error;
       }
-      showSuccess("Brief da manhã enviado com sucesso! Verifique seu canal.");
+      showSuccess("Brief da manhã enviado com sucesso! Verifique seu navegador/celular.");
       console.log("Resposta do brief da manhã:", data);
     } catch (err: any) {
       showError("Erro ao enviar brief da manhã: " + err.message);
@@ -197,40 +183,12 @@ const Settings: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="evolution_api_key" className="text-foreground">Evolution API Key</Label>
-              <Input
-                id="evolution_api_key"
-                {...form.register("evolution_api_key")}
-                placeholder="Sua chave da Evolution API"
-                className="bg-input border-border text-foreground focus-visible:ring-ring"
-              />
-              {form.formState.errors.evolution_api_key && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.evolution_api_key.message}
-                </p>
-              )}
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="evolution_api_instance_name" className="text-foreground">Nome da Instância da Evolution API</Label>
-              <Input
-                id="evolution_api_instance_name"
-                {...form.register("evolution_api_instance_name")}
-                placeholder="Ex: minha-instancia-whatsapp"
-                className="bg-input border-border text-foreground focus-visible:ring-ring"
-              />
-              {form.formState.errors.evolution_api_instance_name && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.evolution_api_instance_name.message}
-                </p>
-              )}
-            </div>
             <div className="border-t border-border pt-4 mt-4">
               <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de Notificação</h3>
               <div>
                 <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
                 <Select
-                  onValueChange={(value: "telegram" | "whatsapp" | "web_push" | "none") =>
+                  onValueChange={(value: "web_push" | "none") => // Apenas web_push e none
                     form.setValue("notification_channel", value)
                   }
                   value={notificationChannel}
@@ -239,65 +197,12 @@ const Settings: React.FC = () => {
                     <SelectValue placeholder="Selecionar canal" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-                    <SelectItem value="telegram">Telegram</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp (via Evolution API)</SelectItem>
                     <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem>
                     <SelectItem value="none">Nenhum</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {notificationChannel === "telegram" && (
-                <>
-                  <div className="mt-4">
-                    <Label htmlFor="telegram_api_key" className="text-foreground">Telegram API Key</Label>
-                    <Input
-                      id="telegram_api_key"
-                      {...form.register("telegram_api_key")}
-                      placeholder="Sua chave da Telegram API"
-                      className="bg-input border-border text-foreground focus-visible:ring-ring"
-                    />
-                    {form.formState.errors.telegram_api_key && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {form.formState.errors.telegram_api_key.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-4">
-                    <Label htmlFor="telegram_chat_id" className="text-foreground">Telegram Chat ID</Label>
-                    <Input
-                      id="telegram_chat_id"
-                      {...form.register("telegram_chat_id")}
-                      placeholder="Seu ID de Chat do Telegram"
-                      className="bg-input border-border text-foreground focus-visible:ring-ring"
-                    />
-                    {form.formState.errors.telegram_chat_id && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {form.formState.errors.telegram_chat_id.message}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {notificationChannel === "whatsapp" && (
-                <>
-                  <div className="mt-4">
-                    <Label htmlFor="whatsapp_phone_number" className="text-foreground">Número de Telefone WhatsApp (com código do país, ex: 5511987654321)</Label>
-                    <Input
-                      id="whatsapp_phone_number"
-                      {...form.register("whatsapp_phone_number")}
-                      placeholder="Ex: 5511987654321"
-                      className="bg-input border-border text-foreground focus-visible:ring-ring"
-                    />
-                    {form.formState.errors.whatsapp_phone_number && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {form.formState.errors.whatsapp_phone_number.message}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
               {notificationChannel === "web_push" && (
                 <div className="mt-4">
                   <WebPushToggle /> {/* Integrar o novo componente aqui */}

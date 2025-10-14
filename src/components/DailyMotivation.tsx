@@ -114,11 +114,11 @@ const DailyMotivation: React.FC = () => {
         <CardTitle className="text-lg font-semibold text-primary">Motivação do Dia</CardTitle>
         <Sparkles className="h-5 w-5 text-primary" />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 text-sm sm:text-base"> {/* Ajuste de tamanho de fonte para mobile */}
         {motivation.verse && (
           <div className="flex items-start gap-2">
             <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-            <blockquote className="text-base italic leading-relaxed text-foreground">
+            <blockquote className="italic leading-relaxed text-foreground break-words"> {/* break-words */}
               "{motivation.verse}"
             </blockquote>
           </div>
@@ -126,7 +126,7 @@ const DailyMotivation: React.FC = () => {
         {motivation.prayer_suggestion && (
           <div className="flex items-start gap-2">
             <HeartHandshake className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-            <p className="text-base leading-relaxed text-foreground">
+            <p className="leading-relaxed text-foreground break-words"> {/* break-words */}
               *Sugestão de Oração:* {motivation.prayer_suggestion}
             </p>
           </div>
@@ -134,7 +134,7 @@ const DailyMotivation: React.FC = () => {
         {motivation.motivational_message && (
           <div className="flex items-start gap-2">
             <MessageSquareText className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-            <p className="text-base leading-relaxed text-foreground">
+            <p className="leading-relaxed text-foreground break-words"> {/* break-words */}
               *Mensagem Motivacional:* {motivation.motivational_message}
             </p>
           </div>
@@ -142,7 +142,7 @@ const DailyMotivation: React.FC = () => {
         {motivation.gratitude_suggestion && (
           <div className="flex items-start gap-2">
             <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-            <p className="text-base leading-relaxed text-foreground">
+            <p className="leading-relaxed text-foreground break-words"> {/* break-words */}
               *Sugestão de Agradecimento:* {motivation.gratitude_suggestion}
             </p>
           </div>

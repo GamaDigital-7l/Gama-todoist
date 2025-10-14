@@ -82,7 +82,9 @@ const DashboardTaskList: React.FC = () => {
           is_completed: !currentStatus, 
           updated_at: new Date().toISOString(),
           last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null,
-          current_daily_target: !currentStatus ? null : undefined,
+          // current_daily_target deve ser resetado para o target_value original se a tarefa for concluída
+          // ou mantido como null/undefined se for uma tarefa geral
+          current_daily_target: !currentStatus ? null : undefined, // Ajustado para resetar ou ser null
         })
         .eq("id", taskId);
 
@@ -240,14 +242,14 @@ const DashboardTaskList: React.FC = () => {
         <div className="space-y-3">
           {todayTasks.map((task) => (
             <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-              <div className="flex items-center gap-3 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
+              <div className="flex items-center gap-3 flex-grow min-w-0">
                 <Checkbox
                   id={`dashboard-task-${task.id}`}
                   checked={task.is_completed}
                   onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
-                <div className="grid gap-1.5 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
+                <div className="grid gap-1.5 flex-grow min-w-0">
                   <label
                     htmlFor={`dashboard-task-${task.id}`}
                     className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
@@ -257,7 +259,7 @@ const DashboardTaskList: React.FC = () => {
                     {task.title}
                   </label>
                   {task.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p> // flex-grow min-w-0 para permitir que o texto encolha
+                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
                   )}
                   {task.time && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -285,7 +287,7 @@ const DashboardTaskList: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
+              <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
                 <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
                   <Brain className="h-4 w-4" />
                   <span className="sr-only">Obter Ajuda da IA</span>

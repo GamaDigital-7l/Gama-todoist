@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para responsividade */}
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>

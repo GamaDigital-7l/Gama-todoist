@@ -117,7 +117,7 @@ const Study: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <Dialog
           open={isFormOpen}
@@ -151,7 +151,7 @@ const Study: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {studySessions.map((session) => (
             <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2"> {/* items-start para alinhar checkbox/título */}
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2 flex-grow min-w-0">
                   <Checkbox
                     id={`study-session-${session.id}`}
@@ -163,7 +163,7 @@ const Study: React.FC = () => {
                     {session.title}
                   </CardTitle>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
+                <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditSession(session)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Sessão</span>
