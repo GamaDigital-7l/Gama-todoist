@@ -3,6 +3,7 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListTodo, Award, Target } from "lucide-react"; // Importando ícones para os cards
 
 const Dashboard: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Diárias</CardTitle>
-            {/* Icon for daily tasks */}
+            <ListTodo className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">3/5 Concluídas</div>
@@ -28,10 +29,10 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pontuação Total</CardTitle>
-            {/* Icon for points */}
+            <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+1,250 Pontos</div>
+            <div className="text-2xl font-bold">+1.250 Pontos</div>
             <p className="text-xs text-muted-foreground">
               Continue assim para subir de nível!
             </p>
@@ -40,7 +41,7 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Próxima Meta</CardTitle>
-            {/* Icon for goals */}
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Ler 10 páginas</div>

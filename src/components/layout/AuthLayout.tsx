@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useSession } from '@/components/auth/SessionContextProvider';
+import { useSession } from '@/contexts/SessionContext';
 import Layout from './Layout'; // Assuming your main layout is here
 
 const AuthLayout: React.FC = () => {

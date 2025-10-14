@@ -29,7 +29,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="sm:hidden">
               <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
+              <span className="sr-only">Alternar Menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs">
@@ -79,12 +79,12 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "User"} />
+                  <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "Usuário"} />
                   <AvatarFallback>
                     <UserCircle className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">Alternar menu do usuário</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

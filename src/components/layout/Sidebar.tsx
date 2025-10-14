@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           {user ? (
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "User"} />
+                <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "Usuário"} />
                 <AvatarFallback>
                   <UserCircle className="h-5 w-5" />
                 </AvatarFallback>
