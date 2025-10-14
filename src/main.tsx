@@ -4,8 +4,8 @@ import "./globals.css";
 import { pdfjs } from "react-pdf"; // Importar pdfjs
 
 // Importar o worker do pdfjs-dist como uma URL estática.
-// O Vite irá processar este arquivo e fornecer uma URL para ele no build final.
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+// Usando a versão não minificada (pdf.worker.js) que é mais comum para esta abordagem com Vite.
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.js?url';
 
 // Definir o workerSrc para a URL fornecida pelo Vite.
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
