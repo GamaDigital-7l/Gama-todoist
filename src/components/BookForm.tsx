@@ -18,13 +18,18 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 
+// Definindo o esquema de validação para o formulário de livro
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),
   author: z.string().optional(),
   cover_image_url: z.string().url("URL da capa inválida.").optional().or(z.literal("")),
   description: z.string().optional(),
-  content: z.string().optional(), // Novo campo para o conteúdo do livro
+  // O campo 'content' foi removido, pois agora usaremos PDF
   read_status: z.enum(["unread", "reading", "finished"]).default("unread"),
+  pdf_file: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.type === "application/pdf", "Apenas arquivos PDF são permitidos."),
 });
 
 type BookFormValues = z.infer<typeof bookSchema>;
@@ -42,29 +47,54 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
       author: "",
       cover_image_url: "",
       description: "",
-      content: "", // Valor padrão para o conteúdo
       read_status: "unread",
+      pdf_file: undefined,
     },
   });
 
   const onSubmit = async (values: BookFormValues) => {
     try {
-      // TODO: Adicionar user_id quando a autenticação estiver ativa
-      const { error } = await supabase.from("books").insert({
+      let pdfUrl: string | null = null;
+
+      if (values.pdf_file) {
+        const file = values.pdf_file;
+        const filePath = `public/${Date.now()}-${file.name}`; // Caminho único para o arquivo
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("book-pdfs") // Nome do bucket no Supabase Storage
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error("Erro ao fazer upload do PDF: " + uploadError.message);
+        }
+
+        // Obter a URL pública do arquivo
+        const { data: publicUrlData } = supabase.storage
+          .from("book-pdfs")
+          .getPublicUrl(filePath);
+        
+        pdfUrl = publicUrlData.publicUrl;
+      }
+
+      // Inserir os dados do livro no banco de dados
+      const { error: insertError } = await supabase.from("books").insert({
         title: values.title,
         author: values.author || null,
         cover_image_url: values.cover_image_url || null,
         description: values.description || null,
-        content: values.content || null, // Salvar o conteúdo do livro
+        pdf_url: pdfUrl, // Salvar a URL do PDF
         read_status: values.read_status,
         // user_id: auth.uid() // Descomentar quando a autenticação for reativada
       });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
       showSuccess("Livro adicionado com sucesso!");
       form.reset();
-      onBookAdded(); // Notifica o componente pai que um livro foi adicionado
-      onClose(); // Fecha o formulário
+      onBookAdded();
+      onClose();
     } catch (error: any) {
       showError("Erro ao adicionar livro: " + error.message);
       console.error("Erro ao adicionar livro:", error);
@@ -116,14 +146,18 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         />
       </div>
       <div>
-        <Label htmlFor="content">Conteúdo do Livro (Opcional)</Label>
-        <Textarea
-          id="content"
-          {...form.register("content")}
-          placeholder="Cole o texto completo do livro aqui..."
-          rows={10}
-          className="min-h-[150px]"
+        <Label htmlFor="pdf_file">Arquivo PDF (Opcional)</Label>
+        <Input
+          id="pdf_file"
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => form.setValue("pdf_file", e.target.files?.[0])}
         />
+        {form.formState.errors.pdf_file && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.pdf_file.message}
+          </p>
+        )}
       </div>
       <div>
         <Label htmlFor="read_status">Status de Leitura</Label>
