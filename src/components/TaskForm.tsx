@@ -325,7 +325,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         <Select
           onValueChange={(value: "none" | "daily_weekday" | "weekly" | "monthly") => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_details", null);
+            form.setValue("recurrence_details", null); // Reset details when type changes
           }}
           value={recurrenceType}
         >
@@ -336,12 +336,36 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily_weekday">Dias de Semana (Seg-Sex)</SelectItem>
             <SelectItem value="weekly">Semanal</SelectItem>
-            <SelectItem value="Wednesday">Quarta-feira</SelectItem>
+            <SelectItem value="monthly">Mensal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {recurrenceType === "weekly" && (
+        <div>
+          <Label htmlFor="recurrence_details_weekly" className="text-foreground">Dia da Semana</Label>
+          <Select
+            onValueChange={(value: string) => form.setValue("recurrence_details", value)}
+            value={form.watch("recurrence_details") || ""}
+          >
+            <SelectTrigger id="recurrence_details_weekly" className="bg-input border-border text-foreground focus-visible:ring-ring">
+              <SelectValue placeholder="Selecionar dia" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+              <SelectItem value="Sunday">Domingo</SelectItem>
+              <SelectItem value="Monday">Segunda-feira</SelectItem>
+              <SelectItem value="Tuesday">Terça-feira</SelectItem>
+              <SelectItem value="Wednesday">Quarta-feira</SelectItem>
               <SelectItem value="Thursday">Quinta-feira</SelectItem>
               <SelectItem value="Friday">Sexta-feira</SelectItem>
               <SelectItem value="Saturday">Sábado</SelectItem>
             </SelectContent>
           </Select>
+          {form.formState.errors.recurrence_details && (
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.recurrence_details.message}
+            </p>
+          )}
         </div>
       )}
 
