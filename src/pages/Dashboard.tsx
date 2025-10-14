@@ -4,6 +4,7 @@ import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target } from "lucide-react"; // Importando ícones para os cards
+import DailyMotivation from "@/components/DailyMotivation"; // Importar o novo componente
 
 const Dashboard: React.FC = () => {
   return (
@@ -16,6 +17,8 @@ const Dashboard: React.FC = () => {
           Aqui você vai acompanhar suas tarefas, metas e progresso de forma inspiradora e organizada.
         </p>
       </div>
+
+      <DailyMotivation /> {/* Adicionando o componente de motivação aqui */}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300">
