@@ -60,12 +60,20 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 Livros
               </NavLink>
               <NavLink
-                to="/study" // Novo link para estudos
+                to="/study"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
                 Estudos
+              </NavLink>
+              <NavLink
+                to="/health" // Novo link para saúde
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
+                }
+              >
+                Saúde
               </NavLink>
               <NavLink
                 to="/motivation"

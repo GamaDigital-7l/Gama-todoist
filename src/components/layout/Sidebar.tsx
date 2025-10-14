@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap } from "lucide-react"; // Importar GraduationCap
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse } from "lucide-react"; // Importar HeartPulse
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               Livros
             </NavLink>
             <NavLink
-              to="/study" // Novo link para estudos
+              to="/study"
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
@@ -77,8 +77,20 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 )
               }
             >
-              <GraduationCap className="h-4 w-4" /> {/* Ícone para estudos */}
+              <GraduationCap className="h-4 w-4" />
               Estudos
+            </NavLink>
+            <NavLink
+              to="/health" // Novo link para saúde
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )
+              }
+            >
+              <HeartPulse className="h-4 w-4" /> {/* Ícone para saúde */}
+              Saúde
             </NavLink>
             <NavLink
               to="/motivation"
