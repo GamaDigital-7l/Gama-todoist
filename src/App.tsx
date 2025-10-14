@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
 import { ThemeProvider } from "./components/ThemeProvider";
+import PushNotificationManager from "./components/PushNotificationManager"; // Importar o novo componente
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,7 +53,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <PushNotificationManager /> {/* Adicionar o gerenciador de notificações aqui */}
+      {children}
+    </>
+  );
 };
 
 const App = () => (
