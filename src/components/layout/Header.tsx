@@ -104,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           </SheetContent>
         </Sheet>
       )}
-      <h1 className="text-xl font-semibold">Minha Netflix da Vida Pessoal</h1>
+      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Minha Netflix da Vida Pessoal</h1>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
       </div>

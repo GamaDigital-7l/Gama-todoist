@@ -89,7 +89,7 @@ const AIChat: React.FC = () => {
                 <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
               )}
               <div
-                className={`max-w-[70%] p-3 rounded-lg ${
+                className={`max-w-[80%] sm:max-w-[70%] p-3 rounded-lg break-words ${ /* Ajustado max-w e adicionado break-words */
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
@@ -105,7 +105,7 @@ const AIChat: React.FC = () => {
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
               <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-              <div className="max-w-[70%] p-3 rounded-lg bg-secondary text-secondary-foreground">
+              <div className="max-w-[80%] sm:max-w-[70%] p-3 rounded-lg bg-secondary text-secondary-foreground"> {/* Ajustado max-w */}
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             </div>

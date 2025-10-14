@@ -145,7 +145,7 @@ const Books: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <Dialog
           open={isFormOpen}
@@ -179,7 +179,7 @@ const Books: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
             <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-              <Link to={`/books/${book.id}`} className="block"> {/* Link para a página de detalhes */}
+              <Link to={`/books/${book.id}`} className="block">
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}
                   alt={book.title}
@@ -259,7 +259,6 @@ const Books: React.FC = () => {
       )}
 
       <div className="flex-1 flex items-end justify-center">
-        {/* MadeWithDyad removido */}
       </div>
     </div>
   );

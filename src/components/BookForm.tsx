@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
-import { Textarea } from "@/components/ui/textarea"; // Importar Textarea
-import { useSession } from "@/integrations/supabase/auth"; // Importar useSession
+import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@/integrations/supabase/auth";
 
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),
@@ -48,7 +48,7 @@ interface BookFormProps {
 }
 
 const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }) => {
-  const { session } = useSession(); // Obter a sessão do usuário
+  const { session } = useSession();
   const userId = session?.user?.id;
 
   const form = useForm<BookFormValues>({
@@ -109,7 +109,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
         total_pages: values.total_pages || null,
         daily_reading_target_pages: values.daily_reading_target_pages || null,
         current_page: 0,
-        user_id: userId, // Adicionar o user_id aqui
+        user_id: userId,
       };
 
       if (initialData) {

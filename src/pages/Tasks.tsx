@@ -11,7 +11,7 @@ import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react"; // Adicionado GraduationCap
+import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +31,8 @@ interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
   due_date?: string;
   recurrence_type: "none" | "daily" | "weekly" | "monthly";
   recurrence_details?: string | null;
-  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
-  target_value?: number | null; // Pode ser nulo para tarefas gerais
+  task_type: "general" | "reading" | "exercise" | "study";
+  target_value?: number | null;
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
@@ -104,7 +104,6 @@ const Tasks: React.FC = () => {
     }
     if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
       try {
-        // Deletar associações de tags primeiro
         await supabase.from("task_tags").delete().eq("task_id", taskId);
 
         const { error } = await supabase
@@ -152,7 +151,7 @@ const Tasks: React.FC = () => {
     switch (taskType) {
       case "reading": return <BookOpen className="h-3 w-3" />;
       case "exercise": return <Dumbbell className="h-3 w-3" />;
-      case "study": return <GraduationCap className="h-3 w-3" />; // Novo ícone para estudos
+      case "study": return <GraduationCap className="h-3 w-3" />;
       default: return null;
     }
   };
@@ -162,33 +161,29 @@ const Tasks: React.FC = () => {
     switch (taskType) {
       case "reading": return `Meta: ${targetValue} páginas`;
       case "exercise": return `Meta: ${targetValue} minutos/reps`;
-      case "study": return `Meta: ${targetValue} minutos de estudo`; // Novo label
+      case "study": return `Meta: ${targetValue} minutos de estudo`;
       default: return null;
     }
   };
 
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
     const today = new Date();
-    const currentDayOfWeek = getDay(today); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
+    const currentDayOfWeek = getDay(today);
     const currentDayOfMonth = today.getDate().toString();
 
-    // Helper to check if a day is included in recurrence_details (for 'weekly')
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
       const days = details.split(',');
       return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
     };
 
-    // Lógica para tarefas recorrentes
     if (task.recurrence_type !== "none") {
       switch (filterType) {
         case "daily":
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "weekly":
-          // For weekly tab, show tasks that recur weekly and are due this week, or daily tasks
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
         case "monthly":
-          // For monthly tab, show tasks that recur monthly and are due this month, or daily/weekly tasks
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "all":
         default:
@@ -196,15 +191,14 @@ const Tasks: React.FC = () => {
       }
     }
 
-    // Lógica para tarefas com data de vencimento única
     if (!task.due_date) return false;
-    const dueDate = parseISO(task.due_date); // task.due_date é string do DB
+    const dueDate = parseISO(task.due_date);
 
     switch (filterType) {
       case "daily":
         return isToday(dueDate);
       case "weekly":
-        return isThisWeek(dueDate, { weekStartsOn: 0 }); // Sunday is the start of the week
+        return isThisWeek(dueDate, { weekStartsOn: 0 });
       case "monthly":
         return isThisMonth(dueDate);
       case "all":
@@ -220,15 +214,15 @@ const Tasks: React.FC = () => {
     return (
       <div className="space-y-3">
         {filteredTasks.map((task) => (
-          <div key={task.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-            <div className="flex items-center gap-3">
+          <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+            <div className="flex items-center gap-3 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
               <Checkbox
                 id={`task-${task.id}`}
                 checked={task.is_completed}
                 onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
                 className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
               />
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
                 <label
                   htmlFor={`task-${task.id}`}
                   className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
@@ -238,7 +232,7 @@ const Tasks: React.FC = () => {
                   {task.title}
                 </label>
                 {task.description && (
-                  <p className="text-sm text-muted-foreground">{task.description}</p>
+                  <p className="text-sm text-muted-foreground break-words">{task.description}</p> {/* break-words para quebrar palavras longas */}
                 )}
                 {task.due_date && task.recurrence_type === "none" && (
                   <p className="text-xs text-muted-foreground">
@@ -271,7 +265,7 @@ const Tasks: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
               <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
                 <Brain className="h-4 w-4" />
                 <span className="sr-only">Obter Ajuda da IA</span>
@@ -301,7 +295,7 @@ const Tasks: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
         <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}
@@ -338,7 +332,7 @@ const Tasks: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="daily" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-secondary/50 border border-border rounded-md">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md"> {/* Ajustado para 2 colunas no mobile */}
                 <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
                 <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
                 <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>

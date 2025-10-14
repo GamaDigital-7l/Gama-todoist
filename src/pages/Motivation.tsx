@@ -22,14 +22,11 @@ const Motivation: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground leading-relaxed">
+          <p className="text-foreground leading-relaxed break-words">
             "O único lugar onde o sucesso vem antes do trabalho é no dicionário." - Vidal Sassoon
           </p>
-          {/* Futuro: Adicionar mais conteúdo motivacional, vídeos, artigos */}
         </CardContent>
       </Card>
-
-      {/* MadeWithDyad removido */}
     </div>
   );
 };

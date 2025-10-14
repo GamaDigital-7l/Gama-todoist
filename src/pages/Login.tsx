@@ -23,7 +23,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md bg-card p-8 rounded-lg shadow-lg border border-border">
+      <div className="w-full max-w-md bg-card p-4 sm:p-8 rounded-lg shadow-lg border border-border"> {/* Ajustado p-4 para mobile */}
         <h2 className="text-2xl font-bold text-center mb-6 text-foreground">Entrar ou Cadastrar</h2>
         <Auth
           supabaseClient={supabase}
@@ -56,7 +56,7 @@ const Login: React.FC = () => {
               },
             },
           }}
-          theme="dark" // Usar tema escuro para o Auth UI para melhor contraste com o fundo claro/escuro do app
+          theme="dark"
           redirectTo={window.location.origin + '/dashboard'}
         />
       </div>

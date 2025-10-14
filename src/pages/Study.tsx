@@ -14,11 +14,11 @@ import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface StudySession extends Omit<StudySessionFormValues, 'session_date'> { // Omitir session_date do StudySessionFormValues
+interface StudySession extends Omit<StudySessionFormValues, 'session_date'> {
   id: string;
   created_at: string;
   updated_at: string;
-  session_date: string; // Definir session_date como string para corresponder ao DB
+  session_date: string;
 }
 
 const fetchStudySessions = async (userId: string): Promise<StudySession[]> => {
@@ -117,7 +117,7 @@ const Study: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <Dialog
           open={isFormOpen}
@@ -151,19 +151,19 @@ const Study: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {studySessions.map((session) => (
             <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2"> {/* items-start para alinhar checkbox/título */}
+                <div className="flex items-center gap-2 flex-grow min-w-0">
                   <Checkbox
                     id={`study-session-${session.id}`}
                     checked={session.is_completed}
                     onCheckedChange={() => handleToggleComplete(session.id, session.is_completed)}
                     className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                   />
-                  <CardTitle className={`text-xl font-semibold ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <CardTitle className={`text-xl font-semibold break-words ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {session.title}
                   </CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
                   <Button variant="ghost" size="icon" onClick={() => handleEditSession(session)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Sessão</span>
@@ -176,7 +176,7 @@ const Study: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {session.notes && (
-                  <CardDescription className="mb-2 text-muted-foreground">{session.notes}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground break-words">{session.notes}</CardDescription>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
                   <BookOpen className="h-4 w-4 text-primary" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}

@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/select";
 import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
-import TagSelector from "./TagSelector"; // Importar o TagSelector
-import { Checkbox } from "@/components/ui/checkbox"; // Importar Checkbox
+import TagSelector from "./TagSelector";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -44,7 +44,7 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
-  task_type: z.enum(["general", "reading", "exercise", "study"]).default("general"), // Adicionado 'study'
+  task_type: z.enum(["general", "reading", "exercise", "study"]).default("general"),
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
@@ -142,8 +142,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         task_type: values.task_type,
-        target_value: finalTargetValue, // Usar o valor final ajustado
-        current_daily_target: finalTargetValue, // current_daily_target também segue a mesma lógica
+        target_value: finalTargetValue,
+        current_daily_target: finalTargetValue,
         updated_at: new Date().toISOString(),
       };
 
@@ -291,7 +291,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
         <Select
-          onValueChange={(value: "general" | "reading" | "exercise" | "study") => // Adicionado 'study'
+          onValueChange={(value: "general" | "reading" | "exercise" | "study") =>
             form.setValue("task_type", value)
           }
           value={taskType}
@@ -303,12 +303,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
             <SelectItem value="general">Geral</SelectItem>
             <SelectItem value="reading">Leitura</SelectItem>
             <SelectItem value="exercise">Exercício</SelectItem>
-            <SelectItem value="study">Estudos</SelectItem> {/* Novo item */}
+            <SelectItem value="study">Estudos</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {(taskType === "reading" || taskType === "exercise" || taskType === "study") && ( // Incluído 'study'
+      {(taskType === "reading" || taskType === "exercise" || taskType === "study") && (
         <div>
           <Label htmlFor="target_value" className="text-foreground">
             Valor Alvo ({taskType === "reading" ? "Páginas" : taskType === "study" ? "Minutos de Estudo" : "Repetições/Minutos"})

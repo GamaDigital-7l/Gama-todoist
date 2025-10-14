@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import TagForm from "./TagForm";
-import { Label } from "@/components/ui/label"; // Importar Label
+import { Label } from "@/components/ui/label";
 
 interface Tag {
   id: string;
@@ -97,7 +97,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
             <PlusCircle className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-md shadow-lg"> {/* Ajustado largura para mobile */}
           <Command className="bg-popover text-popover-foreground">
             <CommandInput placeholder="Buscar tag..." className="h-9" />
             <CommandList>

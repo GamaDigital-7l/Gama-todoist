@@ -13,11 +13,11 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 
-interface Goal extends Omit<GoalFormValues, 'target_date'> { // Omitir target_date do GoalFormValues
+interface Goal extends Omit<GoalFormValues, 'target_date'> {
   id: string;
   created_at: string;
   updated_at: string;
-  target_date?: string | null; // Definir target_date como string | null para corresponder ao DB
+  target_date?: string | null;
 }
 
 const fetchGoals = async (userId: string): Promise<Goal[]> => {
@@ -104,7 +104,6 @@ const Goals: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-muted-foreground">Carregando suas metas...</p>
-        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -115,14 +114,13 @@ const Goals: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas: {error.message}</p>
-        {/* MadeWithDyad removido */}
       </div>
     );
   }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <Dialog
           open={isFormOpen}
@@ -157,8 +155,8 @@ const Goals: React.FC = () => {
           {goals.map((goal) => (
             <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold text-foreground">{goal.title}</CardTitle>
-                <div className="flex items-center gap-2">
+                <CardTitle className="text-xl font-semibold text-foreground break-words">{goal.title}</CardTitle> {/* break-words para títulos longos */}
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Meta</span>
@@ -171,7 +169,7 @@ const Goals: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {goal.description && (
-                  <CardDescription className="mb-2 text-muted-foreground">{goal.description}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground break-words">{goal.description}</CardDescription>
                 )}
                 {goal.target_date && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
@@ -190,7 +188,6 @@ const Goals: React.FC = () => {
       )}
 
       <div className="flex-1 flex items-end justify-center mt-8">
-        {/* MadeWithDyad removido */}
       </div>
     </div>
   );

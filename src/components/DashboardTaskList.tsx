@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, parseISO, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain, GraduationCap } from "lucide-react"; // Adicionado GraduationCap
+import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,8 @@ interface Task {
   is_completed: boolean;
   recurrence_type: "none" | "daily" | "weekly" | "monthly";
   recurrence_details?: string;
-  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
-  target_value?: number | null; // Pode ser nulo para tarefas gerais
+  task_type: "general" | "reading" | "exercise" | "study";
+  target_value?: number | null;
   current_daily_target?: number | null;
   last_successful_completion_date?: string;
   tags: Tag[];
@@ -239,15 +239,15 @@ const DashboardTaskList: React.FC = () => {
         )}
         <div className="space-y-3">
           {todayTasks.map((task) => (
-            <div key={task.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-              <div className="flex items-center gap-3">
+            <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+              <div className="flex items-center gap-3 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
                 <Checkbox
                   id={`dashboard-task-${task.id}`}
                   checked={task.is_completed}
                   onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 flex-grow min-w-0"> {/* flex-grow min-w-0 para permitir que o texto encolha */}
                   <label
                     htmlFor={`dashboard-task-${task.id}`}
                     className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
@@ -285,7 +285,7 @@ const DashboardTaskList: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0"> {/* flex-shrink-0 para evitar que os botões encolham */}
                 <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
                   <Brain className="h-4 w-4" />
                   <span className="sr-only">Obter Ajuda da IA</span>

@@ -65,7 +65,7 @@ const TaskObstacleCoach: React.FC<TaskObstacleCoachProps> = ({ isOpen, onClose, 
       <DialogContent className="sm:max-w-[475px] bg-card border border-border rounded-lg shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-foreground">Coach de Obstáculos da IA</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription className="text-muted-foreground break-words"> {/* Adicionado break-words */}
             Descreva o que está te impedindo de completar a tarefa "{taskTitle}" e a IA te dará uma sugestão.
           </DialogDescription>
         </DialogHeader>
@@ -98,7 +98,7 @@ const TaskObstacleCoach: React.FC<TaskObstacleCoachProps> = ({ isOpen, onClose, 
           {aiSuggestion && (
             <div className="mt-4 p-3 bg-secondary rounded-md text-secondary-foreground border border-border">
               <p className="font-semibold mb-2">Sugestão da IA:</p>
-              <p className="text-sm whitespace-pre-wrap">{aiSuggestion}</p>
+              <p className="text-sm whitespace-pre-wrap break-words">{aiSuggestion}</p> {/* Adicionado break-words */}
             </div>
           )}
         </div>

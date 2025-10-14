@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BellRing, Sun } from "lucide-react"; // Adicionado Sun
+import { BellRing, Sun } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 
 const settingsSchema = z.object({
@@ -38,7 +38,7 @@ const Settings: React.FC = () => {
   const userId = session?.user?.id;
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
-  const [isSendingBriefTest, setIsSendingBriefTest] = useState(false); // Novo estado para o brief
+  const [isSendingBriefTest, setIsSendingBriefTest] = useState(false);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -156,7 +156,7 @@ const Settings: React.FC = () => {
     setIsSendingBriefTest(true);
     try {
       const { data, error } = await supabase.functions.invoke('daily-brief', {
-        body: { timeOfDay: 'morning' }, // Envia 'morning' para o brief
+        body: { timeOfDay: 'morning' },
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
         },
@@ -281,12 +281,12 @@ const Settings: React.FC = () => {
                 </>
               )}
               {notificationChannel !== "none" && (
-                <>
+                <div className="flex flex-col gap-2 mt-4"> {/* Adicionado flex-col e gap-2 para botões */}
                   <Button
                     type="button"
                     onClick={handleSendTestNotification}
                     disabled={isSendingTest}
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700 mt-4"
+                    className="w-full bg-blue-600 text-white hover:bg-blue-700"
                   >
                     <BellRing className="mr-2 h-4 w-4" />
                     {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
@@ -295,12 +295,12 @@ const Settings: React.FC = () => {
                     type="button"
                     onClick={handleSendDailyBriefTest}
                     disabled={isSendingBriefTest}
-                    className="w-full bg-green-600 text-white hover:bg-green-700 mt-2"
+                    className="w-full bg-green-600 text-white hover:bg-green-700"
                   >
                     <Sun className="mr-2 h-4 w-4" />
                     {isSendingBriefTest ? "Enviando Brief..." : "Enviar Brief da Manhã (Teste)"}
                   </Button>
-                </>
+                </div>
               )}
             </div>
 

@@ -91,14 +91,14 @@ const BookDetails: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-4 flex-wrap"> {/* flex-wrap para o cabeçalho */}
         <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{book.title}</h1>
-          {book.author && <p className="text-lg text-muted-foreground">Por {book.author}</p>}
+          <h1 className="text-3xl font-bold break-words">{book.title}</h1> {/* break-words para títulos longos */}
+          {book.author && <p className="text-lg text-muted-foreground break-words">Por {book.author}</p>}
         </div>
       </div>
 
@@ -113,7 +113,7 @@ const BookDetails: React.FC = () => {
           {book.description && (
             <div>
               <h3 className="text-lg font-semibold text-foreground">Descrição:</h3>
-              <p className="text-muted-foreground">{book.description}</p>
+              <p className="text-muted-foreground break-words">{book.description}</p>
             </div>
           )}
 

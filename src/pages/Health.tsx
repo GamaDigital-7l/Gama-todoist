@@ -9,26 +9,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import HealthMetricForm, { HealthMetricFormValues } from "@/components/HealthMetricForm";
-import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm"; // Importar o novo formulário de metas
+import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
-import { Progress } from "@/components/ui/progress"; // Importar componente de progresso
-import { Label } from "@/components/ui/label"; // Importar Label
+import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
 
-interface HealthMetric extends Omit<HealthMetricFormValues, 'date'> { // Omitir date do HealthMetricFormValues
+interface HealthMetric extends Omit<HealthMetricFormValues, 'date'> {
   id: string;
   created_at: string;
   updated_at: string;
-  date: string; // Definir date como string para corresponder ao DB
+  date: string;
 }
 
-interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_date'> { // Omitir datas do HealthGoalFormValues
+interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_date'> {
   id: string;
   created_at: string;
   updated_at: string;
-  start_date: string; // Definir start_date como string para corresponder ao DB
-  target_date: string; // Definir target_date como string para corresponder ao DB
+  start_date: string;
+  target_date: string;
 }
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
@@ -167,9 +167,9 @@ const Health: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para botões em telas pequenas */}
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap justify-end"> {/* flex-wrap e justify-end para botões */}
           <Dialog
             open={isGoalFormOpen}
             onOpenChange={(open) => {
@@ -239,11 +239,11 @@ const Health: React.FC = () => {
 
             return (
               <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className={`text-xl font-semibold ${goal.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                  <CardTitle className={`text-xl font-semibold break-words ${goal.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {goal.title}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
                     {goal.is_completed && <CheckCircle2 className="h-5 w-5 text-green-500" />}
                     <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                       <Edit className="h-4 w-4" />
@@ -307,10 +307,10 @@ const Health: React.FC = () => {
           {healthMetrics.map((metric) => (
             <Card key={metric.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold text-foreground">
+                <CardTitle className="text-xl font-semibold text-foreground break-words">
                   {metric.weight_kg ? `${metric.weight_kg} kg` : "Métrica de Saúde"}
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditMetric(metric)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Métrica</span>
@@ -326,7 +326,7 @@ const Health: React.FC = () => {
                   <CalendarIcon className="h-4 w-4 text-primary" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
-                  <p className="text-sm text-muted-foreground flex items-start gap-1">
+                  <p className="text-sm text-muted-foreground flex items-start gap-1 break-words">
                     <NotebookText className="h-4 w-4 text-primary flex-shrink-0 mt-1" /> Notas: {metric.notes}
                   </p>
                 )}
