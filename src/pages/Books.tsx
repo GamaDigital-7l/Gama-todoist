@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, BookOpen, Edit, Trash2, Target } from "lucide-react";
@@ -225,7 +225,7 @@ const Books: React.FC = () => {
                         type="number"
                         min="0"
                         max={book.total_pages}
-                        value={currentPageInput[book.id]}
+                        value={currentPageInput[book.id] ?? 0} {/* Adicionado ?? 0 para garantir valor definido */}
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
                         className="w-24 bg-input border-border text-foreground focus-visible:ring-ring"
                       />
