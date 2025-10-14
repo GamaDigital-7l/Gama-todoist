@@ -111,7 +111,24 @@ serve(async (req) => {
       throw new Error(`Telegram API error: ${errorData.description}`);
     }
 
-    return new Response(JSON.stringify({ message: "Motivação e oração enviadas com sucesso!" }), {
+    // 4. Salvar a motivação gerada pela IA na tabela daily_motivations
+    const { error: insertMotivationError } = await supabase
+      .from("daily_motivations")
+      .insert({
+        message: aiResponse.motivational_message || "Nenhuma mensagem motivacional.",
+        author: "IA", // Ou um autor mais específico se a IA gerar
+        verse: aiResponse.verse || null,
+        prayer_suggestion: aiResponse.prayer_suggestion || null,
+        motivational_message: aiResponse.motivational_message || null,
+        gratitude_suggestion: aiResponse.gratitude_suggestion || null,
+        created_at: new Date().toISOString(),
+      });
+
+    if (insertMotivationError) {
+      console.error("Erro ao salvar motivação na tabela:", insertMotivationError);
+    }
+
+    return new Response(JSON.stringify({ message: "Motivação e oração enviadas e salvas com sucesso!" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

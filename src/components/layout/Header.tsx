@@ -68,6 +68,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 Motivação
               </NavLink>
               <NavLink
+                to="/ai-chat" // Novo link para o chat de IA
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
+                }
+              >
+                Chat IA
+              </NavLink>
+              <NavLink
                 to="/settings"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`

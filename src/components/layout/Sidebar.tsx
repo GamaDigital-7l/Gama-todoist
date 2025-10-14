@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen } from "lucide-react";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare } from "lucide-react"; // Importar MessageSquare
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -79,6 +79,18 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             >
               <Sparkles className="h-4 w-4" />
               Motivação
+            </NavLink>
+            <NavLink
+              to="/ai-chat" // Novo link para o chat de IA
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )
+              }
+            >
+              <MessageSquare className="h-4 w-4" /> {/* Ícone para o chat */}
+              Chat IA
             </NavLink>
             <NavLink
               to="/settings"
