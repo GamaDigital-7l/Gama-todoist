@@ -12,8 +12,9 @@ import Settings from "./pages/Settings";
 import Books from "./pages/Books";
 import BookReader from "./pages/BookReader";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login"; // Importar a página de Login
-import { SessionContextProvider, useSession } from "./integrations/supabase/auth"; // Importar useSession
+import Login from "./pages/Login";
+import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
+import { ThemeProvider } from "./components/ThemeProvider"; // Importar ThemeProvider
 
 const queryClient = new QueryClient();
 
@@ -34,35 +35,37 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <SessionContextProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} /> {/* Rota para a página de login */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/motivation" element={<Motivation />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/books" element={<Books />} />
-              <Route path="/books/:id" element={<BookReader />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </SessionContextProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme"> {/* Adicionar ThemeProvider */}
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <SessionContextProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/motivation" element={<Motivation />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/books" element={<Books />} />
+                <Route path="/books/:id" element={<BookReader />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SessionContextProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider> {/* Fechar ThemeProvider */}
   </QueryClientProvider>
 );
 

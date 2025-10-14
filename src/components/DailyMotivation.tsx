@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useSession } from "@/integrations/supabase/auth"; // Importar useSession
 
 interface MotivationMessage {
   id: string;
@@ -15,7 +16,7 @@ interface MotivationMessage {
   created_at: string;
 }
 
-const fetchDailyMotivation = async (): Promise<MotivationMessage | null> => {
+const fetchDailyMotivation = async (userId: string | undefined): Promise<MotivationMessage | null> => {
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Tenta buscar uma mensagem criada hoje
@@ -52,9 +53,12 @@ const fetchDailyMotivation = async (): Promise<MotivationMessage | null> => {
 };
 
 const DailyMotivation: React.FC = () => {
+  const { session } = useSession();
+  const userId = session?.user?.id;
+
   const { data: motivation, isLoading, error } = useQuery<MotivationMessage | null, Error>({
-    queryKey: ["dailyMotivation"],
-    queryFn: fetchDailyMotivation,
+    queryKey: ["dailyMotivation", userId], // Adicionar userId à chave da query
+    queryFn: () => fetchDailyMotivation(userId),
     staleTime: 1000 * 60 * 60 * 24, // Cache por 24 horas
   });
 

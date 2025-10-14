@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle"; // Importar ThemeToggle
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -51,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 Metas
               </NavLink>
               <NavLink
-                to="/books" // Novo link para Books
+                to="/books"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
                 }
@@ -80,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
       )}
       <h1 className="text-xl font-semibold">Minha Netflix da Vida Pessoal</h1>
       <div className="ml-auto flex items-center gap-4">
-        {/* Elementos de usuário/login removidos */}
+        <ThemeToggle /> {/* Adicionar o botão de alternância de tema aqui */}
       </div>
     </header>
   );

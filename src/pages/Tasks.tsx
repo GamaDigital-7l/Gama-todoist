@@ -2,31 +2,33 @@
 
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import TaskForm from "@/components/TaskForm";
+import TaskForm, { TaskFormValues } from "@/components/TaskForm"; // Importar TaskFormValues
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock } from "lucide-react"; // Importar ícone de relógio
+import { Trash2, Repeat, Clock, Edit, PlusCircle } from "lucide-react"; // Importar Edit e PlusCircle
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSession } from "@/integrations/supabase/auth";
 
-interface Task {
+interface Task extends TaskFormValues { // Estender de TaskFormValues
   id: string;
-  title: string;
-  description?: string;
-  due_date?: string; // ISO string
-  time?: string; // Formato "HH:mm"
   is_completed: boolean;
-  recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
-  recurrence_details?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-const fetchTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+const fetchTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
@@ -34,19 +36,32 @@ const fetchTasks = async (): Promise<Task[]> => {
 };
 
 const Tasks: React.FC = () => {
+  const { session } = useSession();
+  const userId = session?.user?.id;
+
   const { data: tasks, isLoading, error, refetch } = useQuery<Task[], Error>({
-    queryKey: ["tasks"],
-    queryFn: fetchTasks,
+    queryKey: ["tasks", userId],
+    queryFn: () => fetchTasks(userId!),
+    enabled: !!userId,
   });
 
+  const [isFormOpen, setIsFormOpen] = React.useState(false);
+  const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
+
   const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
     try {
       const { error } = await supabase
         .from("tasks")
         .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
-        .eq("id", taskId);
+        .eq("id", taskId)
+        .eq("user_id", userId);
 
       if (error) throw error;
+      showSuccess("Tarefa atualizada com sucesso!");
       refetch();
     } catch (err: any) {
       showError("Erro ao atualizar tarefa: " + err.message);
@@ -55,18 +70,31 @@ const Tasks: React.FC = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    try {
-      const { error } = await supabase
-        .from("tasks")
-        .delete()
-        .eq("id", taskId);
-
-      if (error) throw error;
-      refetch();
-    } catch (err: any) {
-      showError("Erro ao deletar tarefa: " + err.message);
-      console.error("Erro ao deletar tarefa:", err);
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
     }
+    if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
+      try {
+        const { error } = await supabase
+          .from("tasks")
+          .delete()
+          .eq("id", taskId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Tarefa deletada com sucesso!");
+        refetch();
+      } catch (err: any) {
+        showError("Erro ao deletar tarefa: " + err.message);
+        console.error("Erro ao deletar tarefa:", err);
+      }
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsFormOpen(true);
   };
 
   const getRecurrenceText = (task: Task) => {
@@ -162,10 +190,16 @@ const Tasks: React.FC = () => {
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
-              <Trash2 className="h-4 w-4 text-red-500" />
-              <span className="sr-only">Deletar Tarefa</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)}>
+                <Edit className="h-4 w-4 text-blue-500" />
+                <span className="sr-only">Editar Tarefa</span>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
+                <Trash2 className="h-4 w-4 text-red-500" />
+                <span className="sr-only">Deletar Tarefa</span>
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -181,15 +215,38 @@ const Tasks: React.FC = () => {
   const allTasks = tasks || [];
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h1 className="text-3xl font-bold">Suas Tarefas</h1>
+    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Suas Tarefas</h1>
+        <Dialog
+          open={isFormOpen}
+          onOpenChange={(open) => {
+            setIsFormOpen(open);
+            if (!open) setEditingTask(undefined); // Limpa a tarefa de edição ao fechar
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button onClick={() => setEditingTask(undefined)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
+            </DialogHeader>
+            <TaskForm
+              initialData={editingTask}
+              onTaskSaved={refetch}
+              onClose={() => setIsFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
       <p className="text-lg text-muted-foreground">
         Organize suas tarefas diárias, semanais e mensais aqui.
       </p>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <TaskForm onTaskAdded={refetch} />
-
         <Card>
           <CardHeader>
             <CardTitle>Minhas Tarefas</CardTitle>
