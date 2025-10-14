@@ -6,9 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Importar Input
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"; // Importar ícones de zoom
-import { Document, Page, pdfjs, PDFDocumentProxy } from "react-pdf"; // Importar PDFDocumentProxy
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Document, Page, pdfjs, PDFDocumentProxy } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,17 +37,17 @@ const BookReaderFullScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const readerRef = useRef<HTMLDivElement>(null); // Referência para o contêiner do leitor
+  const readerRef = useRef<HTMLDivElement>(null);
 
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [isHovering, setIsHovering] = useState(false);
   const [touchStartX, setTouchStartX] = useState(0);
-  const [containerWidth, setContainerWidth] = useState<number | null>(null); // Estado para a largura do contêiner
-  const [scale, setScale] = useState<number>(1.0); // Estado para o zoom
-  const [initialScale, setInitialScale] = useState<number | null>(null); // Escala inicial para resetar o zoom
-  const [pageInput, setPageInput] = useState<string>(""); // Estado para o input de página
-  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null); // Estado para o objeto PDFDocumentProxy
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [scale, setScale] = useState<number>(1.0);
+  const [initialScale, setInitialScale] = useState<number | null>(null);
+  const [pageInput, setPageInput] = useState<string>("");
+  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null); // Armazena o objeto PDFDocumentProxy
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -55,15 +55,7 @@ const BookReaderFullScreen: React.FC = () => {
     enabled: !!id,
   });
 
-  // Load initial page from book data if available
-  useEffect(() => {
-    if (book?.current_page) {
-      setPageNumber(book.current_page);
-      setPageInput(String(book.current_page));
-    }
-  }, [book?.current_page]);
-
-  // Observar o redimensionamento do contêiner para ajustar a largura do PDF
+  // Observar o redimensionamento do contêiner para ajustar a largura
   useEffect(() => {
     const updateContainerWidth = () => {
       if (readerRef.current) {
@@ -71,7 +63,7 @@ const BookReaderFullScreen: React.FC = () => {
       }
     };
 
-    updateContainerWidth(); // Define a largura inicial
+    updateContainerWidth();
 
     const resizeObserver = new ResizeObserver(updateContainerWidth);
     if (readerRef.current) {
@@ -85,24 +77,30 @@ const BookReaderFullScreen: React.FC = () => {
     };
   }, [readerRef]);
 
-  // Efeito para calcular a escala inicial uma vez que o documento e a largura do contêiner estejam prontos
+  // Efeito para inicializar a página e a escala quando o documento PDF e a largura do contêiner estiverem prontos
   useEffect(() => {
-    const calculateScale = async () => {
-      if (pdfDocument && readerRef.current && initialScale === null) { // Só calcula uma vez
+    const initializeReader = async () => {
+      if (pdfDocument && readerRef.current && initialScale === null && numPages !== null) {
         try {
+          // Definir página inicial
+          const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
+          setPageNumber(initialPage);
+          setPageInput(String(initialPage));
+
+          // Calcular escala inicial para ajustar à largura
           const page = await pdfDocument.getPage(1);
           const viewport = page.getViewport({ scale: 1 });
           const calculatedScale = readerRef.current.clientWidth / viewport.width;
           setScale(calculatedScale);
           setInitialScale(calculatedScale);
         } catch (err) {
-          console.error("Erro ao calcular escala inicial:", err);
-          showError("Erro ao calcular escala inicial do PDF.");
+          console.error("Erro ao inicializar leitor (página/escala):", err);
+          showError("Erro ao inicializar o leitor de PDF.");
         }
       }
     };
-    calculateScale();
-  }, [pdfDocument, containerWidth, initialScale]); // Depende de pdfDocument e containerWidth
+    initializeReader();
+  }, [pdfDocument, containerWidth, initialScale, numPages, book?.current_page, readerRef]);
 
   const updateCurrentPageInDb = async (newPage: number) => {
     if (!id) return;
@@ -119,9 +117,6 @@ const BookReaderFullScreen: React.FC = () => {
   const onDocumentLoadSuccess = (pdf: PDFDocumentProxy) => {
     setNumPages(pdf.numPages);
     setPdfDocument(pdf); // Armazena o objeto PDFDocumentProxy
-    const initialPage = Math.max(1, Math.min(book?.current_page || 1, pdf.numPages));
-    setPageNumber(initialPage);
-    setPageInput(String(initialPage));
   };
 
   const changePage = (offset: number) => {
@@ -138,8 +133,8 @@ const BookReaderFullScreen: React.FC = () => {
   const previousPage = () => changePage(-1);
   const nextPage = () => changePage(1);
 
-  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0)); // Zoom máximo 3.0
-  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale || 0.5)); // Zoom mínimo, não menor que o ajuste inicial
+  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0));
+  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale || 0.5));
   const resetZoom = () => setScale(initialScale || 1.0);
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,11 +148,10 @@ const BookReaderFullScreen: React.FC = () => {
       updateCurrentPageInDb(newPage);
     } else {
       showError(`Por favor, insira um número de página válido entre 1 e ${numPages || 1}.`);
-      setPageInput(String(pageNumber)); // Reseta o input para a página atual
+      setPageInput(String(pageNumber));
     }
   };
 
-  // Touch/Swipe handling for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
   };
@@ -165,7 +159,7 @@ const BookReaderFullScreen: React.FC = () => {
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touchEndX = e.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX;
-    const swipeThreshold = 50; // pixels
+    const swipeThreshold = 50;
 
     if (swipeDistance > swipeThreshold) {
       previousPage();
@@ -270,11 +264,14 @@ const BookReaderFullScreen: React.FC = () => {
         onTouchStart={isMobile ? handleTouchStart : undefined}
         onTouchEnd={isMobile ? handleTouchEnd : undefined}
       >
-        {containerWidth && ( // Renderiza o Document apenas quando a largura do contêiner é conhecida
+        {book.pdf_url && (
           <Document
             file={book.pdf_url}
             onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
+            onLoadError={(error) => {
+              console.error("Erro ao carregar PDF:", error);
+              showError("Erro ao carregar PDF: " + error.message);
+            }}
             className="flex justify-center items-center h-full w-full"
             options={{
               cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -282,15 +279,20 @@ const BookReaderFullScreen: React.FC = () => {
             }}
             loading={<Loader2 className="h-12 w-12 animate-spin text-primary" />}
           >
-            <Page
-              pageNumber={pageNumber}
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-              className="shadow-lg border border-border"
-              scale={scale} // Usa a escala para o zoom
-              loading={<Loader2 className="h-8 w-8 animate-spin text-primary" />}
-            />
+            {numPages && ( // Renderiza a página apenas se o número total de páginas for conhecido
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                className="shadow-lg border border-border"
+                scale={scale}
+                loading={<Loader2 className="h-8 w-8 animate-spin text-primary" />}
+              />
+            )}
           </Document>
+        )}
+        {!book.pdf_url && !isLoading && !error && (
+          <p className="text-lg text-muted-foreground">Nenhum PDF disponível para este livro.</p>
         )}
 
         {/* Navigation buttons for desktop on hover */}
