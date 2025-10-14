@@ -33,7 +33,7 @@ interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_d
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
   const { data, error } = await supabase
-    .from("health_metrics")
+    .from("public.health_metrics") // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -46,7 +46,7 @@ const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
 
 const fetchHealthGoals = async (userId: string): Promise<HealthGoal[]> => {
   const { data, error } = await supabase
-    .from("health_goals")
+    .from("public.health_goals") // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("target_date", { ascending: true });
@@ -91,7 +91,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta métrica de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_metrics")
+          .from("public.health_metrics") // Especificando o esquema
           .delete()
           .eq("id", metricId)
           .eq("user_id", userId);
@@ -119,7 +119,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta meta de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_goals")
+          .from("public.health_goals") // Especificando o esquema
           .delete()
           .eq("id", goalId)
           .eq("user_id", userId);

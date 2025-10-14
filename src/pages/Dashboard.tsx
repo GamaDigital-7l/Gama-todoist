@@ -52,7 +52,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
-    .from("profiles")
+    .from("public.profiles") // Especificando o esquema
     .select("id, points")
     .eq("id", userId)
     .single();
@@ -65,7 +65,7 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Incluído task_type
+  const { data, error } = await supabase.from("public.tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Incluído task_type
   if (error) {
     console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
@@ -75,7 +75,7 @@ const fetchUserTasks = async (): Promise<Task[]> => {
 
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
-    .from("health_metrics")
+    .from("public.health_metrics") // Especificando o esquema
     .select("id, date, weight_kg")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -91,7 +91,7 @@ const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | n
 
 const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
   const { data, error } = await supabase
-    .from("health_goals")
+    .from("public.health_goals") // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .eq("is_completed", false)
