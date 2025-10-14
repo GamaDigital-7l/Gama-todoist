@@ -221,6 +221,7 @@ const BookReaderFullScreen: React.FC = () => {
               renderAnnotationLayer={true}
               className="shadow-lg border border-border"
               width={pageRenderWidth} // Usa a largura calculada
+              // Removido o height fixo para mobile, permitindo que a altura seja calculada automaticamente
             />
           </Document>
         )}
