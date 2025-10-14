@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import dyadComponentTagger from "@dyad-sh/react-vite-component-tagger";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-// A importação de 'vite-plugin-static-copy' foi removida.
+import { viteStaticCopy } from 'vite-plugin-static-copy'; // Importar o plugin
 
 export default defineConfig(() => ({
   server: {
@@ -12,7 +12,14 @@ export default defineConfig(() => ({
   plugins: [
     dyadComponentTagger(), 
     react(),
-    // A configuração do plugin viteStaticCopy foi removida.
+    viteStaticCopy({ // Adicionar a configuração do plugin
+      targets: [
+        {
+          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+          dest: 'pdf-worker', // Copiar para public/pdf-worker
+        },
+      ],
+    }),
   ],
   resolve: {
     alias: {
