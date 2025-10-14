@@ -2,13 +2,14 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target } from "lucide-react";
+import { ListTodo, Award, Target, HeartPulse, TrendingDown } from "lucide-react";
 import DailyMotivation from "@/components/DailyMotivation";
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO } from "date-fns";
+import { isToday, parseISO, differenceInDays } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface Profile {
   id: string;
@@ -21,6 +22,22 @@ interface Task {
   due_date?: string;
   recurrence_type: "none" | "daily_weekday" | "weekly" | "monthly";
   recurrence_details?: string;
+}
+
+interface HealthMetric {
+  id: string;
+  date: string;
+  weight_kg?: number | null;
+}
+
+interface HealthGoal {
+  id: string;
+  title: string;
+  initial_weight_kg: number;
+  target_weight_kg: number;
+  start_date: string;
+  target_date: string;
+  is_completed: boolean;
 }
 
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
@@ -46,6 +63,39 @@ const fetchUserTasks = async (): Promise<Task[]> => {
   return data || [];
 };
 
+const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
+  const { data, error } = await supabase
+    .from("health_metrics")
+    .select("weight_kg")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error("Erro ao buscar última métrica de saúde:", error);
+    throw error;
+  }
+  return data;
+};
+
+const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
+  const { data, error } = await supabase
+    .from("health_goals")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_completed", false)
+    .order("target_date", { ascending: true })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error("Erro ao buscar meta de saúde ativa:", error);
+    throw error;
+  }
+  return data;
+};
+
 const Dashboard: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -59,6 +109,18 @@ const Dashboard: React.FC = () => {
   const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[], Error>({
     queryKey: ["tasksForDashboard"],
     queryFn: fetchUserTasks,
+    enabled: !!userId,
+  });
+
+  const { data: latestHealthMetric, isLoading: isLoadingLatestMetric } = useQuery<HealthMetric | null, Error>({
+    queryKey: ["latestHealthMetric", userId],
+    queryFn: () => fetchLatestHealthMetric(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: activeHealthGoal, isLoading: isLoadingActiveGoal } = useQuery<HealthGoal | null, Error>({
+    queryKey: ["activeHealthGoal", userId],
+    queryFn: () => fetchActiveHealthGoal(userId!),
     enabled: !!userId,
   });
 
@@ -111,6 +173,31 @@ const Dashboard: React.FC = () => {
 
   const todayTasksStats = tasks ? getTodayCompletedTasksCount(tasks) : { completed: 0, total: 0 };
 
+  const currentWeight = latestHealthMetric?.weight_kg || null;
+  let healthGoalProgress = {
+    totalToLose: 0,
+    currentWeightLost: 0,
+    remainingToLose: 0,
+    progressPercentage: 0,
+    daysRemaining: 0,
+  };
+
+  if (activeHealthGoal && currentWeight !== null) {
+    const totalToLose = activeHealthGoal.initial_weight_kg - activeHealthGoal.target_weight_kg;
+    const currentWeightLost = activeHealthGoal.initial_weight_kg - currentWeight;
+    const remainingToLose = totalToLose - currentWeightLost;
+    const progressPercentage = totalToLose > 0 ? (currentWeightLost / totalToLose) * 100 : 0;
+    const daysRemaining = differenceInDays(parseISO(activeHealthGoal.target_date), new Date());
+
+    healthGoalProgress = {
+      totalToLose,
+      currentWeightLost,
+      remainingToLose,
+      progressPercentage: Math.max(0, Math.min(100, progressPercentage)), // Clamp between 0 and 100
+      daysRemaining: Math.max(0, daysRemaining),
+    };
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <DailyMotivation />
@@ -152,14 +239,28 @@ const Dashboard: React.FC = () => {
         </Card>
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Próxima Meta</CardTitle>
-            <Target className="h-5 w-5 text-green-500" />
+            <CardTitle className="text-lg font-semibold text-foreground">Meta de Saúde</CardTitle>
+            <HeartPulse className="h-5 w-5 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">Ler 10 páginas</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Faltam 5 páginas para hoje.
-            </p>
+            {isLoadingActiveGoal || isLoadingLatestMetric ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : activeHealthGoal && currentWeight !== null ? (
+              <>
+                <div className="text-2xl font-bold text-foreground flex items-center gap-2">
+                  <TrendingDown className="h-5 w-5 text-green-500" /> {healthGoalProgress.remainingToLose.toFixed(1)} kg restantes
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  para {activeHealthGoal.target_weight_kg} kg até {format(parseISO(activeHealthGoal.target_date), "dd/MM")}.
+                </p>
+                <Progress value={healthGoalProgress.progressPercentage} className="w-full mt-2" />
+                <p className="text-xs text-muted-foreground text-right mt-1">{healthGoalProgress.progressPercentage.toFixed(0)}%</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma meta de saúde ativa. Adicione uma!
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
