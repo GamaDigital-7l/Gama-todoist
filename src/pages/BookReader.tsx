@@ -8,8 +8,7 @@ import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Document, Page } from "react-pdf"; // Removido 'pdfjs' daqui
-import { pdfjs } from "pdfjs-dist"; // Importado pdfjs diretamente de pdfjs-dist
+import { Document, Page, pdfjs } from "react-pdf"; // Importar pdfjs de react-pdf
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
