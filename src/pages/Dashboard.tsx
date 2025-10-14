@@ -3,22 +3,18 @@
 import React from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target } from "lucide-react"; // Importando ícones para os cards
-import DailyMotivation from "@/components/DailyMotivation"; // Importar o novo componente
+import { ListTodo, Award, Target } from "lucide-react";
+import DailyMotivation from "@/components/DailyMotivation";
+import DashboardTaskList from "@/components/DashboardTaskList"; // Importar o novo componente
 
 const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-2">
-          Bem-vindo à sua Netflix da Vida Pessoal!
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Aqui você vai acompanhar suas tarefas, metas e progresso de forma inspiradora e organizada.
-        </p>
-      </div>
+      {/* A mensagem de boas-vindas foi removida daqui */}
 
-      <DailyMotivation /> {/* Adicionando o componente de motivação aqui */}
+      <DailyMotivation />
+
+      <DashboardTaskList /> {/* Adicionando a lista de tarefas em destaque aqui */}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300">
