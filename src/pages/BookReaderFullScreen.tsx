@@ -43,7 +43,6 @@ const BookReaderFullScreen: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [touchStartX, setTouchStartX] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number | null>(null); // Estado para a largura do contêiner
-  const [containerHeight, setContainerHeight] = useState<number | null>(null); // Novo estado para a altura do contêiner
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -60,16 +59,15 @@ const BookReaderFullScreen: React.FC = () => {
 
   // Observar o redimensionamento do contêiner para ajustar a largura do PDF
   useEffect(() => {
-    const updateContainerDimensions = () => {
+    const updateContainerWidth = () => {
       if (readerRef.current) {
         setContainerWidth(readerRef.current.clientWidth);
-        setContainerHeight(readerRef.current.clientHeight); // Atualiza a altura também
       }
     };
 
-    updateContainerDimensions(); // Define a largura e altura iniciais
+    updateContainerWidth(); // Define a largura inicial
 
-    const resizeObserver = new ResizeObserver(updateContainerDimensions);
+    const resizeObserver = new ResizeObserver(updateContainerWidth);
     if (readerRef.current) {
       resizeObserver.observe(readerRef.current);
     }
@@ -221,20 +219,21 @@ const BookReaderFullScreen: React.FC = () => {
               renderAnnotationLayer={true}
               className="shadow-lg border border-border"
               width={pageRenderWidth} // Usa a largura calculada para preencher o contêiner
-              // A altura será calculada automaticamente para manter o aspecto
             />
           </Document>
         )}
 
         {/* Navigation buttons for desktop on hover */}
-        {!isMobile && isHovering && (
+        {!isMobile && (
           <>
             <Button
               variant="ghost"
               size="icon"
               onClick={previousPage}
               disabled={pageNumber <= 1}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
+                isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
             >
               <ChevronLeft className="h-6 w-6" />
               <span className="sr-only">Página Anterior</span>
@@ -244,11 +243,27 @@ const BookReaderFullScreen: React.FC = () => {
               size="icon"
               onClick={nextPage}
               disabled={pageNumber >= (numPages || 1)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30"
+              className={`absolute right-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
+                isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
             >
               <ChevronRight className="h-6 w-6" />
               <span className="sr-only">Próxima Página</span>
             </Button>
+          </>
+        )}
+
+        {/* Tap areas for mobile navigation */}
+        {isMobile && (
+          <>
+            <div
+              className="absolute left-0 top-0 h-full w-1/2 cursor-pointer z-10"
+              onClick={previousPage}
+            />
+            <div
+              className="absolute right-0 top-0 h-full w-1/2 cursor-pointer z-10"
+              onClick={nextPage}
+            />
           </>
         )}
       </div>
