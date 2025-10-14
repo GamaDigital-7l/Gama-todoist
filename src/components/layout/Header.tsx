@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse } from "lucide-react"; // Importar HeartPulse
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -33,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Dashboard
+                <Home className="h-5 w-5" /> Dashboard
               </NavLink>
               <NavLink
                 to="/tasks"
@@ -41,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Tarefas
+                <ListTodo className="h-5 w-5" /> Tarefas
               </NavLink>
               <NavLink
                 to="/goals"
@@ -49,15 +50,15 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
                 >
-                Metas
+                <Target className="h-5 w-5" /> Metas
               </NavLink>
               <NavLink
                 to="/books"
                 className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-primary bg-accent" : "text-muted-foreground hover:text-foreground"}`
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Livros
+                <BookOpen className="h-5 w-5" /> Livros
               </NavLink>
               <NavLink
                 to="/study"
@@ -65,15 +66,15 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Estudos
+                <GraduationCap className="h-5 w-5" /> Estudos
               </NavLink>
               <NavLink
-                to="/health" // Novo link para saúde
+                to="/health"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Saúde
+                <HeartPulse className="h-5 w-5" /> Saúde
               </NavLink>
               <NavLink
                 to="/motivation"
@@ -81,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Motivação
+                <Sparkles className="h-5 w-5" /> Motivação
               </NavLink>
               <NavLink
                 to="/ai-chat"
@@ -89,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Chat IA
+                <MessageSquare className="h-5 w-5" /> Chat IA
               </NavLink>
               <NavLink
                 to="/settings"
@@ -97,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                Configurações
+                <Settings className="h-5 w-5" /> Configurações
               </NavLink>
             </nav>
           </SheetContent>

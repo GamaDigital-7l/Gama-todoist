@@ -24,8 +24,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/dashboard"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -36,8 +36,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/tasks"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -48,8 +48,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/goals"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -60,8 +60,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/books"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -72,8 +72,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/study"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -84,8 +84,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/health" // Novo link para saúde
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -96,8 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/motivation"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -108,8 +108,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/ai-chat"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >
@@ -120,8 +120,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               to="/settings"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
                 )
               }
             >

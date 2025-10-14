@@ -93,20 +93,12 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
       </div>
       <div>
         <Label htmlFor="color" className="text-foreground">Cor da Tag</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            id="color"
-            type="color"
-            {...form.register("color")}
-            className="w-12 h-12 p-1 border-border rounded-md cursor-pointer"
-          />
-          <Input
-            type="text"
-            {...form.register("color")}
-            placeholder="#RRGGBB"
-            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
-          />
-        </div>
+        <Input
+          id="color"
+          type="color"
+          {...form.register("color")}
+          className="w-full h-12 p-1 border-border rounded-md cursor-pointer"
+        />
         {form.formState.errors.color && (
           <p className="text-red-500 text-sm mt-1">
             {form.formState.errors.color.message}
