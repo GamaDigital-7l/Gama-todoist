@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Importação corrigida para PDFDocumentProxy
+// Importação corrigida para PDFDocumentProxy - usando uma interface local para robustez
+// import { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Removido
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,10 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
-import { useParams, useNavigate } from "react-router-dom"; // Importar useParams e useNavigate
-import { useQuery } from "@tanstack/react-query"; // Importar useQuery
-import { supabase } from "@/integrations/supabase/client"; // Importar supabase
-import { showError } from "@/utils/toast"; // Importar showError
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { showError } from "@/utils/toast";
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -25,21 +26,24 @@ interface Book {
   pdf_url?: string;
 }
 
-// Removendo props bookUrl e onClose, pois serão gerenciadas internamente
+// Interface local para o objeto retornado por onLoadSuccess
+interface LocalPDFDocumentProxy {
+  numPages: number;
+}
+
 const BookReaderFullScreen: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // Obter o ID do livro da URL
-  const navigate = useNavigate(); // Para navegação
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
-  const [loadingPdf, setLoadingPdf] = useState<boolean>(true); // Estado de carregamento do PDF
-  const [pdfError, setPdfError] = useState<string | null>(null); // Erro de carregamento do PDF
+  const [loadingPdf, setLoadingPdf] = useState<boolean>(true);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
 
-  // Função para buscar os detalhes do livro, incluindo a URL do PDF
   const fetchBookById = async (bookId: string): Promise<Book | null> => {
     const { data, error } = await supabase
       .from("books")
@@ -59,9 +63,9 @@ const BookReaderFullScreen: React.FC = () => {
     enabled: !!id,
   });
 
-  const bookUrl = book?.pdf_url; // A URL do PDF agora vem dos dados do livro
+  const bookUrl = book?.pdf_url;
 
-  const onDocumentLoadSuccess = ({ numPages }: PDFDocumentProxy) => {
+  const onDocumentLoadSuccess = ({ numPages }: LocalPDFDocumentProxy) => {
     setNumPages(numPages);
     setLoadingPdf(false);
     setPdfError(null);
