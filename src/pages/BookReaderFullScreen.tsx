@@ -45,9 +45,9 @@ const BookReaderFullScreen: React.FC = () => {
   const [touchStartX, setTouchStartX] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const [scale, setScale] = useState<number>(1.0);
-  const [initialScale, setInitialScale] = useState<number | null>(null);
+  const [initialScale, setInitialScale] = useState<number | null>(null); // Escala 'fit-to-width'
   const [pageInput, setPageInput] = useState<string>("");
-  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null); // Armazena o objeto PDFDocumentProxy
+  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -55,7 +55,7 @@ const BookReaderFullScreen: React.FC = () => {
     enabled: !!id,
   });
 
-  // Observar o redimensionamento do contêiner para ajustar a largura
+  // 1. Observar o redimensionamento do contêiner para ajustar a largura
   useEffect(() => {
     const updateContainerWidth = () => {
       if (readerRef.current) {
@@ -77,12 +77,13 @@ const BookReaderFullScreen: React.FC = () => {
     };
   }, [readerRef]);
 
-  // Efeito para inicializar a página e a escala quando o documento PDF e a largura do contêiner estiverem prontos
+  // 2. Efeito para calcular a escala inicial (fit-to-width) e definir a página
+  // Este efeito é acionado quando o documento PDF e a largura do contêiner estão disponíveis.
   useEffect(() => {
-    const initializeReader = async () => {
-      if (pdfDocument && readerRef.current && initialScale === null && numPages !== null) {
+    const initializeReaderState = async () => {
+      if (pdfDocument && readerRef.current && containerWidth && numPages !== null) {
         try {
-          // Definir página inicial
+          // Definir página inicial com base nos dados do livro ou padrão para 1
           const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
           setPageNumber(initialPage);
           setPageInput(String(initialPage));
@@ -91,16 +92,26 @@ const BookReaderFullScreen: React.FC = () => {
           const page = await pdfDocument.getPage(1);
           const viewport = page.getViewport({ scale: 1 });
           const calculatedScale = readerRef.current.clientWidth / viewport.width;
-          setScale(calculatedScale);
-          setInitialScale(calculatedScale);
+          
+          // Se initialScale ainda não foi definido, define-o e a escala atual
+          if (initialScale === null) {
+            setInitialScale(calculatedScale);
+            setScale(calculatedScale);
+          } else {
+            // Se o containerWidth mudou, reajusta a escala atual mantendo o fator de zoom relativo
+            const currentZoomFactor = scale / initialScale;
+            setInitialScale(calculatedScale); // Atualiza o initialScale para a nova largura
+            setScale(calculatedScale * currentZoomFactor); // Aplica o fator de zoom à nova escala base
+          }
+
         } catch (err) {
           console.error("Erro ao inicializar leitor (página/escala):", err);
           showError("Erro ao inicializar o leitor de PDF.");
         }
       }
     };
-    initializeReader();
-  }, [pdfDocument, containerWidth, initialScale, numPages, book?.current_page, readerRef]);
+    initializeReaderState();
+  }, [pdfDocument, containerWidth, numPages, book?.current_page]); // Depende de pdfDocument, containerWidth, numPages e book?.current_page
 
   const updateCurrentPageInDb = async (newPage: number) => {
     if (!id) return;
@@ -114,9 +125,10 @@ const BookReaderFullScreen: React.FC = () => {
     }
   };
 
+  // 3. onDocumentLoadSuccess: Apenas define o número de páginas e o objeto PDFDocumentProxy
   const onDocumentLoadSuccess = (pdf: PDFDocumentProxy) => {
     setNumPages(pdf.numPages);
-    setPdfDocument(pdf); // Armazena o objeto PDFDocumentProxy
+    setPdfDocument(pdf);
   };
 
   const changePage = (offset: number) => {
@@ -134,8 +146,8 @@ const BookReaderFullScreen: React.FC = () => {
   const nextPage = () => changePage(1);
 
   const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0));
-  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale || 0.5));
-  const resetZoom = () => setScale(initialScale || 1.0);
+  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale ? initialScale * 0.5 : 0.5)); // Garante que não fique muito pequeno
+  const resetZoom = () => setScale(initialScale || 1.0); // Reseta para a escala 'fit-to-width'
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageInput(e.target.value);
@@ -224,7 +236,7 @@ const BookReaderFullScreen: React.FC = () => {
         </Button>
         <h1 className="text-xl font-bold text-foreground truncate flex-1 text-center sm:text-left">{book.title}</h1>
         <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
-          <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale || 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+          <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ZoomOut className="h-4 w-4" />
             <span className="sr-only">Diminuir Zoom</span>
           </Button>
