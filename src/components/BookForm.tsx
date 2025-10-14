@@ -3,11 +3,10 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import *s z from "zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import { Textarea } from "@/components/ui/textarea"; // Importar Textarea
 
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),
@@ -31,11 +31,11 @@ const bookSchema = z.object({
   total_pages: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(1, "O total de páginas deve ser um número positivo.").nullable().optional(),
-  ), // Novo campo
+  ),
   daily_reading_target_pages: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(1, "A meta diária deve ser um número positivo.").nullable().optional(),
-  ), // Novo campo
+  ),
 });
 
 type BookFormValues = z.infer<typeof bookSchema>;
@@ -43,7 +43,7 @@ type BookFormValues = z.infer<typeof bookSchema>;
 interface BookFormProps {
   onBookAdded: () => void;
   onClose: () => void;
-  initialData?: BookFormValues & { id: string }; // Adicionado para edição futura, se necessário
+  initialData?: BookFormValues & { id: string };
 }
 
 const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }) => {
@@ -51,7 +51,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
     resolver: zodResolver(bookSchema),
     defaultValues: initialData ? {
       ...initialData,
-      pdf_file: undefined, // PDF file cannot be pre-filled
+      pdf_file: undefined,
     } : {
       title: "",
       author: "",
@@ -97,13 +97,12 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
         description: values.description || null,
         pdf_url: pdfUrl,
         read_status: values.read_status,
-        total_pages: values.total_pages || null, // Salvar total de páginas
-        daily_reading_target_pages: values.daily_reading_target_pages || null, // Salvar meta diária
-        current_page: 0, // Iniciar na página 0
+        total_pages: values.total_pages || null,
+        daily_reading_target_pages: values.daily_reading_target_pages || null,
+        current_page: 0,
       };
 
       if (initialData) {
-        // Lógica de atualização se houver initialData
         const { error: updateError } = await supabase.from("books").update(dataToSave).eq("id", initialData.id);
         if (updateError) throw updateError;
         showSuccess("Livro atualizado com sucesso!");
