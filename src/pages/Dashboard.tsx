@@ -2,15 +2,18 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown } from "lucide-react";
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
 import DailyMotivation from "@/components/DailyMotivation";
 import DashboardTaskList from "@/components/DashboardTaskList";
-import TaskAIHelper from "@/components/TaskAIHelper"; // Importar o novo componente
+import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays } from "date-fns";
+import { isToday, parseISO, differenceInDays, format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import TaskForm from "@/components/TaskForm"; // Importar o TaskForm
 
 interface Profile {
   id: string;
@@ -107,7 +110,7 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   });
 
-  const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[], Error>({
+  const { data: tasks, isLoading: isLoadingTasks, refetch: refetchTasks } = useQuery<Task[], Error>({
     queryKey: ["tasksForDashboard"],
     queryFn: fetchUserTasks,
     enabled: !!userId,
@@ -124,6 +127,8 @@ const Dashboard: React.FC = () => {
     queryFn: () => fetchActiveHealthGoal(userId!),
     enabled: !!userId,
   });
+
+  const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
 
   const getTodayCompletedTasksCount = (allTasks: Task[]): { completed: number; total: number } => {
     const today = new Date();
@@ -201,11 +206,34 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+            </DialogHeader>
+            <TaskForm
+              onTaskSaved={() => {
+                refetchTasks(); // Refetch tasks on dashboard after saving
+                setIsTaskFormOpen(false);
+              }}
+              onClose={() => setIsTaskFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+
       <DailyMotivation />
 
       <DashboardTaskList />
 
-      <TaskAIHelper /> {/* Novo componente de assistente de tarefas IA */}
+      <TaskAIHelper />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
@@ -267,8 +295,6 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* MadeWithDyad removido */}
     </div>
   );
 };

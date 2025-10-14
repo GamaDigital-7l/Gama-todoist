@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Brain, Loader2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
@@ -45,6 +45,7 @@ interface TaskFormProps {
 const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const [isGeneratingAISuggestions, setIsGeneratingAISuggestions] = useState(false);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -113,6 +114,54 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     }
   };
 
+  const handleGenerateAISuggestions = async () => {
+    const currentTitle = form.getValues("title");
+    const currentDescription = form.getValues("description");
+
+    if (!currentTitle && !currentDescription) {
+      showError("Por favor, insira um título ou descrição para a IA gerar sugestões.");
+      return;
+    }
+
+    setIsGeneratingAISuggestions(true);
+    try {
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), e um tipo de recorrência (none, daily_weekday, weekly, monthly) com detalhes se aplicável (ex: 'Monday' para semanal, '15' para mensal, caso contrário null). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details".`;
+
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: { messages: [{ role: "user", content: prompt }] },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const aiSuggestions = JSON.parse(data.response);
+
+      // Atualizar o formulário com as sugestões da IA
+      if (aiSuggestions.description) form.setValue("description", aiSuggestions.description);
+      if (aiSuggestions.due_date) {
+        try {
+          form.setValue("due_date", parseISO(aiSuggestions.due_date));
+        } catch (e) {
+          console.warn("AI suggested invalid due_date format:", aiSuggestions.due_date);
+        }
+      } else {
+        form.setValue("due_date", null);
+      }
+      if (aiSuggestions.time) form.setValue("time", aiSuggestions.time); else form.setValue("time", null);
+      if (aiSuggestions.recurrence_type) form.setValue("recurrence_type", aiSuggestions.recurrence_type);
+      if (aiSuggestions.recurrence_details) form.setValue("recurrence_details", aiSuggestions.recurrence_details); else form.setValue("recurrence_details", null);
+
+      showSuccess("Sugestões da IA aplicadas!");
+
+    } catch (err: any) {
+      showError("Erro ao gerar sugestões da IA: " + err.message);
+      console.error("Erro na chamada da Edge Function ai-chat para sugestões de tarefas:", err);
+    } finally {
+      setIsGeneratingAISuggestions(false);
+    }
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
       <div>
@@ -138,6 +187,21 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
           className="bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
+      
+      <Button
+        type="button"
+        onClick={handleGenerateAISuggestions}
+        disabled={isGeneratingAISuggestions || (!form.watch("title") && !form.watch("description"))}
+        className="w-full bg-blue-600 text-white hover:bg-blue-700"
+      >
+        {isGeneratingAISuggestions ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Brain className="mr-2 h-4 w-4" />
+        )}
+        Gerar Sugestões com IA
+      </Button>
+
       <div>
         <Label htmlFor="due_date" className="text-foreground">Data de Vencimento (Opcional)</Label>
         <Popover>
