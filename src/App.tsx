@@ -3,10 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "./components/layout/Layout";
+import { SessionContextProvider } from "./components/auth/SessionContextProvider"; // Import SessionContextProvider
+import AuthLayout from "./components/layout/AuthLayout"; // Import AuthLayout
 import Dashboard from "./pages/Dashboard";
-import Tasks from "./pages/Tasks"; // Import the new Tasks page
-import Goals from "./pages/Goals"; // Import the new Goals page
+import Tasks from "./pages/Tasks";
+import Goals from "./pages/Goals";
+import Login from "./pages/Login"; // Import the new Login page
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,16 +19,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tasks" element={<Tasks />} /> {/* New route for Tasks */}
-            <Route path="/goals" element={<Goals />} /> {/* New route for Goals */}
-            {/* Future routes like /motivation, /settings will go here */}
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <SessionContextProvider> {/* Wrap the entire app with SessionContextProvider */}
+          <Routes>
+            <Route path="/login" element={<Login />} /> {/* Public login route */}
+            <Route element={<AuthLayout />}> {/* Protected routes */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/goals" element={<Goals />} />
+              {/* Future protected routes like /motivation, /settings will go here */}
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
