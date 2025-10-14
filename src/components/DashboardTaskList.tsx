@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ListTodo, Repeat, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSession } from "@/integrations/supabase/auth";
 
 interface Task {
   id: string;
@@ -23,6 +24,8 @@ interface Task {
   recurrence_details?: string;
 }
 
+const POINTS_PER_TASK = 10; // Pontos ganhos por tarefa concluída
+
 const fetchTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
   if (error) {
@@ -32,24 +35,53 @@ const fetchTasks = async (): Promise<Task[]> => {
 };
 
 const DashboardTaskList: React.FC = () => {
+  const { session } = useSession();
+  const queryClient = useQueryClient();
   const { data: tasks, isLoading, error, refetch } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks"],
     queryFn: fetchTasks,
   });
 
-  const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
+      const { error: updateError } = await supabase
         .from("tasks")
         .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
         .eq("id", taskId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Se a tarefa foi marcada como concluída e o usuário está logado, adicione pontos
+      if (!currentStatus && session?.user?.id) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("points")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        const newPoints = (profile?.points || 0) + POINTS_PER_TASK;
+        const { error: pointsError } = await supabase
+          .from("profiles")
+          .update({ points: newPoints })
+          .eq("id", session.user.id);
+
+        if (pointsError) throw pointsError;
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] }); // Invalida o cache do perfil para atualizar os pontos
+      }
+    },
+    onSuccess: () => {
       refetch();
-    } catch (err: any) {
+    },
+    onError: (err: any) => {
       showError("Erro ao atualizar tarefa: " + err.message);
       console.error("Erro ao atualizar tarefa:", err);
-    }
+    },
+  });
+
+  const handleToggleComplete = (taskId: string, currentStatus: boolean) => {
+    updateTaskMutation.mutate({ taskId, currentStatus });
   };
 
   const getRecurrenceText = (task: Task) => {
