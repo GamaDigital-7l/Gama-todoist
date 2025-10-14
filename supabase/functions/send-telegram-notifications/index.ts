@@ -18,23 +18,45 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, // Usar service role key para acesso total
     );
 
-    // 1. Obter configurações do Telegram
+    // 1. Obter configurações do Telegram e Evolution API
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("telegram_api_key, telegram_chat_id")
+      .select("telegram_api_key, telegram_chat_id, evolution_api_key, whatsapp_phone_number, notification_channel")
       .limit(1)
       .single();
 
-    if (settingsError || !settings?.telegram_api_key || !settings?.telegram_chat_id) {
-      console.error("Configurações do Telegram não encontradas ou incompletas:", settingsError);
+    if (settingsError) {
+      console.error("Erro ao buscar configurações:", settingsError);
       return new Response(
-        JSON.stringify({ error: "Telegram API Key or Chat ID not configured." }),
+        JSON.stringify({ error: "Erro ao buscar configurações." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const TELEGRAM_BOT_TOKEN = settings.telegram_api_key;
-    const TELEGRAM_CHAT_ID = settings.telegram_chat_id;
+    const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
+    const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
+    const EVOLUTION_API_KEY = settings?.evolution_api_key;
+    const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
+    const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
+
+    if (NOTIFICATION_CHANNEL === "telegram" && (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID)) {
+      return new Response(
+        JSON.stringify({ error: "Telegram API Key or Chat ID not configured for Telegram notifications." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !WHATSAPP_PHONE_NUMBER)) {
+      return new Response(
+        JSON.stringify({ error: "Evolution API Key or WhatsApp Phone Number not configured for WhatsApp notifications." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (NOTIFICATION_CHANNEL === "none") {
+      return new Response(
+        JSON.stringify({ message: "Nenhum canal de notificação selecionado. Nenhuma notificação enviada." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // 2. Obter tarefas para hoje que não estão completas
     const today = format(new Date(), "yyyy-MM-dd");
@@ -92,22 +114,12 @@ serve(async (req) => {
       }
 
       if (taskDueDate && task.time) {
-        // Combine date and time, assuming local time for task input
         const [hour, minute] = task.time.split(":").map(Number);
         taskTime = new Date(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate(), hour, minute, 0);
-        
-        // Convert task time to UTC for comparison with 'now' (which is UTC)
-        // This assumes task.time is in the local timezone where the task was created.
-        // For simplicity, we'll just compare directly with 'now' assuming server and user timezones are similar
-        // or that the user understands the notifications might be slightly off based on server time.
-        // A more robust solution would involve storing user's timezone.
       } else if (taskDueDate && !task.time) {
-        // If no specific time, consider it due all day, notify once at a reasonable time (e.g., morning)
-        // For simplicity, we'll skip time-based notifications for tasks without a specific time.
-        // Or, we could set a default notification time like 9 AM.
-        continue; // Skip tasks with only a due_date for timed notifications
+        continue;
       } else {
-        continue; // Skip tasks not due today or not recurring today
+        continue;
       }
 
       if (!taskTime) continue;
@@ -148,45 +160,67 @@ serve(async (req) => {
           message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
         }
         
-        // Add buttons for completion status
-        const completeUrl = `https://your-app-domain.com/tasks?action=complete&id=${task.id}`; // Replace with your actual app domain
-        const postponeUrl = `https://your-app-domain.com/tasks?action=postpone&id=${task.id}`; // Replace with your actual app domain
-
-        const keyboard = {
-          inline_keyboard: [
-            [
-              { text: "✅ Concluída", callback_data: `complete_task_${task.id}` },
-              { text: " adiada", callback_data: `postpone_task_${task.id}` },
-            ],
-          ],
-        };
-
         notificationsToSend.push({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: "Markdown",
-          reply_markup: keyboard,
+          task_id: task.id,
+          message: message,
         });
         tasksToUpdate.push(task.id);
       }
     }
 
     // 3. Enviar notificações
-    const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     const sendPromises = notificationsToSend.map(async (notification) => {
-      const response = await fetch(telegramApiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(notification),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erro ao enviar notificação para o Telegram:", errorData);
-        throw new Error(`Telegram API error: ${errorData.description}`);
+      if (NOTIFICATION_CHANNEL === "telegram") {
+        const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        // Para Telegram, podemos manter os botões se desejado, mas para simplificar, vou remover por enquanto
+        // e focar na funcionalidade de alternar canais.
+        // Se precisar de botões no Telegram, a lógica original pode ser reintroduzida aqui.
+        const response = await fetch(telegramApiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: notification.message,
+            parse_mode: "Markdown",
+            // reply_markup: keyboard, // Removido para simplificar a transição
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Erro ao enviar notificação para o Telegram:", errorData);
+          throw new Error(`Telegram API error: ${errorData.description}`);
+        }
+        return response.json();
+      } else if (NOTIFICATION_CHANNEL === "whatsapp") {
+        const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`; // Substitua 'instanceName' e o domínio se necessário
+        const response = await fetch(evolutionApiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": EVOLUTION_API_KEY!,
+          },
+          body: JSON.stringify({
+            number: WHATSAPP_PHONE_NUMBER!,
+            options: {
+              delay: 1200,
+              presence: "composing",
+              linkPreview: false
+            },
+            textMessage: {
+              text: notification.message.replace(/\*/g, "").replace(/_/g, "") // Remover Markdown para WhatsApp simples
+            }
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", errorData);
+          throw new Error(`Evolution API error: ${errorData.message || JSON.stringify(errorData)}`);
+        }
+        return response.json();
       }
-      return response.json();
+      return Promise.resolve(null); // Caso NOTIFICATION_CHANNEL seja 'none'
     });
 
     await Promise.all(sendPromises);

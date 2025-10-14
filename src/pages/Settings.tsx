@@ -25,6 +25,8 @@ const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
+  notification_channel: z.enum(["telegram", "whatsapp", "none"]).default("telegram"), // Novo campo
+  whatsapp_phone_number: z.string().nullable().optional(), // Novo campo
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -40,6 +42,8 @@ const Settings: React.FC = () => {
       groq_api_key: "",
       openai_api_key: "",
       ai_provider_preference: "groq",
+      notification_channel: "telegram", // Default
+      whatsapp_phone_number: "",
     },
   });
 
@@ -71,6 +75,8 @@ const Settings: React.FC = () => {
         groq_api_key: values.groq_api_key || null,
         openai_api_key: values.openai_api_key || null,
         ai_provider_preference: values.ai_provider_preference,
+        notification_channel: values.notification_channel, // Novo campo
+        whatsapp_phone_number: values.whatsapp_phone_number || null, // Novo campo
         updated_at: new Date().toISOString(),
       };
 
@@ -98,6 +104,8 @@ const Settings: React.FC = () => {
       console.error("Erro ao salvar configurações:", error);
     }
   };
+
+  const notificationChannel = form.watch("notification_channel");
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
@@ -129,34 +137,80 @@ const Settings: React.FC = () => {
                 </p>
               )}
             </div>
-            <div>
-              <Label htmlFor="telegram_api_key" className="text-foreground">Telegram API Key</Label>
-              <Input
-                id="telegram_api_key"
-                {...form.register("telegram_api_key")}
-                placeholder="Sua chave da Telegram API"
-                className="bg-input border-border text-foreground focus-visible:ring-ring"
-              />
-              {form.formState.errors.telegram_api_key && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.telegram_api_key.message}
-                </p>
+            <div className="border-t border-border pt-4 mt-4">
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de Notificação</h3>
+              <div>
+                <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
+                <Select
+                  onValueChange={(value: "telegram" | "whatsapp" | "none") =>
+                    form.setValue("notification_channel", value)
+                  }
+                  value={notificationChannel}
+                >
+                  <SelectTrigger id="notification_channel" className="bg-input border-border text-foreground focus-visible:ring-ring">
+                    <SelectValue placeholder="Selecionar canal" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp (via Evolution API)</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {notificationChannel === "telegram" && (
+                <>
+                  <div className="mt-4">
+                    <Label htmlFor="telegram_api_key" className="text-foreground">Telegram API Key</Label>
+                    <Input
+                      id="telegram_api_key"
+                      {...form.register("telegram_api_key")}
+                      placeholder="Sua chave da Telegram API"
+                      className="bg-input border-border text-foreground focus-visible:ring-ring"
+                    />
+                    {form.formState.errors.telegram_api_key && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.telegram_api_key.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-4">
+                    <Label htmlFor="telegram_chat_id" className="text-foreground">Telegram Chat ID</Label>
+                    <Input
+                      id="telegram_chat_id"
+                      {...form.register("telegram_chat_id")}
+                      placeholder="Seu ID de Chat do Telegram"
+                      className="bg-input border-border text-foreground focus-visible:ring-ring"
+                    />
+                    {form.formState.errors.telegram_chat_id && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.telegram_chat_id.message}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {notificationChannel === "whatsapp" && (
+                <>
+                  <div className="mt-4">
+                    <Label htmlFor="whatsapp_phone_number" className="text-foreground">Número de Telefone WhatsApp (com código do país, ex: 5511987654321)</Label>
+                    <Input
+                      id="whatsapp_phone_number"
+                      {...form.register("whatsapp_phone_number")}
+                      placeholder="Ex: 5511987654321"
+                      className="bg-input border-border text-foreground focus-visible:ring-ring"
+                    />
+                    {form.formState.errors.whatsapp_phone_number && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.whatsapp_phone_number.message}
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
             </div>
-            <div>
-              <Label htmlFor="telegram_chat_id" className="text-foreground">Telegram Chat ID</Label>
-              <Input
-                id="telegram_chat_id"
-                {...form.register("telegram_chat_id")}
-                placeholder="Seu ID de Chat do Telegram"
-                className="bg-input border-border text-foreground focus-visible:ring-ring"
-              />
-              {form.formState.errors.telegram_chat_id && (
-                <p className="text-red-500 text-sm mt-1">
-                  {form.formState.errors.telegram_chat_id.message}
-                </p>
-              )}
-            </div>
+
             <div className="border-t border-border pt-4 mt-4">
               <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de IA</h3>
               <div>

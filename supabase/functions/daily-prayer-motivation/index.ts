@@ -22,44 +22,55 @@ serve(async (req) => {
     // 1. Obter configurações do usuário
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference")
+      .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference, notification_channel, evolution_api_key, whatsapp_phone_number")
       .limit(1)
       .single();
 
-    if (settingsError || !settings?.telegram_api_key || !settings?.telegram_chat_id) {
-      console.error("Configurações do Telegram não encontradas ou incompletas:", settingsError);
+    if (settingsError) {
+      console.error("Erro ao buscar configurações:", settingsError);
       return new Response(
-        JSON.stringify({ error: "Telegram API Key or Chat ID not configured." }),
+        JSON.stringify({ error: "Erro ao buscar configurações." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const TELEGRAM_BOT_TOKEN = settings.telegram_api_key;
-    const TELEGRAM_CHAT_ID = settings.telegram_chat_id;
-    const AI_PROVIDER = settings.ai_provider_preference || "groq";
+    const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
+    const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
+    const EVOLUTION_API_KEY = settings?.evolution_api_key;
+    const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
+    const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
+    const AI_PROVIDER = settings?.ai_provider_preference || "groq";
+
+    if (NOTIFICATION_CHANNEL === "telegram" && (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID)) {
+      return new Response(
+        JSON.stringify({ error: "Telegram API Key or Chat ID not configured for Telegram notifications." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !WHATSAPP_PHONE_NUMBER)) {
+      return new Response(
+        JSON.stringify({ error: "Evolution API Key or WhatsApp Phone Number not configured for WhatsApp notifications." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (AI_PROVIDER === "groq" && !settings?.groq_api_key) {
+      return new Response(
+        JSON.stringify({ error: "Groq API Key not configured." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (AI_PROVIDER === "openai" && !settings?.openai_api_key) {
+      return new Response(
+        JSON.stringify({ error: "OpenAI API Key not configured." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     let aiClient;
     if (AI_PROVIDER === "groq") {
-      if (!settings.groq_api_key) {
-        return new Response(
-          JSON.stringify({ error: "Groq API Key not configured." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      aiClient = new Groq({ apiKey: settings.groq_api_key });
-    } else if (AI_PROVIDER === "openai") {
-      if (!settings.openai_api_key) {
-        return new Response(
-          JSON.stringify({ error: "OpenAI API Key not configured." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      aiClient = new OpenAI({ apiKey: settings.openai_api_key });
-    } else {
-      return new Response(
-        JSON.stringify({ error: "Invalid AI provider preference." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      aiClient = new Groq({ apiKey: settings!.groq_api_key! });
+    } else { // AI_PROVIDER === "openai"
+      aiClient = new OpenAI({ apiKey: settings!.openai_api_key! });
     }
 
     const { timeOfDay } = await req.json(); // 'morning' or 'evening'
@@ -77,38 +88,68 @@ serve(async (req) => {
 
     const aiResponse = JSON.parse(chatCompletion.choices[0].message.content || '{}');
 
-    let message = `🙏 *Sua Dose Diária de Fé e Motivação (${timeOfDay === 'morning' ? 'Manhã' : 'Noite'})*\n\n`;
+    let messageText = `🙏 *Sua Dose Diária de Fé e Motivação (${timeOfDay === 'morning' ? 'Manhã' : 'Noite'})*\n\n`;
     if (aiResponse.verse) {
-      message += `📖 *Versículo do Dia:*\n_${aiResponse.verse}_\n\n`;
+      messageText += `📖 *Versículo do Dia:*\n_${aiResponse.verse}_\n\n`;
     }
     if (aiResponse.prayer_suggestion) {
-      message += `🛐 *Sugestão de Oração:*\n_${aiResponse.prayer_suggestion}_\n\n`;
+      messageText += `🛐 *Sugestão de Oração:*\n_${aiResponse.prayer_suggestion}_\n\n`;
     }
     if (aiResponse.motivational_message) {
-      message += `✨ *Mensagem Motivacional:*\n_${aiResponse.motivational_message}_\n\n`;
+      messageText += `✨ *Mensagem Motivacional:*\n_${aiResponse.motivational_message}_\n\n`;
     }
     if (timeOfDay === 'evening' && aiResponse.gratitude_suggestion) {
-      message += `💖 *Sugestão de Agradecimento:*\n_${aiResponse.gratitude_suggestion}_\n\n`;
+      messageText += `💖 *Sugestão de Agradecimento:*\n_${aiResponse.gratitude_suggestion}_\n\n`;
     }
 
-    // 3. Enviar notificação para o Telegram
-    const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    const response = await fetch(telegramApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: "Markdown",
-      }),
-    });
+    // 3. Enviar notificação para o canal preferido
+    if (NOTIFICATION_CHANNEL === "telegram") {
+      const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const response = await fetch(telegramApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: messageText,
+          parse_mode: "Markdown",
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Erro ao enviar notificação para o Telegram:", errorData);
-      throw new Error(`Telegram API error: ${errorData.description}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro ao enviar notificação para o Telegram:", errorData);
+        throw new Error(`Telegram API error: ${errorData.description}`);
+      }
+    } else if (NOTIFICATION_CHANNEL === "whatsapp") {
+      // Assumindo um endpoint genérico da Evolution API para envio de texto
+      // Você pode precisar ajustar o URL e o corpo da requisição com base na sua documentação específica da Evolution API
+      const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`; // Substitua 'instanceName' e o domínio se necessário
+      const response = await fetch(evolutionApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": EVOLUTION_API_KEY!, // A Evolution API geralmente usa 'apikey' no header
+        },
+        body: JSON.stringify({
+          number: WHATSAPP_PHONE_NUMBER!,
+          options: {
+            delay: 1200,
+            presence: "composing",
+            linkPreview: false
+          },
+          textMessage: {
+            text: messageText.replace(/\*/g, "").replace(/_/g, "") // Remover Markdown para WhatsApp simples
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro ao enviar notificação para o WhatsApp (Evolution API):", errorData);
+        throw new Error(`Evolution API error: ${errorData.message || JSON.stringify(errorData)}`);
+      }
     }
 
     // 4. Salvar a motivação gerada pela IA na tabela daily_motivations
@@ -116,7 +157,7 @@ serve(async (req) => {
       .from("daily_motivations")
       .insert({
         message: aiResponse.motivational_message || "Nenhuma mensagem motivacional.",
-        author: "IA", // Ou um autor mais específico se a IA gerar
+        author: "IA",
         verse: aiResponse.verse || null,
         prayer_suggestion: aiResponse.prayer_suggestion || null,
         motivational_message: aiResponse.motivational_message || null,
