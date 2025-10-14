@@ -7,12 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf"; // Manter importação de pdfjs para cMapUrl
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Definir o workerSrc para o arquivo local do pdfjs-dist
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
+// pdfjs.GlobalWorkerOptions.workerSrc agora é definido em src/main.tsx
 
 interface Book {
   id: string;
@@ -134,7 +133,7 @@ const BookReader: React.FC = () => {
                 onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
                 className="max-w-full h-full"
                 options={{
-                  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`, // Usar pdfjs.version para cMapUrl
                   cMapPacked: true,
                 }}
               >
