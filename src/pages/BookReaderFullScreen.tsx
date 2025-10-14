@@ -8,7 +8,7 @@ import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // Importar Input
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"; // Importar ícones de zoom
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page, pdfjs, PDFDocumentProxy } from "react-pdf"; // Importar PDFDocumentProxy
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -47,6 +47,7 @@ const BookReaderFullScreen: React.FC = () => {
   const [scale, setScale] = useState<number>(1.0); // Estado para o zoom
   const [initialScale, setInitialScale] = useState<number | null>(null); // Escala inicial para resetar o zoom
   const [pageInput, setPageInput] = useState<string>(""); // Estado para o input de página
+  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null); // Estado para o objeto PDFDocumentProxy
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -84,6 +85,25 @@ const BookReaderFullScreen: React.FC = () => {
     };
   }, [readerRef]);
 
+  // Efeito para calcular a escala inicial uma vez que o documento e a largura do contêiner estejam prontos
+  useEffect(() => {
+    const calculateScale = async () => {
+      if (pdfDocument && readerRef.current && initialScale === null) { // Só calcula uma vez
+        try {
+          const page = await pdfDocument.getPage(1);
+          const viewport = page.getViewport({ scale: 1 });
+          const calculatedScale = readerRef.current.clientWidth / viewport.width;
+          setScale(calculatedScale);
+          setInitialScale(calculatedScale);
+        } catch (err) {
+          console.error("Erro ao calcular escala inicial:", err);
+          showError("Erro ao calcular escala inicial do PDF.");
+        }
+      }
+    };
+    calculateScale();
+  }, [pdfDocument, containerWidth, initialScale]); // Depende de pdfDocument e containerWidth
+
   const updateCurrentPageInDb = async (newPage: number) => {
     if (!id) return;
     try {
@@ -96,20 +116,12 @@ const BookReaderFullScreen: React.FC = () => {
     }
   };
 
-  const onDocumentLoadSuccess = async ({ numPages, getPage }: { numPages: number; getPage: (pageIndex: number) => Promise<any> }) => {
-    setNumPages(numPages);
-    const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
+  const onDocumentLoadSuccess = (pdf: PDFDocumentProxy) => {
+    setNumPages(pdf.numPages);
+    setPdfDocument(pdf); // Armazena o objeto PDFDocumentProxy
+    const initialPage = Math.max(1, Math.min(book?.current_page || 1, pdf.numPages));
     setPageNumber(initialPage);
     setPageInput(String(initialPage));
-
-    // Calculate initial scale to fit width
-    if (readerRef.current) {
-      const page = await getPage(1);
-      const viewport = page.getViewport({ scale: 1 });
-      const calculatedScale = readerRef.current.clientWidth / viewport.width;
-      setScale(calculatedScale);
-      setInitialScale(calculatedScale);
-    }
   };
 
   const changePage = (offset: number) => {
@@ -126,8 +138,8 @@ const BookReaderFullScreen: React.FC = () => {
   const previousPage = () => changePage(-1);
   const nextPage = () => changePage(1);
 
-  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0)); // Max zoom 3.0
-  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale || 0.5)); // Min zoom, don't go smaller than initial fit
+  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0)); // Zoom máximo 3.0
+  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale || 0.5)); // Zoom mínimo, não menor que o ajuste inicial
   const resetZoom = () => setScale(initialScale || 1.0);
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +153,7 @@ const BookReaderFullScreen: React.FC = () => {
       updateCurrentPageInDb(newPage);
     } else {
       showError(`Por favor, insira um número de página válido entre 1 e ${numPages || 1}.`);
-      setPageInput(String(pageNumber)); // Reset input to current page
+      setPageInput(String(pageNumber)); // Reseta o input para a página atual
     }
   };
 
