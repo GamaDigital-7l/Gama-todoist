@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown } from "lucide-react";
 import DailyMotivation from "@/components/DailyMotivation";
 import DashboardTaskList from "@/components/DashboardTaskList";
+import TaskAIHelper from "@/components/TaskAIHelper"; // Importar o novo componente
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -203,6 +204,8 @@ const Dashboard: React.FC = () => {
       <DailyMotivation />
 
       <DashboardTaskList />
+
+      <TaskAIHelper /> {/* Novo componente de assistente de tarefas IA */}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
