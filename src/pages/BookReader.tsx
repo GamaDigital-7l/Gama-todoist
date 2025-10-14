@@ -8,7 +8,8 @@ import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf"; // Removido 'pdfjs' daqui
+import { pdfjs } from "pdfjs-dist"; // Importado pdfjs diretamente de pdfjs-dist
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -137,6 +138,10 @@ const BookReader: React.FC = () => {
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
                 className="max-w-full h-full"
+                options={{
+                  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                  cMapPacked: true,
+                }}
               >
                 <Page pageNumber={pageNumber} renderTextLayer={true} renderAnnotationLayer={true} />
               </Document>
