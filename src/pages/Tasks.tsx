@@ -160,9 +160,9 @@ const Tasks: React.FC = () => {
       case "daily":
         return isToday(dueDate);
       case "weekly":
-        return isThisWeek(dueDate); // Removido { locale: ptBR }
+        return isThisWeek(dueDate);
       case "monthly":
-        return isThisMonth(dueDate); // Removido { locale: ptBR }
+        return isThisMonth(dueDate);
       case "all":
       default:
         return true;

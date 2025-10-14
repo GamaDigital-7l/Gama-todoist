@@ -3,8 +3,9 @@ import App from "./App.tsx";
 import "./globals.css";
 import { pdfjs } from "react-pdf"; // Importar pdfjs
 
-// Definir o workerSrc para o arquivo local do pdfjs-dist usando new URL()
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
+// Definir o workerSrc para o arquivo local do pdfjs-dist na pasta public
+// Certifique-se de ter copiado 'node_modules/pdfjs-dist/build/pdf.worker.min.js' para 'public/pdf.worker.min.js'
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 // Registrar o Service Worker
 if ('serviceWorker' in navigator) {

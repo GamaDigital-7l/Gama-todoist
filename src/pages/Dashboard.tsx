@@ -55,7 +55,7 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
     console.error("Erro ao buscar perfil do usuário:", error);
     throw error;
   }
-  return data;
+  return data as Profile | null; // Explicitamente tipar o retorno
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
@@ -80,7 +80,7 @@ const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | n
     console.error("Erro ao buscar última métrica de saúde:", error);
     throw error;
   }
-  return data;
+  return data as HealthMetric | null; // Explicitamente tipar o retorno
 };
 
 const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
@@ -97,7 +97,7 @@ const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null>
     console.error("Erro ao buscar meta de saúde ativa:", error);
     throw error;
   }
-  return data;
+  return data as HealthGoal | null; // Explicitamente tipar o retorno
 };
 
 const Dashboard: React.FC = () => {
