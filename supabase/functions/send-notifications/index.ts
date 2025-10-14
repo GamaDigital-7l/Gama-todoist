@@ -63,7 +63,7 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
     const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
     const EVOLUTION_API_KEY = settings?.evolution_api_key;
-    const EVOLUTION_API_INSTANCE_NAME = settings?.evolution_api_instance_name; // Novo
+    const EVOLUTION_API_INSTANCE_NAME = settings?.evolution_api_instance_name;
     const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
     const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
 
@@ -112,8 +112,7 @@ serve(async (req) => {
       .from("tasks")
       .select("*")
       .eq("user_id", userId)
-      .eq("is_completed", false)
-      .or(`due_date.eq.${today},recurrence_type.neq.none`);
+      .or(`due_date.eq.${today},recurrence_type.neq.none`); // Inclui tarefas concluídas para o lembrete de 1h depois
 
     if (tasksError) {
       console.error("Erro ao buscar tarefas:", tasksError);
@@ -124,7 +123,8 @@ serve(async (req) => {
     }
 
     const notificationsToSend = [];
-    const tasksToUpdate = [];
+    const tasksToUpdateCurrentTarget = []; // Para atualizar current_daily_target
+    const tasksToUpdateLastNotified = new Map<string, Date>(); // Para atualizar last_notified_at
 
     const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
       if (!details) return false;
@@ -135,9 +135,8 @@ serve(async (req) => {
     for (const task of tasks) {
       let taskDueDate: Date | null = null;
       let taskTime: Date | null = null;
-      let shouldNotify = false;
-      let notificationType = "";
 
+      // Lógica para calcular current_daily_target
       let currentTarget = task.current_daily_target || task.target_value;
       const lastCompletionDate = task.last_successful_completion_date ? parseISO(task.last_successful_completion_date) : null;
       const isCompletedYesterday = lastCompletionDate && format(lastCompletionDate, "yyyy-MM-dd") === yesterday;
@@ -148,9 +147,10 @@ serve(async (req) => {
         } else {
           currentTarget = task.target_value;
         }
-        tasksToUpdate.push({ id: task.id, current_daily_target: currentTarget });
+        tasksToUpdateCurrentTarget.push({ id: task.id, current_daily_target: currentTarget });
       }
 
+      // Determinar se a tarefa é para hoje
       if (task.recurrence_type !== "none") {
         const currentDayOfWeek = getDay(now);
         const currentDayOfMonth = now.getDate();
@@ -173,44 +173,19 @@ serve(async (req) => {
         }
       }
 
-      if (taskDueDate && task.time) {
-        const [hour, minute] = task.time.split(":").map(Number);
-        taskTime = new Date(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate(), hour, minute, 0);
-      } else if (taskDueDate && !task.time) {
-        continue;
-      } else {
-        continue;
-      }
+      if (!taskDueDate || !task.time) continue; // A tarefa não é para hoje ou não tem horário
 
-      if (!taskTime) continue;
-
-      const time15Before = subMinutes(taskTime, 15);
-      const timeAt = taskTime;
-      const time30After = addMinutes(taskTime, 30);
+      const [hour, minute] = task.time.split(":").map(Number);
+      taskTime = new Date(taskDueDate.getFullYear(), taskDueDate.getMonth(), taskDueDate.getDate(), hour, minute, 0);
 
       const lastNotifiedAt = task.last_notified_at ? parseISO(task.last_notified_at) : null;
 
-      if (isAfter(now, time15Before) && isBefore(now, timeAt) && (!lastNotifiedAt || isBefore(lastNotifiedAt, time15Before))) {
-        shouldNotify = true;
-        notificationType = "15 minutos antes";
-      }
-      else if (isAfter(now, subMinutes(timeAt, 5)) && isBefore(now, addMinutes(timeAt, 5)) && (!lastNotifiedAt || isBefore(lastNotifiedAt, subMinutes(timeAt, 5)))) {
-        shouldNotify = true;
-        notificationType = "na hora";
-      }
-      else if (isAfter(now, timeAt) && isBefore(now, time30After) && (!lastNotifiedAt || isBefore(lastNotifiedAt, timeAt))) {
-        shouldNotify = true;
-        notificationType = "30 minutos depois";
-      }
-
-      if (shouldNotify) {
-        let message = `⏰ Lembrete de Tarefa (${notificationType}):\n\n*${task.title}*`;
-        if (task.description) {
-          message += `\n_${task.description}_`;
-        }
-        if (task.time) {
-          message += `\nÀs ${task.time}`;
-        }
+      // Lógica de notificação para 15 minutos antes
+      const time15Before = subMinutes(taskTime, 15);
+      if (isAfter(now, time15Before) && isBefore(now, taskTime) && (!lastNotifiedAt || isBefore(lastNotifiedAt, time15Before))) {
+        let message = `⏰ Lembrete de Tarefa (15 minutos antes):\n\n*${task.title}*`;
+        if (task.description) message += `\n_${task.description}_`;
+        if (task.time) message += `\nÀs ${task.time}`;
         if (task.recurrence_type !== "none") {
           message += `\n(Recorrente: ${task.recurrence_type === "daily" ? "Diariamente" : task.recurrence_type === "weekly" ? `Semanalmente nos dias ${task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS_SHORT[day] || day).join(', ')}` : `Mensalmente no dia ${task.recurrence_details}`})`;
         } else if (task.due_date) {
@@ -223,13 +198,71 @@ serve(async (req) => {
           else if (task.task_type === "study") targetUnit = "minutos de estudo";
           message += `\n*Meta de Hoje:* ${currentTarget} ${targetUnit}`;
         }
-        
         notificationsToSend.push({
           task_id: task.id,
           message: message,
           title: `Lembrete: ${task.title}`,
           url: `/tasks`,
+          triggerTime: time15Before,
         });
+        tasksToUpdateLastNotified.set(task.id, time15Before);
+      }
+
+      // Lógica de notificação na hora
+      const timeAtWindowStart = subMinutes(taskTime, 5);
+      const timeAtWindowEnd = addMinutes(taskTime, 5);
+      if (isAfter(now, timeAtWindowStart) && isBefore(now, timeAtWindowEnd) && (!lastNotifiedAt || isBefore(lastNotifiedAt, timeAtWindowStart))) {
+        let message = `🔔 Lembrete de Tarefa (na hora):\n\n*${task.title}*`;
+        if (task.description) message += `\n_${task.description}_`;
+        if (task.time) message += `\nÀs ${task.time}`;
+        if (task.recurrence_type !== "none") {
+          message += `\n(Recorrente: ${task.recurrence_type === "daily" ? "Diariamente" : task.recurrence_type === "weekly" ? `Semanalmente nos dias ${task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS_SHORT[day] || day).join(', ')}` : `Mensalmente no dia ${task.recurrence_details}`})`;
+        } else if (task.due_date) {
+          message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
+        }
+        if (task.task_type !== "general" && currentTarget !== null && currentTarget !== undefined) {
+          let targetUnit = "";
+          if (task.task_type === "reading") targetUnit = "páginas";
+          else if (task.task_type === "exercise") targetUnit = "minutos/reps";
+          else if (task.task_type === "study") targetUnit = "minutos de estudo";
+          message += `\n*Meta de Hoje:* ${currentTarget} ${targetUnit}`;
+        }
+        notificationsToSend.push({
+          task_id: task.id,
+          message: message,
+          title: `Lembrete: ${task.title}`,
+          url: `/tasks`,
+          triggerTime: taskTime,
+        });
+        tasksToUpdateLastNotified.set(task.id, taskTime);
+      }
+
+      // Lógica de notificação 1 hora depois se não concluída
+      const time60After = addMinutes(taskTime, 60);
+      if (!task.is_completed && isAfter(now, taskTime) && isBefore(now, time60After) && (!lastNotifiedAt || isBefore(lastNotifiedAt, taskTime))) {
+        let message = `⚠️ Tarefa Pendente (1 hora depois):\n\n*${task.title}* ainda não foi concluída!`;
+        if (task.description) message += `\n_${task.description}_`;
+        if (task.time) message += `\nÀs ${task.time}`;
+        if (task.recurrence_type !== "none") {
+          message += `\n(Recorrente: ${task.recurrence_type === "daily" ? "Diariamente" : task.recurrence_type === "weekly" ? `Semanalmente nos dias ${task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS_SHORT[day] || day).join(', ')}` : `Mensalmente no dia ${task.recurrence_details}`})`;
+        } else if (task.due_date) {
+          message += `\nEm ${format(parseISO(task.due_date), "dd/MM/yyyy")}`;
+        }
+        if (task.task_type !== "general" && currentTarget !== null && currentTarget !== undefined) {
+          let targetUnit = "";
+          if (task.task_type === "reading") targetUnit = "páginas";
+          else if (task.task_type === "exercise") targetUnit = "minutos/reps";
+          else if (task.task_type === "study") targetUnit = "minutos de estudo";
+          message += `\n*Meta de Hoje:* ${currentTarget} ${targetUnit}`;
+        }
+        notificationsToSend.push({
+          task_id: task.id,
+          message: message,
+          title: `Tarefa Pendente: ${task.title}`,
+          url: `/tasks`,
+          triggerTime: time60After,
+        });
+        tasksToUpdateLastNotified.set(task.id, time60After);
       }
     }
 
@@ -257,7 +290,6 @@ serve(async (req) => {
         }
         return telegramResponseData;
       } else if (NOTIFICATION_CHANNEL === "whatsapp") {
-        // Usar o nome da instância configurado
         const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/${EVOLUTION_API_INSTANCE_NAME}`;
         console.log("Evolution API URL:", evolutionApiUrl);
         const response = await fetch(evolutionApiUrl, {
@@ -288,7 +320,6 @@ serve(async (req) => {
         }
         return whatsappResponseData;
       } else if (NOTIFICATION_CHANNEL === "web_push") {
-        // Buscar todas as inscrições de push para o usuário
         const { data: subscriptions, error: fetchError } = await supabase
           .from('user_subscriptions')
           .select('subscription')
@@ -331,19 +362,28 @@ serve(async (req) => {
 
     await Promise.all(sendPromises);
 
-    if (tasksToUpdate.length > 0) {
-      for (const taskUpdate of tasksToUpdate) {
+    // Atualizar current_daily_target
+    if (tasksToUpdateCurrentTarget.length > 0) {
+      for (const taskUpdate of tasksToUpdateCurrentTarget) {
         const { error: updateError } = await supabase
           .from("tasks")
-          .update({ 
-            last_notified_at: now.toISOString(),
-            current_daily_target: taskUpdate.current_daily_target
-          })
+          .update({ current_daily_target: taskUpdate.current_daily_target })
           .eq("id", taskUpdate.id);
 
         if (updateError) {
-          console.error("Erro ao atualizar last_notified_at ou current_daily_target:", updateError);
+          console.error("Erro ao atualizar current_daily_target:", updateError);
         }
+      }
+    }
+
+    // Atualizar last_notified_at para as tarefas que tiveram notificações enviadas
+    for (const [taskId, triggerTime] of tasksToUpdateLastNotified.entries()) {
+      const { error: updateError } = await supabase
+        .from("tasks")
+        .update({ last_notified_at: triggerTime.toISOString() })
+        .eq("id", taskId);
+      if (updateError) {
+        console.error(`Erro ao atualizar last_notified_at para tarefa ${taskId}:`, updateError);
       }
     }
 
