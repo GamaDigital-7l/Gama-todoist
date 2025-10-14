@@ -11,10 +11,9 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+// Definir o workerSrc para uma versão específica do pdfjs-dist que seja compatível com react-pdf v10.x
+// A versão 5.4.296 é a que está sendo esperada pela API, então vamos usar uma versão 5.x do worker.
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.js`;
 
 interface Book {
   id: string;
