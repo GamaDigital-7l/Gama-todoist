@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { Document, Page, pdfjs } from "react-pdf"; // Importar pdfjs aqui
+import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,12 +36,13 @@ const BookReaderFullScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const readerRef = useRef<HTMLDivElement>(null);
+  const readerRef = useRef<HTMLDivElement>(null); // Referência para o contêiner do leitor
 
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [isHovering, setIsHovering] = useState(false);
   const [touchStartX, setTouchStartX] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null); // Estado para a largura do contêiner
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -55,6 +56,28 @@ const BookReaderFullScreen: React.FC = () => {
       setPageNumber(book.current_page);
     }
   }, [book?.current_page]);
+
+  // Observar o redimensionamento do contêiner para ajustar a largura do PDF
+  useEffect(() => {
+    const updateContainerWidth = () => {
+      if (readerRef.current) {
+        setContainerWidth(readerRef.current.clientWidth);
+      }
+    };
+
+    updateContainerWidth(); // Define a largura inicial
+
+    const resizeObserver = new ResizeObserver(updateContainerWidth);
+    if (readerRef.current) {
+      resizeObserver.observe(readerRef.current);
+    }
+
+    return () => {
+      if (readerRef.current) {
+        resizeObserver.unobserve(readerRef.current);
+      }
+    };
+  }, [readerRef]);
 
   const updateCurrentPageInDb = async (newPage: number) => {
     if (!id) return;
@@ -151,6 +174,11 @@ const BookReaderFullScreen: React.FC = () => {
     );
   }
 
+  // Calcula a largura da página do PDF
+  const pageRenderWidth = containerWidth
+    ? (isMobile ? containerWidth * 0.9 : containerWidth)
+    : undefined;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
       <div className="flex items-center justify-between p-4 bg-card border-b border-border shadow-sm">
@@ -176,25 +204,26 @@ const BookReaderFullScreen: React.FC = () => {
         onTouchStart={isMobile ? handleTouchStart : undefined}
         onTouchEnd={isMobile ? handleTouchEnd : undefined}
       >
-        <Document
-          file={book.pdf_url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
-          className="flex justify-center items-center h-full w-full"
-          options={{
-            cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-            cMapPacked: true,
-          }}
-        >
-          <Page
-            pageNumber={pageNumber}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-            className="shadow-lg border border-border"
-            width={isMobile ? window.innerWidth * 0.9 : undefined} // Ajusta largura para mobile
-            height={isMobile ? window.innerHeight * 0.8 : undefined} // Ajusta altura para mobile
-          />
-        </Document>
+        {containerWidth && ( // Renderiza o Document apenas quando a largura do contêiner é conhecida
+          <Document
+            file={book.pdf_url}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
+            className="flex justify-center items-center h-full w-full"
+            options={{
+              cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+              cMapPacked: true,
+            }}
+          >
+            <Page
+              pageNumber={pageNumber}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+              className="shadow-lg border border-border"
+              width={pageRenderWidth} // Usa a largura calculada
+            />
+          </Document>
+        )}
 
         {/* Navigation buttons for desktop on hover */}
         {!isMobile && isHovering && (
