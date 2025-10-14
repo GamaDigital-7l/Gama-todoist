@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { format, addMinutes, subMinutes, isBefore, isAfter, parseISO, isToday, getDay, subDays } from "https://esm.sh/date-fns@2.30.0";
+import webpush from "https://esm.sh/web-push@3.6.2"; // Importar a biblioteca web-push
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +47,7 @@ serve(async (req) => {
 
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("telegram_api_key, telegram_chat_id, evolution_api_key, whatsapp_phone_number, notification_channel")
+      .select("telegram_api_key, telegram_chat_id, evolution_api_key, evolution_api_instance_name, whatsapp_phone_number, notification_channel")
       .eq("user_id", userId)
       .limit(1)
       .single();
@@ -62,6 +63,7 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
     const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
     const EVOLUTION_API_KEY = settings?.evolution_api_key;
+    const EVOLUTION_API_INSTANCE_NAME = settings?.evolution_api_instance_name; // Novo
     const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
     const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
 
@@ -71,9 +73,9 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !WHATSAPP_PHONE_NUMBER)) {
+    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !EVOLUTION_API_INSTANCE_NAME || !WHATSAPP_PHONE_NUMBER)) {
       return new Response(
-        JSON.stringify({ error: "Evolution API Key or WhatsApp Phone Number not configured for WhatsApp notifications." }),
+        JSON.stringify({ error: "Evolution API Key, Instance Name, or WhatsApp Phone Number not configured for WhatsApp notifications." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -81,6 +83,24 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ message: "Nenhum canal de notificação selecionado. Nenhuma notificação enviada." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Configuração do web-push para notificações web_push
+    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+
+    if (NOTIFICATION_CHANNEL === "web_push" && (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY)) {
+      return new Response(
+        JSON.stringify({ error: "VAPID keys not configured in Supabase secrets for Web Push notifications." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (NOTIFICATION_CHANNEL === "web_push") {
+      webpush.setVapidDetails(
+        'mailto: <gustavogama099@gmail.com>', // Seu e-mail de contato
+        VAPID_PUBLIC_KEY!,
+        VAPID_PRIVATE_KEY!
       );
     }
 
@@ -200,7 +220,7 @@ serve(async (req) => {
           let targetUnit = "";
           if (task.task_type === "reading") targetUnit = "páginas";
           else if (task.task_type === "exercise") targetUnit = "minutos/reps";
-          else if (task.task_type === "study") targetUnit = "minutos de estudo"; // Novo
+          else if (task.task_type === "study") targetUnit = "minutos de estudo";
           message += `\n*Meta de Hoje:* ${currentTarget} ${targetUnit}`;
         }
         
@@ -237,7 +257,9 @@ serve(async (req) => {
         }
         return telegramResponseData;
       } else if (NOTIFICATION_CHANNEL === "whatsapp") {
-        const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`;
+        // Usar o nome da instância configurado
+        const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/${EVOLUTION_API_INSTANCE_NAME}`;
+        console.log("Evolution API URL:", evolutionApiUrl);
         const response = await fetch(evolutionApiUrl, {
           method: "POST",
           headers: {
@@ -266,25 +288,43 @@ serve(async (req) => {
         }
         return whatsappResponseData;
       } else if (NOTIFICATION_CHANNEL === "web_push") {
-        const { error: pushError } = await supabase.functions.invoke('send-web-push-notification', {
-          body: {
-            userId: userId,
-            payload: {
-              title: notification.title,
-              body: notification.message.replace(/\*/g, "").replace(/_/g, ""),
-              url: notification.url,
-            }
-          },
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        // Buscar todas as inscrições de push para o usuário
+        const { data: subscriptions, error: fetchError } = await supabase
+          .from('user_subscriptions')
+          .select('subscription')
+          .eq('user_id', userId);
 
-        if (pushError) {
-          console.error("Erro ao invocar send-web-push-notification:", pushError);
-          throw new Error(`Web Push Function error: ${pushError.message}`);
+        if (fetchError) {
+          console.error("Erro ao buscar inscrições de usuário para web push:", fetchError);
+          throw new Error("Failed to fetch user subscriptions for web push.");
         }
-        return { message: "Web Push notification sent." };
+
+        if (!subscriptions || subscriptions.length === 0) {
+          console.log("Nenhuma inscrição de web push encontrada para este usuário.");
+          return { message: "No web push subscriptions found." };
+        }
+
+        const pushPromises = subscriptions.map(async (subRecord) => {
+          try {
+            await webpush.sendNotification(
+              subRecord.subscription as webpush.PushSubscription,
+              JSON.stringify({
+                title: notification.title,
+                body: notification.message.replace(/\*/g, "").replace(/_/g, ""),
+                url: notification.url,
+              })
+            );
+            console.log(`Notificação web push enviada para o usuário ${userId}.`);
+          } catch (pushError: any) {
+            console.error(`Erro ao enviar notificação web push para ${userId}:`, pushError);
+            if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+              console.warn(`Inscrição de web push inválida/expirada para o usuário ${userId}. Removendo...`);
+              await supabase.from('user_subscriptions').delete().eq('subscription', subRecord.subscription);
+            }
+          }
+        });
+        await Promise.all(pushPromises);
+        return { message: "Web Push notifications processed." };
       }
       return Promise.resolve(null);
     });

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import Groq from "https://esm.sh/groq-sdk@0.4.0";
 import OpenAI from "https://esm.sh/openai@4.52.2";
 import { format, isToday, getDay } from "https://esm.sh/date-fns@2.30.0";
+import webpush from "https://esm.sh/web-push@3.6.2"; // Importar a biblioteca web-push
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +44,7 @@ serve(async (req) => {
 
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference, notification_channel, evolution_api_key, whatsapp_phone_number")
+      .select("telegram_api_key, telegram_chat_id, groq_api_key, openai_api_key, ai_provider_preference, notification_channel, evolution_api_key, evolution_api_instance_name, whatsapp_phone_number")
       .eq("user_id", userId)
       .limit(1)
       .single();
@@ -59,6 +60,7 @@ serve(async (req) => {
     const TELEGRAM_BOT_TOKEN = settings?.telegram_api_key;
     const TELEGRAM_CHAT_ID = settings?.telegram_chat_id;
     const EVOLUTION_API_KEY = settings?.evolution_api_key;
+    const EVOLUTION_API_INSTANCE_NAME = settings?.evolution_api_instance_name; // Novo
     const WHATSAPP_PHONE_NUMBER = settings?.whatsapp_phone_number;
     const NOTIFICATION_CHANNEL = settings?.notification_channel || "telegram";
     const AI_PROVIDER = settings?.ai_provider_preference || "groq";
@@ -69,9 +71,9 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !WHATSAPP_PHONE_NUMBER)) {
+    if (NOTIFICATION_CHANNEL === "whatsapp" && (!EVOLUTION_API_KEY || !EVOLUTION_API_INSTANCE_NAME || !WHATSAPP_PHONE_NUMBER)) {
       return new Response(
-        JSON.stringify({ error: "Evolution API Key or WhatsApp Phone Number not configured for WhatsApp notifications." }),
+        JSON.stringify({ error: "Evolution API Key, Instance Name, or WhatsApp Phone Number not configured for WhatsApp notifications." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -94,6 +96,24 @@ serve(async (req) => {
       );
     }
 
+    // Configuração do web-push para notificações web_push
+    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+
+    if (NOTIFICATION_CHANNEL === "web_push" && (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY)) {
+      return new Response(
+        JSON.stringify({ error: "VAPID keys not configured in Supabase secrets for Web Push notifications." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (NOTIFICATION_CHANNEL === "web_push") {
+      webpush.setVapidDetails(
+        'mailto: <gustavogama099@gmail.com>', // Seu e-mail de contato
+        VAPID_PUBLIC_KEY!,
+        VAPID_PRIVATE_KEY!
+      );
+    }
+
     let aiClient;
     if (AI_PROVIDER === "groq") {
       aiClient = new Groq({ apiKey: settings!.groq_api_key! });
@@ -107,7 +127,7 @@ serve(async (req) => {
 
     const { data: tasks, error: tasksError } = await supabase
       .from("tasks")
-      .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type") // Incluído task_type
+      .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type")
       .eq("user_id", userId)
       .eq("is_completed", false)
       .or(`due_date.eq.${today},recurrence_type.neq.none`);
@@ -187,13 +207,17 @@ serve(async (req) => {
           parse_mode: "Markdown",
         }),
       });
+      const telegramResponseData = await response.json();
+      console.log("Telegram API Response OK:", response.ok);
+      console.log("Telegram API Full Response:", telegramResponseData);
       if (!response.ok) {
-        const errorData = await response.json();
         console.error("Erro ao enviar brief para o Telegram:", errorData);
         throw new Error(`Telegram API error: ${errorData.description}`);
       }
     } else if (NOTIFICATION_CHANNEL === "whatsapp") {
-      const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/instanceName`;
+      // Usar o nome da instância configurado
+      const evolutionApiUrl = `https://api.evolution-api.com/message/sendText/${EVOLUTION_API_INSTANCE_NAME}`;
+      console.log("Evolution API URL:", evolutionApiUrl);
       const response = await fetch(evolutionApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY! },
@@ -203,27 +227,51 @@ serve(async (req) => {
           textMessage: { text: briefMessage.replace(/\*/g, "").replace(/_/g, "") }
         }),
       });
+      const whatsappResponseData = await response.json();
+      console.log("Evolution API Response OK:", response.ok);
+      console.log("Evolution API Full Response:", whatsappResponseData);
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erro ao enviar brief para o WhatsApp (Evolution API):", errorData);
-        throw new Error(`Evolution API error: ${errorData.message || JSON.stringify(errorData)}`);
+        console.error("Erro ao enviar brief para o WhatsApp (Evolution API):", whatsappResponseData);
+        throw new Error(`Evolution API error: ${whatsappResponseData.message || JSON.stringify(whatsappResponseData)}`);
       }
     } else if (NOTIFICATION_CHANNEL === "web_push") {
-      const { error: pushError } = await supabase.functions.invoke('send-web-push-notification', {
-        body: {
-          userId: userId,
-          payload: {
-            title: "Seu Brief da Manhã",
-            body: briefMessage.replace(/\*/g, "").replace(/_/g, ""),
-            url: `/dashboard`,
-          }
-        },
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (pushError) {
-        console.error("Erro ao invocar send-web-push-notification para o brief:", pushError);
-        throw new Error(`Web Push Function error: ${pushError.message}`);
+      // Buscar todas as inscrições de push para o usuário
+      const { data: subscriptions, error: fetchError } = await supabase
+        .from('user_subscriptions')
+        .select('subscription')
+        .eq('user_id', userId);
+
+      if (fetchError) {
+        console.error("Erro ao buscar inscrições de usuário para web push:", fetchError);
+        throw new Error("Failed to fetch user subscriptions for web push.");
       }
+
+      if (!subscriptions || subscriptions.length === 0) {
+        console.log("Nenhuma inscrição de web push encontrada para este usuário.");
+        return { message: "No web push subscriptions found." };
+      }
+
+      const pushPromises = subscriptions.map(async (subRecord) => {
+        try {
+          await webpush.sendNotification(
+            subRecord.subscription as webpush.PushSubscription,
+            JSON.stringify({
+              title: "Seu Brief da Manhã",
+              body: briefMessage.replace(/\*/g, "").replace(/_/g, ""),
+              url: `/dashboard`,
+            })
+          );
+          console.log(`Notificação web push enviada para o usuário ${userId}.`);
+        } catch (pushError: any) {
+          console.error(`Erro ao enviar notificação web push para ${userId}:`, pushError);
+          if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+            console.warn(`Inscrição de web push inválida/expirada para o usuário ${userId}. Removendo...`);
+            await supabase.from('user_subscriptions').delete().eq('subscription', subRecord.subscription);
+          }
+        }
+      });
+      await Promise.all(pushPromises);
+      return { message: "Web Push notifications processed." };
     }
 
     return new Response(JSON.stringify({ message: "Brief da manhã enviado com sucesso!" }), {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { supabase, VAPID_PUBLIC_KEY } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/integrations/supabase/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -22,80 +22,20 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 const PushNotificationManager: React.FC = () => {
-  const { session, isLoading } = useSession();
-  const userId = session?.user?.id;
-
+  // Este componente agora apenas garante que o service worker está registrado.
+  // A lógica de inscrição/desinscrição para notificações push será movida para WebPushToggle.tsx
   useEffect(() => {
-    if (!isLoading && userId) {
-      // Verifica se as notificações push são suportadas
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.warn('Notificações Push não são suportadas neste navegador.');
-        return;
-      }
-
-      const subscribeUser = async () => {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          let subscription = await registration.pushManager.getSubscription();
-
-          if (!subscription) {
-            // Se não houver inscrição, cria uma nova
-            const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-            subscription = await registration.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: convertedVapidKey,
-            });
-            showSuccess('Inscrito para notificações push!');
-          } else {
-            console.log('Já inscrito para notificações push:', subscription);
-          }
-
-          // Salva a inscrição no banco de dados do Supabase
-          const { data: existingSubscription, error: fetchError } = await supabase
-            .from('user_subscriptions')
-            .select('id')
-            .eq('user_id', userId)
-            .limit(1)
-            .single();
-
-          if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-            throw fetchError;
-          }
-
-          if (existingSubscription) {
-            // Atualiza a inscrição existente
-            const { error: updateError } = await supabase
-              .from('user_subscriptions')
-              .update({ subscription: subscription.toJSON(), updated_at: new Date().toISOString() })
-              .eq('id', existingSubscription.id);
-            if (updateError) throw updateError;
-            console.log('Inscrição de push atualizada no Supabase.');
-          } else {
-            // Insere uma nova inscrição
-            const { error: insertError } = await supabase
-              .from('user_subscriptions')
-              .insert({ user_id: userId, subscription: subscription.toJSON() });
-            if (insertError) throw insertError;
-            console.log('Nova inscrição de push salva no Supabase.');
-          }
-
-        } catch (err: any) {
-          console.error('Erro ao inscrever o usuário para notificações push:', err);
-          showError('Erro ao configurar notificações push: ' + err.message);
-        }
-      };
-
-      // Solicita permissão e inscreve o usuário
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          subscribeUser();
-        } else {
-          console.warn('Permissão de notificação negada.');
-          // showError('Permissão de notificação negada. As notificações push não funcionarão.');
-        }
-      });
+    if (!('serviceWorker' in navigator)) {
+      console.warn('Service Workers não são suportados neste navegador.');
+      return;
     }
-  }, [isLoading, userId]);
+
+    // O registro do service worker já é feito em main.tsx,
+    // mas podemos adicionar uma verificação aqui se necessário.
+    // Por enquanto, este componente pode ser simplificado ou removido se não tiver outras responsabilidades.
+    // Para manter a estrutura, ele apenas loga que está ativo.
+    console.log('PushNotificationManager ativo: Service Worker registrado.');
+  }, []);
 
   return null; // Este componente não renderiza nada visível
 };

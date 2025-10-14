@@ -19,9 +19,11 @@ import {
 } from "@/components/ui/select";
 import { BellRing, Sun } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
+import WebPushToggle from "@/components/WebPushToggle"; // Importar o novo componente
 
 const settingsSchema = z.object({
   evolution_api_key: z.string().nullable().optional(),
+  evolution_api_instance_name: z.string().nullable().optional(), // Novo campo
   telegram_api_key: z.string().nullable().optional(),
   telegram_chat_id: z.string().nullable().optional(),
   groq_api_key: z.string().nullable().optional(),
@@ -43,6 +45,7 @@ const Settings: React.FC = () => {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       evolution_api_key: "",
+      evolution_api_instance_name: "", // Valor padrão
       telegram_api_key: "",
       telegram_chat_id: "",
       groq_api_key: "",
@@ -84,6 +87,7 @@ const Settings: React.FC = () => {
     try {
       const updateData = {
         evolution_api_key: values.evolution_api_key || null,
+        evolution_api_instance_name: values.evolution_api_instance_name || null, // Salvar o novo campo
         telegram_api_key: values.telegram_api_key || null,
         telegram_chat_id: values.telegram_chat_id || null,
         groq_api_key: values.groq_api_key || null,
@@ -207,6 +211,20 @@ const Settings: React.FC = () => {
                 </p>
               )}
             </div>
+            <div className="mt-4">
+              <Label htmlFor="evolution_api_instance_name" className="text-foreground">Nome da Instância da Evolution API</Label>
+              <Input
+                id="evolution_api_instance_name"
+                {...form.register("evolution_api_instance_name")}
+                placeholder="Ex: minha-instancia-whatsapp"
+                className="bg-input border-border text-foreground focus-visible:ring-ring"
+              />
+              {form.formState.errors.evolution_api_instance_name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {form.formState.errors.evolution_api_instance_name.message}
+                </p>
+              )}
+            </div>
             <div className="border-t border-border pt-4 mt-4">
               <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de Notificação</h3>
               <div>
@@ -280,8 +298,13 @@ const Settings: React.FC = () => {
                   </div>
                 </>
               )}
+              {notificationChannel === "web_push" && (
+                <div className="mt-4">
+                  <WebPushToggle /> {/* Integrar o novo componente aqui */}
+                </div>
+              )}
               {notificationChannel !== "none" && (
-                <div className="flex flex-col gap-2 mt-4"> {/* Adicionado flex-col e gap-2 para botões */}
+                <div className="flex flex-col gap-2 mt-4">
                   <Button
                     type="button"
                     onClick={handleSendTestNotification}
