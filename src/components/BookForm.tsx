@@ -23,6 +23,7 @@ const bookSchema = z.object({
   author: z.string().optional(),
   cover_image_url: z.string().url("URL da capa inválida.").optional().or(z.literal("")),
   description: z.string().optional(),
+  content: z.string().optional(), // Novo campo para o conteúdo do livro
   read_status: z.enum(["unread", "reading", "finished"]).default("unread"),
 });
 
@@ -41,6 +42,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
       author: "",
       cover_image_url: "",
       description: "",
+      content: "", // Valor padrão para o conteúdo
       read_status: "unread",
     },
   });
@@ -53,6 +55,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
         author: values.author || null,
         cover_image_url: values.cover_image_url || null,
         description: values.description || null,
+        content: values.content || null, // Salvar o conteúdo do livro
         read_status: values.read_status,
         // user_id: auth.uid() // Descomentar quando a autenticação for reativada
       });
@@ -110,6 +113,16 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose }) => {
           id="description"
           {...form.register("description")}
           placeholder="Uma breve descrição do livro..."
+        />
+      </div>
+      <div>
+        <Label htmlFor="content">Conteúdo do Livro (Opcional)</Label>
+        <Textarea
+          id="content"
+          {...form.register("content")}
+          placeholder="Cole o texto completo do livro aqui..."
+          rows={10}
+          className="min-h-[150px]"
         />
       </div>
       <div>
