@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { NavLink } from "react-router-dom"; // Importar NavLink para consistência
+import { NavLink } from "react-router-dom";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -47,8 +47,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
                 }
-              >
+                >
                 Metas
+              </NavLink>
+              <NavLink
+                to="/books" // Novo link para Books
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`
+                }
+              >
+                Livros
               </NavLink>
               <NavLink
                 to="/motivation"

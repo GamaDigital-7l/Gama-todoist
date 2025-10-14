@@ -7,8 +7,9 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
-import Motivation from "./pages/Motivation"; // Importando a nova página
-import Settings from "./pages/Settings";     // Importando a nova página
+import Motivation from "./pages/Motivation";
+import Settings from "./pages/Settings";
+import Books from "./pages/Books"; // Importando a nova página Books
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,8 +26,9 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/goals" element={<Goals />} />
-            <Route path="/motivation" element={<Motivation />} /> {/* Nova rota */}
-            <Route path="/settings" element={<Settings />} />     {/* Nova rota */}
+            <Route path="/motivation" element={<Motivation />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/books" element={<Books />} /> {/* Nova rota para Books */}
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

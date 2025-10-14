@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { NavLink, Link } from "react-router-dom"; // Usar NavLink para destacar o link ativo
-import { Home, ListTodo, Target, Sparkles, Settings } from "lucide-react";
+import { NavLink, Link } from "react-router-dom";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen } from "lucide-react"; // Importar BookOpen
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -55,6 +55,18 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             >
               <Target className="h-4 w-4" />
               Metas
+            </NavLink>
+            <NavLink
+              to="/books" // Novo link para Books
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  isActive ? "bg-muted text-primary" : "text-muted-foreground"
+                )
+              }
+            >
+              <BookOpen className="h-4 w-4" /> {/* Ícone para Books */}
+              Livros
             </NavLink>
             <NavLink
               to="/motivation"
