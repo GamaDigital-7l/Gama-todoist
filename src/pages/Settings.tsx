@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/select";
 
 const settingsSchema = z.object({
-  evolution_api_key: z.string().optional(),
-  telegram_api_key: z.string().optional(),
-  telegram_chat_id: z.string().optional(),
-  groq_api_key: z.string().optional(),
-  openai_api_key: z.string().optional(),
+  evolution_api_key: z.string().nullable().optional(),
+  telegram_api_key: z.string().nullable().optional(),
+  telegram_chat_id: z.string().nullable().optional(),
+  groq_api_key: z.string().nullable().optional(),
+  openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
 });
 
