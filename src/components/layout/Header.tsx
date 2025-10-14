@@ -60,6 +60,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 Livros
               </NavLink>
               <NavLink
+                to="/study" // Novo link para estudos
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
+                }
+              >
+                Estudos
+              </NavLink>
+              <NavLink
                 to="/motivation"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
@@ -68,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 Motivação
               </NavLink>
               <NavLink
-                to="/ai-chat" // Novo link para o chat de IA
+                to="/ai-chat"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }

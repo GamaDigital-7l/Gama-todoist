@@ -11,7 +11,8 @@ import Motivation from "./pages/Motivation";
 import Settings from "./pages/Settings";
 import Books from "./pages/Books";
 import BookReader from "./pages/BookReader";
-import AIChat from "./pages/AIChat"; // Importar a nova página de chat
+import AIChat from "./pages/AIChat";
+import Study from "./pages/Study"; // Importar a nova página de estudo
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -59,7 +60,8 @@ const App = () => (
                 <Route path="/books" element={<Books />} />
                 <Route path="/books/:id" element={<BookReader />} />
                 <Route path="/motivation" element={<Motivation />} />
-                <Route path="/ai-chat" element={<AIChat />} /> {/* Nova rota para o chat de IA */}
+                <Route path="/ai-chat" element={<AIChat />} />
+                <Route path="/study" element={<Study />} /> {/* Nova rota para estudos */}
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
