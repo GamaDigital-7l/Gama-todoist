@@ -257,7 +257,7 @@ const DashboardTaskList: React.FC = () => {
                     {task.title}
                   </label>
                   {task.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p> // flex-grow min-w-0 para permitir que o texto encolha
                   )}
                   {task.time && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

@@ -232,7 +232,7 @@ const Tasks: React.FC = () => {
                   {task.title}
                 </label>
                 {task.description && (
-                  <p className="text-sm text-muted-foreground break-words">{task.description}</p> {/* break-words para quebrar palavras longas */}
+                  <p className="text-sm text-muted-foreground break-words">{task.description}</p> // break-words para quebrar palavras longas
                 )}
                 {task.due_date && task.recurrence_type === "none" && (
                   <p className="text-xs text-muted-foreground">
