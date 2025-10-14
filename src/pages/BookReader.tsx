@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -71,7 +70,7 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <MadeWithDyad />
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -82,7 +81,7 @@ const BookReader: React.FC = () => {
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <h1 className="text-3xl font-bold">Carregando Livro...</h1>
         <p className="text-lg text-muted-foreground">Preparando sua leitura.</p>
-        <MadeWithDyad />
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -96,7 +95,7 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <MadeWithDyad />
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -109,7 +108,7 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <MadeWithDyad />
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -167,9 +166,7 @@ const BookReader: React.FC = () => {
         )}
       </div>
 
-      <div className="flex-1 flex items-end justify-center mt-8">
-        <MadeWithDyad />
-      </div>
+      {/* MadeWithDyad removido */}
     </div>
   );
 };

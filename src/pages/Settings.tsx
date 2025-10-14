@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,9 +148,7 @@ const Settings: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="flex-1 flex items-end justify-center">
-        <MadeWithDyad />
-      </div>
+      {/* MadeWithDyad removido */}
     </div>
   );
 };

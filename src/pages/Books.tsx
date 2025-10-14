@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -44,9 +43,7 @@ const Books: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-muted-foreground">Carregando seus livros...</p>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -57,9 +54,7 @@ const Books: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-red-500">Erro ao carregar livros: {error.message}</p>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        {/* MadeWithDyad removido */}
       </div>
     );
   }
@@ -122,7 +117,7 @@ const Books: React.FC = () => {
       )}
 
       <div className="flex-1 flex items-end justify-center">
-        <MadeWithDyad />
+        {/* MadeWithDyad removido */}
       </div>
     </div>
   );

@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Importar CardDescription
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 
 const Motivation: React.FC = () => {
@@ -30,9 +29,7 @@ const Motivation: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="flex-1 flex items-end justify-center">
-        <MadeWithDyad />
-      </div>
+      {/* MadeWithDyad removido */}
     </div>
   );
 };

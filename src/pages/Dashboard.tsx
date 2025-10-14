@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target } from "lucide-react";
 import DailyMotivation from "@/components/DailyMotivation";
@@ -165,9 +164,7 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="flex-1 flex items-end justify-center mt-8">
-        <MadeWithDyad />
-      </div>
+      {/* MadeWithDyad removido */}
     </div>
   );
 };
