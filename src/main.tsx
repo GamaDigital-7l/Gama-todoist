@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./globals.css";
 import { pdfjs } from "react-pdf"; // Importar pdfjs
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.js?url'; // Importar o worker usando a sintaxe ?url do Vite
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry.js?url'; // Importar o worker usando a sintaxe ?url do Vite
 
 // Definir o workerSrc para o arquivo local do pdfjs-dist
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
