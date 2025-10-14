@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api"; // Importação corrigida para PDFDocumentProxy
+import { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Importação corrigida para PDFDocumentProxy
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";
@@ -11,36 +11,66 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { useParams, useNavigate } from "react-router-dom"; // Importar useParams e useNavigate
+import { useQuery } from "@tanstack/react-query"; // Importar useQuery
+import { supabase } from "@/integrations/supabase/client"; // Importar supabase
+import { showError } from "@/utils/toast"; // Importar showError
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
-interface BookReaderFullScreenProps {
-  bookUrl: string;
-  onClose: () => void;
+interface Book {
+  id: string;
+  title: string;
+  pdf_url?: string;
 }
 
-const BookReaderFullScreen: React.FC<BookReaderFullScreenProps> = ({ bookUrl, onClose }) => {
+// Removendo props bookUrl e onClose, pois serão gerenciadas internamente
+const BookReaderFullScreen: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); // Obter o ID do livro da URL
+  const navigate = useNavigate(); // Para navegação
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState<boolean>(true); // Estado de carregamento do PDF
+  const [pdfError, setPdfError] = useState<string | null>(null); // Erro de carregamento do PDF
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
 
+  // Função para buscar os detalhes do livro, incluindo a URL do PDF
+  const fetchBookById = async (bookId: string): Promise<Book | null> => {
+    const { data, error } = await supabase
+      .from("books")
+      .select("id, title, pdf_url")
+      .eq("id", bookId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    return data || null;
+  };
+
+  const { data: book, isLoading: isLoadingBook, error: bookFetchError } = useQuery<Book | null, Error>({
+    queryKey: ["bookPdf", id],
+    queryFn: () => fetchBookById(id!),
+    enabled: !!id,
+  });
+
+  const bookUrl = book?.pdf_url; // A URL do PDF agora vem dos dados do livro
+
   const onDocumentLoadSuccess = ({ numPages }: PDFDocumentProxy) => {
     setNumPages(numPages);
-    setLoading(false);
-    setError(null);
+    setLoadingPdf(false);
+    setPdfError(null);
   };
 
   const onDocumentLoadError = (err: Error) => {
     console.error("Failed to load PDF:", err);
-    setError("Não foi possível carregar o PDF. Verifique a URL ou tente novamente.");
-    setLoading(false);
+    setPdfError("Não foi possível carregar o PDF. Verifique a URL ou tente novamente.");
+    setLoadingPdf(false);
     toast({
       title: "Erro ao carregar livro",
       description: "Não foi possível carregar o PDF. Verifique a URL ou tente novamente.",
@@ -100,11 +130,61 @@ const BookReaderFullScreen: React.FC<BookReaderFullScreenProps> = ({ bookUrl, on
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const handleClose = () => {
+    navigate(`/books/${id}`); // Navegar de volta para a página de detalhes do livro
+  };
+
+  if (!id) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+        <h1 className="text-3xl font-bold">Erro</h1>
+        <p className="text-lg text-muted-foreground">ID do livro não fornecido.</p>
+        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoadingBook) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h1 className="text-3xl font-bold mt-4">Carregando detalhes do livro...</h1>
+      </div>
+    );
+  }
+
+  if (bookFetchError) {
+    showError("Erro ao carregar detalhes do livro: " + bookFetchError.message);
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+        <h1 className="text-3xl font-bold text-red-500">Erro ao Carregar Livro</h1>
+        <p className="text-lg text-muted-foreground">Ocorreu um erro: {bookFetchError.message}</p>
+        <Button onClick={() => navigate("/books")} className="mt-4 w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
+        </Button>
+      </div>
+    );
+  }
+
+  if (!book || !bookUrl) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+        <h1 className="text-3xl font-bold">PDF Não Encontrado</h1>
+        <p className="text-lg text-muted-foreground">O PDF para este livro não está disponível.</p>
+        <Button onClick={handleClose} className="mt-4 w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Detalhes do Livro
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground">
       {/* Top Bar */}
       <div className="flex items-center justify-between p-2 border-b border-border bg-card shadow-sm">
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
@@ -147,19 +227,19 @@ const BookReaderFullScreen: React.FC<BookReaderFullScreenProps> = ({ bookUrl, on
 
       {/* PDF Viewer Area */}
       <div ref={containerRef} className="flex-1 overflow-auto flex justify-center items-center p-4">
-        {loading && (
+        {(isLoadingBook || loadingPdf) && (
           <div className="flex flex-col items-center text-muted-foreground">
             <Loader2 className="h-10 w-10 animate-spin mb-4" />
             <p>Carregando livro...</p>
           </div>
         )}
-        {error && (
+        {pdfError && (
           <div className="text-center text-red-500">
-            <p>{error}</p>
-            <Button onClick={onClose} className="mt-4">Voltar</Button>
+            <p>{pdfError}</p>
+            <Button onClick={handleClose} className="mt-4">Voltar</Button>
           </div>
         )}
-        {!loading && !error && (
+        {!isLoadingBook && !loadingPdf && !pdfError && bookUrl && (
           <Document
             file={bookUrl}
             onLoadSuccess={onDocumentLoadSuccess}
