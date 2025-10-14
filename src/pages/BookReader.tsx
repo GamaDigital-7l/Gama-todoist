@@ -1,25 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
+
+// Configura o worker do pdf.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface Book {
   id: string;
   title: string;
   author?: string;
   content?: string;
+  pdf_url?: string; // Adicionando pdf_url à interface
 }
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
     .from("books")
-    .select("id, title, author, content")
+    .select("id, title, author, content, pdf_url") // Incluir pdf_url na seleção
     .eq("id", bookId)
     .single();
 
@@ -33,11 +40,26 @@ const BookReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book", id],
     queryFn: () => fetchBookById(id!),
     enabled: !!id, // Só executa a query se o ID estiver disponível
   });
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPageNumber(1); // Reset para a primeira página ao carregar um novo documento
+  };
+
+  const changePage = (offset: number) => {
+    setPageNumber(prevPageNumber => Math.max(1, Math.min(prevPageNumber + offset, numPages || 1)));
+  };
+
+  const previousPage = () => changePage(-1);
+  const nextPage = () => changePage(1);
 
   if (!id) {
     return (
@@ -47,21 +69,18 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        <MadeWithDyad />
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 lg:p-6">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <h1 className="text-3xl font-bold">Carregando Livro...</h1>
         <p className="text-lg text-muted-foreground">Preparando sua leitura.</p>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        <MadeWithDyad />
       </div>
     );
   }
@@ -75,9 +94,7 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        <MadeWithDyad />
       </div>
     );
   }
@@ -90,9 +107,7 @@ const BookReader: React.FC = () => {
         <Button onClick={() => navigate("/books")} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
-        <div className="flex-1 flex items-end justify-center">
-          <MadeWithDyad />
-        </div>
+        <MadeWithDyad />
       </div>
     );
   }
@@ -110,13 +125,39 @@ const BookReader: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 border rounded-lg bg-card text-card-foreground leading-relaxed text-justify">
-        {book.content ? (
-          // Usar dangerouslySetInnerHTML para renderizar o conteúdo, se houver HTML
-          // Caso contrário, apenas exibir o texto
-          <div dangerouslySetInnerHTML={{ __html: book.content.replace(/\n/g, '<br />') }} />
+      <div className="flex-1 flex flex-col items-center justify-center p-4 border rounded-lg bg-card text-card-foreground overflow-hidden">
+        {book.pdf_url ? (
+          <>
+            <div className="flex-1 overflow-auto w-full flex justify-center">
+              <Document
+                file={book.pdf_url}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={(error) => showError("Erro ao carregar PDF: " + error.message)}
+                className="max-w-full h-full"
+              >
+                <Page pageNumber={pageNumber} renderTextLayer={true} renderAnnotationLayer={true} />
+              </Document>
+            </div>
+            {numPages && (
+              <div className="flex items-center gap-4 mt-4">
+                <Button onClick={previousPage} disabled={pageNumber <= 1}>
+                  Página Anterior
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Página {pageNumber} de {numPages}
+                </p>
+                <Button onClick={nextPage} disabled={pageNumber >= numPages}>
+                  Próxima Página
+                </Button>
+              </div>
+            )}
+          </>
+        ) : book.content ? (
+          <div className="flex-1 overflow-y-auto p-4 w-full leading-relaxed text-justify">
+            <div dangerouslySetInnerHTML={{ __html: book.content.replace(/\n/g, '<br />') }} />
+          </div>
         ) : (
-          <p className="text-muted-foreground">Nenhum conteúdo de livro disponível para leitura.</p>
+          <p className="text-muted-foreground">Nenhum conteúdo de livro ou PDF disponível para leitura.</p>
         )}
       </div>
 
