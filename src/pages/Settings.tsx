@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BellRing } from "lucide-react";
 
 const settingsSchema = z.object({
   evolution_api_key: z.string().nullable().optional(),
@@ -33,6 +34,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const Settings: React.FC = () => {
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -102,6 +104,26 @@ const Settings: React.FC = () => {
     } catch (error: any) {
       showError("Erro ao salvar configurações: " + error.message);
       console.error("Erro ao salvar configurações:", error);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    setIsSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-telegram-notifications', {
+        body: {}, // O corpo pode ser vazio, a função buscará as tarefas
+      });
+
+      if (error) {
+        throw error;
+      }
+      showSuccess("Notificação de teste enviada com sucesso! Verifique seu canal.");
+      console.log("Resposta da notificação de teste:", data);
+    } catch (err: any) {
+      showError("Erro ao enviar notificação de teste: " + err.message);
+      console.error("Erro ao enviar notificação de teste:", err);
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -208,6 +230,17 @@ const Settings: React.FC = () => {
                     )}
                   </div>
                 </>
+              )}
+              {notificationChannel !== "none" && (
+                <Button
+                  type="button"
+                  onClick={handleSendTestNotification}
+                  disabled={isSendingTest}
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 mt-4"
+                >
+                  <BellRing className="mr-2 h-4 w-4" />
+                  {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
+                </Button>
               )}
             </div>
 
