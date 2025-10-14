@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api"; // Correct import for PDFDocumentProxy
+import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api"; // Importação corrigida para PDFDocumentProxy
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";

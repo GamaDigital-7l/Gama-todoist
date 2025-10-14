@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Edit, Trash2, Search, XCircle, Tag as TagIcon } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Edit, Trash2, Search, XCircle, Tag as TagIcon, Check as CheckIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ interface Task {
   due_date: string | null;
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
-  tags: Tag[]; // Adicionando a propriedade tags
+  tags?: Tag[]; // Tornando a propriedade tags opcional
 }
 
 const taskSchema = z.object({
@@ -154,7 +154,7 @@ const Tasks: React.FC = () => {
         due_date: task.due_date,
         completed: task.completed,
         priority: task.priority,
-        tag_ids: task.tags.map(tag => tag.id),
+        tag_ids: task.tags?.map(tag => tag.id), // Usar encadeamento opcional aqui também
       });
       setSelectedDate(task.due_date ? new Date(task.due_date) : undefined);
     } else {
@@ -377,7 +377,7 @@ const Tasks: React.FC = () => {
                 {task.description && (
                   <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                 )}
-                {task.tags && task.tags.length > 0 && (
+                {task.tags?.length > 0 && ( {/* Usando encadeamento opcional */}
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
                       <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
