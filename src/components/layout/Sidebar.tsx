@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react"; // Importar NotebookText
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -92,8 +92,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <HeartPulse className="h-4 w-4" />
               Saúde
             </NavLink>
+            {/* Novo link para Notas */}
             <NavLink
-              to="/notes" {/* Novo link para Notas */}
+              to="/notes"
               className={({ isActive }) =>
                 cn(
                   "nav-link-base",
@@ -101,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 )
               }
             >
-              <NotebookText className="h-4 w-4" /> {/* Ícone para Notas */}
+              <NotebookText className="h-4 w-4" />
               Notas
             </NavLink>
             <NavLink
