@@ -5,8 +5,8 @@ export interface Tag {
 }
 
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
-export type TaskType = "general" | "reading" | "exercise" | "study" | "cliente_fixo" | "frella" | "agencia" | "copa_2001"; // Atualizado
-export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today"; // Atualizado
+export type TaskType = "general" | "reading" | "exercise" | "study" | "cliente_fixo" | "frella" | "agencia" | "copa_2001";
+export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today";
 
 export interface Task {
   id: string;
@@ -19,7 +19,7 @@ export interface Task {
   recurrence_details?: string | null;
   task_type: TaskType;
   target_value?: number | null;
-  current_daily_target?: number | null;
+  // current_daily_target?: number | null; // Removido
   last_successful_completion_date?: string | null;
   origin_board: OriginBoard; // Novo campo para o quadro de origem
   created_at: string;

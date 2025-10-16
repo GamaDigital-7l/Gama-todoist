@@ -9,12 +9,22 @@ import { showError, showSuccess } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { OriginBoard } from "@/types/task";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 interface QuickAddTaskInputProps {
   originBoard: OriginBoard;
   onTaskAdded: () => void;
 }
+
+// Função para sanitizar o nome da tag
+const sanitizeTagName = (name: string) => {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s-]/g, "")
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+};
 
 const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTaskAdded }) => {
   const { session } = useSession();
@@ -34,54 +44,25 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
     setIsLoading(true);
 
     try {
-      // Usar IA para parsear o input de texto natural
-      const prompt = `Parse the following natural language task description into a JSON object.
-      The task should be assigned to the board "${originBoard}".
-      If a due date is mentioned (e.g., "tomorrow", "next monday", "on 25/12"), convert it to "YYYY-MM-DD" format. If no year is specified, assume the current year. If "today" is mentioned, use today's date. If no date is mentioned, set due_date to null.
-      If a time is mentioned (e.g., "at 9am", "14:30"), convert it to "HH:mm" format. If no time is mentioned, set time to null.
-      Identify if the task is recurrent (e.g., "daily", "every monday", "monthly on the 15th").
-      For weekly recurrence, recurrence_details should be a comma-separated string of day names (e.g., "Monday,Wednesday").
-      For monthly recurrence, recurrence_details should be the day of the month (e.g., "15").
-      For daily recurrence, recurrence_details should be null.
-      If no recurrence is mentioned, set recurrence_type to "none" and recurrence_details to null.
-      Identify task type (general, reading, exercise, study) and target value if applicable (e.g., "read 10 pages", "run 30 minutes", "study 2 hours"). For 'study', target value is in minutes.
-      The output JSON should have the following keys: "title", "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".
-      Example 1: "adicionar revisar proposta amanhã 9h urgente" -> {"title": "Revisar proposta", "description": null, "due_date": "YYYY-MM-DD", "time": "09:00", "recurrence_type": "none", "recurrence_details": null, "task_type": "general", "target_value": null}
-      Example 2: "correr 30 minutos diariamente" -> {"title": "Correr", "description": "Correr por 30 minutos", "due_date": null, "time": null, "recurrence_type": "daily", "recurrence_details": null, "task_type": "exercise", "target_value": 30}
-      Example 3: "estudar react por 2 horas toda terça" -> {"title": "Estudar React", "description": "Estudar React por 2 horas", "due_date": null, "time": null, "recurrence_type": "weekly", "recurrence_details": "Tuesday", "task_type": "study", "target_value": 120}
-      Example 4: "ler 20 paginas do livro de historia" -> {"title": "Ler livro de história", "description": "Ler 20 páginas do livro de história", "due_date": null, "time": null, "recurrence_type": "none", "recurrence_details": null, "task_type": "reading", "target_value": 20}
-      
-      Task: "${input}"`;
-
-      const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-chat', {
-        body: { messages: [{ role: "user", content: prompt }] },
-      });
-
-      if (aiError) {
-        throw aiError;
-      }
-
-      const parsedTask = JSON.parse(aiData.response);
-
-      // Ajustar due_date e tags com base no originBoard
-      let finalDueDate = parsedTask.due_date;
-      let finalTags = [];
-
+      // Valores padrão para a tarefa rápida
+      let finalDueDate: string | null = null;
+      let finalTags: string[] = [];
       let tagName: string | undefined;
       let tagColor: string | undefined;
 
+      // Define a data de vencimento e tags com base no originBoard
       if (originBoard === "today_priority") {
-        finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
+        finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
-        tagColor = '#EF4444'; // Vermelho
+        tagColor = '#EF4444';
       } else if (originBoard === "today_no_priority") {
-        finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
+        finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-sem-prioridade';
-        tagColor = '#3B82F6'; // Azul
+        tagColor = '#3B82F6';
       } else if (originBoard === "jobs_woe_today") {
-        finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
+        finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'jobs-woe-hoje';
-        tagColor = '#8B5CF6'; // Roxo
+        tagColor = '#8B5CF6';
       }
 
       if (tagName && tagColor) {
@@ -104,7 +85,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
             .select('id')
             .single();
           if (createTagError) throw createTagError;
-          finalTags.push(newTag.id);
+          tagId = newTag.id;
         }
         if (tagId) {
           finalTags.push(tagId);
@@ -113,15 +94,15 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       const { data: newTask, error: insertError } = await supabase.from("tasks").insert({
         user_id: userId,
-        title: parsedTask.title,
-        description: parsedTask.description || null,
+        title: input, // O input do usuário é o título
+        description: null, // Sem descrição por padrão
         due_date: finalDueDate,
-        time: parsedTask.time || null,
-        recurrence_type: parsedTask.recurrence_type || "none",
-        recurrence_details: parsedTask.recurrence_details || null,
-        task_type: parsedTask.task_type || "general",
-        target_value: parsedTask.target_value || null,
-        origin_board: originBoard, // Define o quadro de origem
+        time: null,
+        recurrence_type: "none", // Não recorrente por padrão
+        recurrence_details: null,
+        task_type: "general", // Tipo geral por padrão
+        target_value: null,
+        origin_board: originBoard,
         is_completed: false,
       }).select("id").single();
 
@@ -150,23 +131,23 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2"> {/* Alterado para flex-col em mobile, flex-row em sm+ */}
+    <div className="flex flex-col sm:flex-row gap-2">
       <Input
         type="text"
-        placeholder="Adicionar tarefa rapidamente (ex: 'revisar proposta amanhã 9h urgente')"
+        placeholder="Adicionar tarefa rapidamente (ex: 'Comprar pão')"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
         className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
         disabled={isLoading}
       />
-      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <PlusCircle className="h-4 w-4" />
         )}
-        <span className="sr-only sm:not-sr-only sm:ml-2">Adicionar</span> {/* Texto visível em sm+ */}
+        <span className="sr-only sm:not-sr-only sm:ml-2">Adicionar</span>
       </Button>
     </div>
   );

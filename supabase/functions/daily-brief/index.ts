@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import Groq from "https://esm.sh/groq-sdk@0.4.0";
-import OpenAI from "https://esm.sh/openai@4.52.2";
 import { format, isToday, getDay, parseISO, isThisWeek, isThisMonth } from "https://esm.sh/date-fns@2.30.0"; // Adicionado isThisWeek, isThisMonth
 import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
 import webpush from "https://esm.sh/web-push@3.6.2";
@@ -72,7 +70,7 @@ serve(async (req) => {
 
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("groq_api_key, openai_api_key, ai_provider_preference, notification_channel")
+      .select("notification_channel") // Removido campos de IA
       .eq("user_id", userId)
       .limit(1)
       .single();
@@ -86,7 +84,6 @@ serve(async (req) => {
     }
 
     const NOTIFICATION_CHANNEL = settings?.notification_channel || "web_push";
-    const AI_PROVIDER = settings?.ai_provider_preference || "groq";
 
     if (NOTIFICATION_CHANNEL === "none") {
       return new Response(
@@ -111,25 +108,6 @@ serve(async (req) => {
       VAPID_PRIVATE_KEY!
     );
 
-    let aiClient;
-    if (AI_PROVIDER === "groq") {
-      if (!settings?.groq_api_key) {
-        return new Response(
-          JSON.stringify({ error: "Groq API Key not configured." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      aiClient = new Groq({ apiKey: settings.groq_api_key });
-    } else {
-      if (!settings?.openai_api_key) {
-        return new Response(
-          JSON.stringify({ error: "OpenAI API Key not configured." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      aiClient = new OpenAI({ apiKey: settings.openai_api_key });
-    }
-
     const { timeOfDay } = await req.json(); // 'morning', 'evening' ou 'test_notification'
 
     // Obter a data e hora atual no fuso horário de São Paulo
@@ -148,7 +126,7 @@ serve(async (req) => {
     } else {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type, is_completed, last_successful_completion_date") // Adicionado is_completed e last_successful_completion_date
+        .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type, is_completed, last_successful_completion_date")
         .eq("user_id", userId)
         .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
 
@@ -183,42 +161,25 @@ serve(async (req) => {
         } else if (task.due_date) {
           return format(parseISO(task.due_date), "yyyy-MM-dd") === todaySaoPaulo;
         }
-        return isTaskDueToday && !getAdjustedTaskCompletionStatus(task); // Filtrar apenas tarefas não concluídas para o período
+        return isTaskDueToday && !getAdjustedTaskCompletionStatus(task);
       });
 
-      const taskList = todayTasks.map(task => `- ${task.title}${task.time ? ` às ${task.time}` : ''} (Tipo: ${task.task_type})`).join("\n"); // Incluído o tipo de tarefa no prompt
-
-      const prompt = `Crie um breve resumo motivacional para a ${timeOfDay === 'morning' ? 'manhã' : 'noite'}. Inclua:
-      - 3 pontos principais para focar hoje (baseado nas tarefas: ${taskList || 'Nenhuma tarefa importante.'}).
-      - 1 hábito sagrado para praticar hoje.
-      - 1 micro-meta alcançável para o dia.
-      - Uma previsão de bloqueios potenciais (ex: "Cuidado com distrações no meio da tarde").
-      Os tipos de tarefa podem ser: general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001.
-      Formate a resposta em JSON com as chaves: "main_points", "sacred_habit", "micro_goal", "potential_blockages".`;
-
-      const chatCompletion = await aiClient.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: AI_PROVIDER === "groq" ? "llama3-8b-8192" : "gpt-3.5-turbo",
-        response_format: { type: "json_object" },
-      });
-
-      const aiResponse = JSON.parse(chatCompletion.choices[0].message.content || '{}');
-
+      // Geração de mensagem estática ou simplificada, sem IA
       notificationTitle = timeOfDay === 'morning' ? "Seu Brief da Manhã" : "Seu Brief da Noite";
-      briefMessage = `☀️ *Seu Brief da ${timeOfDay === 'morning' ? 'Manhã' : 'Noite'}*\n\n`;
-      if (aiResponse.main_points) {
-        briefMessage += `🎯 *Foco do Dia:*\n${aiResponse.main_points.map((p: string) => `• ${p}`).join('\n')}\n\n`;
+      briefMessage = `Olá! Aqui está seu resumo para a ${timeOfDay === 'morning' ? 'manhã' : 'noite'}:\n\n`;
+
+      if (todayTasks.length > 0) {
+        briefMessage += `Você tem ${todayTasks.length} tarefas pendentes para hoje:\n`;
+        todayTasks.slice(0, 3).forEach(task => { // Limita a 3 tarefas para o resumo
+          briefMessage += `- ${task.title}${task.time ? ` às ${task.time}` : ''}\n`;
+        });
+        if (todayTasks.length > 3) {
+          briefMessage += `...e mais ${todayTasks.length - 3} tarefas!\n`;
+        }
+      } else {
+        briefMessage += "Nenhuma tarefa pendente para hoje. Ótimo trabalho!\n";
       }
-      if (aiResponse.sacred_habit) {
-        briefMessage += `🧘‍♀️ *Hábito Sagrado:*\n_${aiResponse.sacred_habit}_\n\n`;
-      }
-      if (aiResponse.micro_goal) {
-        briefMessage += `🚀 *Micro-Meta:*\n_${aiResponse.micro_goal}_\n\n`;
-      }
-      if (aiResponse.potential_blockages) {
-        briefMessage += `🚧 *Atenção:*\n_${aiResponse.potential_blockages}_\n\n`;
-      }
-      briefMessage += `Tenha um dia produtivo!`;
+      briefMessage += `\nTenha um dia produtivo!`;
     }
 
     // Enviar notificação Web Push
@@ -246,7 +207,7 @@ serve(async (req) => {
           subRecord.subscription as webpush.PushSubscription,
           JSON.stringify({
             title: notificationTitle,
-            body: briefMessage.replace(/\*/g, "").replace(/_/g, ""), // Remover Markdown para o corpo da notificação
+            body: briefMessage,
             url: notificationUrl,
           })
         );
@@ -260,8 +221,6 @@ serve(async (req) => {
       }
     });
     await Promise.all(pushPromises);
-
-    // A inserção na tabela daily_motivations foi removida.
 
     return new Response(JSON.stringify({ message: "Brief da manhã/notificação de teste enviado com sucesso!" }), {
       status: 200,

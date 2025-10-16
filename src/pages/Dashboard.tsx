@@ -4,7 +4,6 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
 import DashboardTaskList from "@/components/DashboardTaskList"; // Agora é o quadro "Geral"
-import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -350,7 +349,7 @@ const Dashboard: React.FC = () => {
         <DashboardTaskList /> {/* Este agora é o quadro "Geral" */}
       </div>
 
-      <TaskAIHelper />
+      {/* TaskAIHelper removido daqui */}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">

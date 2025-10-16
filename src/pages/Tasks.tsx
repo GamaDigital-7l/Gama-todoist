@@ -11,11 +11,10 @@ import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
+import { Trash2, Repeat, Clock, Edit, PlusCircle, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask } from "@/types/task"; // Importar Task, Tag, TemplateTask e constantes
 import TaskItem from "@/components/TaskItem"; // Importar o novo componente TaskItem
@@ -84,8 +83,7 @@ const Tasks: React.FC = () => {
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
-  const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
-  const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
+  // isObstacleCoachOpen e selectedTaskForCoach removidos
 
   const [isTemplateFormOpen, setIsTemplateFormOpen] = React.useState(false);
   const [editingTemplateTask, setEditingTemplateTask] = React.useState<TemplateTask | undefined>(undefined);
@@ -173,10 +171,7 @@ const Tasks: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleOpenObstacleCoach = (task: Task) => {
-    setSelectedTaskForCoach(task);
-    setIsObstacleCoachOpen(true);
-  };
+  // handleOpenObstacleCoach removido
 
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
     const today = new Date();
@@ -386,14 +381,7 @@ const Tasks: React.FC = () => {
         </Card>
       </div>
 
-      {selectedTaskForCoach && (
-        <TaskObstacleCoach
-          isOpen={isObstacleCoachOpen}
-          onClose={() => setIsObstacleCoachOpen(false)}
-          taskTitle={selectedTaskForCoach.title}
-          taskDescription={selectedTaskForCoach.description}
-        />
-      )}
+      {/* TaskObstacleCoach removido */}
     </div>
   );
 };

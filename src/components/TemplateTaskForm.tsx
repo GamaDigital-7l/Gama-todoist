@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Brain, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react"; // Brain removido
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
@@ -81,7 +81,7 @@ interface TemplateTaskFormProps {
 const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemplateTaskSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
-  const [isGeneratingAISuggestions, setIsGeneratingAISuggestions] = useState(false);
+  // isGeneratingAISuggestions removido
 
   const form = useForm<TemplateTaskFormValues>({
     resolver: zodResolver(templateTaskSchema),
@@ -139,7 +139,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       return;
     }
 
-    console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values);
+    // console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values); // Log de depuração removido
 
     try {
       let templateTaskId: string;
@@ -158,7 +158,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         updated_at: new Date().toISOString(),
       };
 
-      console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave);
+      // console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave); // Log de depuração removido
 
       if (initialData) {
         const { data, error } = await supabase
@@ -203,53 +203,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     }
   };
 
-  const handleGenerateAISuggestions = async () => {
-    const currentTitle = form.getValues("title");
-    const currentDescription = form.getValues("description");
-
-    if (!currentTitle && !currentDescription) {
-      showError("Por favor, insira um título ou descrição para a IA gerar sugestões.");
-      return;
-    }
-
-    setIsGeneratingAISuggestions(true);
-    try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um quadro de origem (general, today_priority, today_no_priority, jobs_woe_today), um tipo de tarefa (general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "recurrence_type", "recurrence_details", "origin_board", "task_type", "target_value".`;
-
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
-        body: { messages: [{ role: "user", content: prompt }] },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      const aiSuggestions = JSON.parse(data.response);
-
-      if (aiSuggestions.description) form.setValue("description", aiSuggestions.description);
-      if (aiSuggestions.recurrence_type) form.setValue("recurrence_type", aiSuggestions.recurrence_type);
-      if (aiSuggestions.recurrence_details) {
-        form.setValue("recurrence_details", aiSuggestions.recurrence_details);
-        if (aiSuggestions.recurrence_type === "weekly") {
-          setSelectedDays(aiSuggestions.recurrence_details.split(','));
-        }
-      } else {
-        form.setValue("recurrence_details", null);
-        setSelectedDays([]);
-      }
-      if (aiSuggestions.origin_board) form.setValue("origin_board", aiSuggestions.origin_board);
-      if (aiSuggestions.task_type) form.setValue("task_type", aiSuggestions.task_type);
-      if (aiSuggestions.target_value) form.setValue("target_value", aiSuggestions.target_value); else form.setValue("target_value", null);
-
-      showSuccess("Sugestões da IA aplicadas!");
-
-    } catch (err: any) {
-      showError("Erro ao gerar sugestões da IA: " + err.message);
-      console.error("Erro na chamada da Edge Function ai-chat para sugestões de tarefas padrão:", err);
-    } finally {
-      setIsGeneratingAISuggestions(false);
-    }
-  };
+  // handleGenerateAISuggestions removido
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
@@ -277,19 +231,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         />
       </div>
       
-      <Button
-        type="button"
-        onClick={handleGenerateAISuggestions}
-        disabled={isGeneratingAISuggestions || (!form.watch("title") && !form.watch("description"))}
-        className="w-full bg-blue-600 text-white hover:bg-blue-700"
-      >
-        {isGeneratingAISuggestions ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Brain className="mr-2 h-4 w-4" />
-        )}
-        Gerar Sugestões com IA
-      </Button>
+      {/* Botão de IA removido */}
 
       <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>

@@ -8,10 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, BookOpen, Dumbbell, Brain, GraduationCap, PlusCircle } from "lucide-react";
+import { Repeat, Clock, Edit, Trash2, BookOpen, Dumbbell, GraduationCap, PlusCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import { Task, DAYS_OF_WEEK_LABELS, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -29,8 +28,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   const { session } = useSession();
   const queryClient = useQueryClient();
 
-  const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
-  const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
   const [isSubtaskFormOpen, setIsSubtaskFormOpen] = React.useState(false);
@@ -153,10 +150,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     setIsTaskFormOpen(true);
   };
 
-  const handleOpenObstacleCoach = (task: Task) => {
-    setSelectedTaskForCoach(task);
-    setIsObstacleCoachOpen(true);
-  };
+  // handleOpenObstacleCoach removido
 
   const getRecurrenceText = (task: Task) => {
     switch (task.recurrence_type) {
@@ -276,10 +270,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             </DialogContent>
           </Dialog>
 
-          <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
-            <Brain className="h-4 w-4" />
-            <span className="sr-only">Obter Ajuda da IA</span>
-          </Button>
+          {/* Botão de IA removido */}
           <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Editar Tarefa</span>
@@ -291,14 +282,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
         </div>
       </div>
 
-      {selectedTaskForCoach && (
-        <TaskObstacleCoach
-          isOpen={isObstacleCoachOpen}
-          onClose={() => setIsObstacleCoachOpen(false)}
-          taskTitle={selectedTaskForCoach.title}
-          taskDescription={selectedTaskForCoach.description || undefined}
-        />
-      )}
+      {/* TaskObstacleCoach removido */}
 
       {isTaskFormOpen && (
         <Dialog
