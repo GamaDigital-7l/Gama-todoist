@@ -1,26 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { BellRing, Sun, CalendarCheck, Link as LinkIcon, Unlink } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
-import WebPushToggle from "@/components/WebPushToggle";
-import { useSearchParams } from "react-router-dom";
+import ProfileManagementCard from "@/components/settings/ProfileManagementCard";
+import IntegrationsCard from "@/components/settings/IntegrationsCard";
+import NotificationSettingsCard from "@/components/settings/NotificationSettingsCard";
+import AISettingsCard from "@/components/settings/AISettingsCard";
 
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
@@ -34,15 +24,12 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 const Settings: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
-  const userEmail = session?.user?.email; // Obter o e-mail da sessão
+  const userEmail = session?.user?.email;
+
   const [settingsId, setSettingsId] = useState<string | null>(null);
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [isSendingBriefTest, setIsSendingBriefTest] = useState(false);
-  const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
-  const [isUpdatingProfileEmail, setIsUpdatingProfileEmail] = useState(false); // Novo estado
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [isUpdatingProfileEmail, setIsUpdatingProfileEmail] = useState(false);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -54,7 +41,7 @@ const Settings: React.FC = () => {
     },
   });
 
-  const fetchSettingsAndGoogleStatus = async () => {
+  const fetchSettingsAndGoogleStatus = useCallback(async () => {
     if (!userId) return;
 
     const { data, error } = await supabase
@@ -73,8 +60,8 @@ const Settings: React.FC = () => {
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("google_access_token, email") // Também buscar o email do perfil
-      .eq("user_id", userId)
+      .select("google_access_token, email")
+      .eq("id", userId)
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
@@ -84,21 +71,11 @@ const Settings: React.FC = () => {
     } else {
       setIsGoogleConnected(false);
     }
-  };
+  }, [userId, form]);
 
   useEffect(() => {
     fetchSettingsAndGoogleStatus();
-
-    const googleAuthSuccess = searchParams.get("google_auth_success");
-    if (googleAuthSuccess === "true") {
-      showSuccess("Google Calendar conectado com sucesso!");
-      setSearchParams({}, { replace: true });
-      fetchSettingsAndGoogleStatus();
-    } else if (searchParams.get("google_auth_error")) {
-      showError("Erro ao conectar Google Calendar. Tente novamente.");
-      setSearchParams({}, { replace: true });
-    }
-  }, [form, userId, searchParams, setSearchParams]);
+  }, [fetchSettingsAndGoogleStatus]);
 
   const onSubmit = async (values: SettingsFormValues) => {
     if (!userId) {
@@ -142,169 +119,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSendTestNotification = async () => {
-    if (!userId) {
-      showError("Usuário não autenticado. Faça login para enviar notificações de teste.");
-      return;
-    }
-    setIsSendingTest(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('daily-brief', {
-        body: { timeOfDay: 'test_notification' },
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-      showSuccess("Notificação de teste enviada com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta da notificação de teste:", data);
-    } catch (err: any) {
-      showError("Erro ao enviar notificação de teste: " + err.message);
-      console.error("Erro ao enviar notificação de teste:", err);
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
-  const handleSendDailyBriefTest = async () => {
-    if (!userId) {
-      showError("Usuário não autenticado. Faça login para enviar o brief da manhã.");
-      return;
-    }
-    setIsSendingBriefTest(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('daily-brief', {
-        body: { timeOfDay: 'morning' },
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-      showSuccess("Brief da manhã enviado com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta do brief da manhã:", data);
-    } catch (err: any) {
-      showError("Erro ao enviar brief da manhã: " + err.message);
-      console.error("Erro ao enviar brief da manhã:", err);
-    } finally {
-      setIsSendingBriefTest(false);
-    }
-  };
-
-  const handleSendWeeklyBriefTest = async () => {
-    if (!userId) {
-      showError("Usuário não autenticado. Faça login para enviar o resumo semanal.");
-      return;
-    }
-    setIsSendingWeeklyBriefTest(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('weekly-brief', {
-        body: { type: 'weekly_brief' },
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-      showSuccess("Resumo semanal enviado com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta do resumo semanal:", data);
-    } catch (err: any) {
-      showError("Erro ao enviar resumo semanal: " + err.message);
-      console.error("Erro ao enviar resumo semanal:", err);
-    } finally {
-      setIsSendingWeeklyBriefTest(false);
-    }
-  };
-
-  const handleConnectGoogleCalendar = () => {
-    if (!userId) {
-      showError("Usuário não autenticado. Faça login para conectar o Google Calendar.");
-      return;
-    }
-    setIsConnectingGoogle(true);
-    // Construindo a URL da Edge Function manualmente
-    const googleOAuthInitUrl = `https://qbhwjmwyrkfyxajaksfk.supabase.co/functions/v1/google-oauth/init`;
-    window.location.href = googleOAuthInitUrl;
-  };
-
-  const handleDisconnectGoogleCalendar = async () => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (!window.confirm("Tem certeza que deseja desconectar o Google Calendar?")) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          google_access_token: null,
-          google_refresh_token: null,
-          google_token_expiry: null,
-          google_calendar_id: null,
-        })
-        .eq("user_id", userId);
-
-      if (error) throw error;
-      showSuccess("Google Calendar desconectado com sucesso!");
-      setIsGoogleConnected(false);
-    } catch (err: any) {
-      showError("Erro ao desconectar Google Calendar: " + err.message);
-      console.error("Erro ao desconectar Google Calendar:", err);
-    }
-  };
-
-  const handleUpdateProfileEmail = async () => {
-    if (!userId || !userEmail) {
-      showError("Usuário não autenticado ou e-mail não disponível.");
-      return;
-    }
-    setIsUpdatingProfileEmail(true);
-    try {
-      const { data: existingProfile, error: fetchProfileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", userId)
-        .single();
-
-      if (fetchProfileError && fetchProfileError.code !== 'PGRST116') {
-        throw fetchProfileError;
-      }
-
-      if (existingProfile) {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ email: userEmail, updated_at: new Date().toISOString() })
-          .eq("id", userId);
-        if (updateError) throw updateError;
-      } else {
-        // Se nenhum perfil existir, crie um com o e-mail
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({ id: userId, email: userEmail });
-        if (insertError) throw insertError;
-      }
-      showSuccess("E-mail do perfil sincronizado com sucesso!");
-      fetchSettingsAndGoogleStatus(); // Re-fetch para atualizar o status
-    } catch (err: any) {
-      showError("Erro ao sincronizar e-mail do perfil: " + err.message);
-      console.error("Erro ao sincronizar e-mail do perfil:", err);
-    } finally {
-      setIsUpdatingProfileEmail(false);
-    }
-  };
-
-  const notificationChannel = form.watch("notification_channel");
-
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold">Configurações</h1>
@@ -312,194 +126,34 @@ const Settings: React.FC = () => {
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>
 
-      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-foreground">Gerenciamento de Perfil</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Garanta que seu perfil esteja atualizado para integrações.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="border-b border-border pb-4">
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Sincronizar E-mail do Perfil</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Se você está tendo problemas para conectar o Google Calendar, clique aqui para garantir que seu e-mail esteja salvo corretamente no seu perfil.
-              </p>
-              <Button
-                type="button"
-                onClick={handleUpdateProfileEmail}
-                disabled={isUpdatingProfileEmail || !userEmail}
-                className="w-full bg-blue-500 text-white hover:bg-blue-600"
-              >
-                {isUpdatingProfileEmail ? "Sincronizando..." : "Sincronizar E-mail do Perfil"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ProfileManagementCard
+        userId={userId}
+        userEmail={userEmail}
+        isUpdatingProfileEmail={isUpdatingProfileEmail}
+        setIsUpdatingProfileEmail={setIsUpdatingProfileEmail}
+        onProfileEmailSynced={fetchSettingsAndGoogleStatus}
+      />
 
-      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-foreground">Integrações</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Conecte serviços externos para expandir as funcionalidades do Nexus Flow.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="border-b border-border pb-4">
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Google Calendar</h3>
-              {isGoogleConnected ? (
-                <Button
-                  type="button"
-                  onClick={handleDisconnectGoogleCalendar}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  <Unlink className="mr-2 h-4 w-4" />
-                  Desconectar Google Calendar
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleConnectGoogleCalendar}
-                  disabled={isConnectingGoogle}
-                  className="w-full bg-blue-500 text-white hover:bg-blue-600"
-                >
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  {isConnectingGoogle ? "Conectando..." : "Conectar Google Calendar"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <IntegrationsCard
+        userId={userId}
+        session={session}
+        isGoogleConnected={isGoogleConnected}
+        setIsGoogleConnected={setIsGoogleConnected}
+        isConnectingGoogle={isConnectingGoogle}
+        setIsConnectingGoogle={setIsConnectingGoogle}
+        onGoogleAuthComplete={fetchSettingsAndGoogleStatus}
+      />
 
-      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-foreground">Chaves de API e Preferências de IA</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Insira suas chaves de API e escolha seu provedor de IA preferido.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="border-t border-border pt-4 mt-4">
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de Notificação</h3>
-              <div>
-                <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
-                <Select
-                  onValueChange={(value: "web_push" | "none") =>
-                    form.setValue("notification_channel", value)
-                  }
-                  value={notificationChannel}
-                >
-                  <SelectTrigger id="notification_channel" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
-                    <SelectValue placeholder="Selecionar canal" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-                    <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+      <NotificationSettingsCard
+        userId={userId}
+        session={session}
+        form={form}
+      />
 
-              {notificationChannel === "web_push" && (
-                <div className="mt-4">
-                  <WebPushToggle />
-                </div>
-              )}
-              {notificationChannel !== "none" && (
-                <div className="flex flex-col gap-2 mt-4">
-                  <Button
-                    type="button"
-                    onClick={handleSendTestNotification}
-                    disabled={isSendingTest}
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <BellRing className="mr-2 h-4 w-4" />
-                    {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSendDailyBriefTest}
-                    disabled={isSendingBriefTest}
-                    className="w-full bg-green-600 text-white hover:bg-green-700"
-                  >
-                    <Sun className="mr-2 h-4 w-4" />
-                    {isSendingBriefTest ? "Enviando Brief..." : "Enviar Brief da Manhã (Teste)"}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSendWeeklyBriefTest}
-                    disabled={isSendingWeeklyBriefTest}
-                    className="w-full bg-purple-600 text-white hover:bg-purple-700"
-                  >
-                    <CalendarCheck className="mr-2 h-4 w-4" />
-                    {isSendingWeeklyBriefTest ? "Enviando Resumo Semanal..." : "Enviar Resumo Semanal (Teste)"}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-border pt-4 mt-4">
-              <h3 className="text-lg font-semibold mb-2 text-foreground">Configurações de IA</h3>
-              <div>
-                <Label htmlFor="groq_api_key" className="text-foreground">Groq API Key (Grátis)</Label>
-                <Input
-                  id="groq_api_key"
-                  {...form.register("groq_api_key")}
-                  placeholder="Sua chave da Groq API"
-                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-                />
-                {form.formState.errors.groq_api_key && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {form.formState.errors.groq_api_key.message}
-                  </p>
-                )}
-              </div>
-              <div className="mt-4">
-                <Label htmlFor="openai_api_key" className="text-foreground">OpenAI (ChatGPT) API Key (Pago)</Label>
-                <Input
-                  id="openai_api_key"
-                  {...form.register("openai_api_key")}
-                  placeholder="Sua chave da OpenAI API"
-                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-                />
-                {form.formState.errors.openai_api_key && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {form.formState.errors.openai_api_key.message}
-                  </p>
-                )}
-              </div>
-              <div className="mt-4">
-                <Label htmlFor="ai_provider_preference" className="text-foreground">Provedor de IA Preferido</Label>
-                <Select
-                  onValueChange={(value: "groq" | "openai") =>
-                    form.setValue("ai_provider_preference", value)
-                  }
-                  value={form.watch("ai_provider_preference")}
-                >
-                  <SelectTrigger id="ai_provider_preference" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
-                    <SelectValue placeholder="Selecionar provedor de IA" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-                    <SelectItem value="groq">Groq (Grátis)</SelectItem>
-                    <SelectItem value="openai">OpenAI (ChatGPT - Pago)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.ai_provider_preference && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {form.formState.errors.ai_provider_preference.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Salvar Configurações</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <AISettingsCard
+        form={form}
+        onSubmit={onSubmit}
+      />
     </div>
   );
 };
