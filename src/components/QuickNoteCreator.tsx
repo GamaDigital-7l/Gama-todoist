@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Image as ImageIcon, ListTodo } from "lucide-react"; // Removido Palette
+import { PlusCircle, Image as ImageIcon, ListTodo } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes"; // Importar a interface Note
@@ -19,7 +19,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  const handleOpenFormWithDefaults = (type: "text" | "checklist", withImagePicker?: boolean) => { // Removido 'color' do parâmetro
+  const handleOpenFormWithDefaults = (type: "text" | "checklist", withImagePicker?: boolean) => {
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
@@ -54,7 +54,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground"> {/* Removido 'undefined' para color */}
+            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               <ImageIcon className="h-5 w-5" />
               <span className="sr-only">Adicionar Imagem</span>
             </Button>
@@ -63,7 +63,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"> {/* Adicionado max-h e overflow-y */}
           <DialogHeader>
             {/* Título e descrição do Dialog podem ser mais genéricos ou removidos, pois o NoteForm terá seu próprio título */}
             {/* <DialogTitle className="text-foreground">Criar Nova Nota</DialogTitle>

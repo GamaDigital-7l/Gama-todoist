@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Removido Palette
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -22,8 +22,6 @@ interface NoteItemProps {
   note: Note;
   refetchNotes: () => void;
 }
-
-// Removido o array COLORS, pois não é mais necessário para a UI.
 
 const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   const { session } = useSession();
@@ -223,7 +221,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
             if (!open) setEditingNote(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"> {/* Adicionado max-h e overflow-y */}
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingNote ? "Editar Nota" : "Criar Nova Nota"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

@@ -14,13 +14,6 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import TagSelector from "./TagSelector";
 import TimePicker from "./TimePicker";
@@ -30,9 +23,6 @@ import { format, parseISO } from "date-fns";
 
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
-
-// As cores não serão mais usadas para seleção, apenas para referência se necessário em outro lugar
-// Removido o array COLORS, pois não é mais necessário para a UI.
 
 // Definir o esquema para um item de checklist
 const checklistItemSchema = z.object({
@@ -342,6 +332,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         {/* Conteúdo da Nota / Checklist */}
         {noteType === "text" ? (
           <ReactQuill
+            key={noteType} // Adicionado key para forçar re-renderização
             ref={quillRef}
             theme="bubble" // Tema bubble para um visual mais limpo, sem toolbar visível por padrão
             value={form.watch("content")}
@@ -349,7 +340,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar" // A classe min-h-[80px] e z-10 agora vêm do globals.css
+            className="bg-transparent text-foreground quill-no-toolbar" // As classes min-h-[80px] e z-10 agora vêm do globals.css
           />
         ) : (
           <div className="space-y-2">
