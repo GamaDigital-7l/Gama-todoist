@@ -12,7 +12,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import MeetingForm from "@/components/MeetingForm";
+import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm"; // Importar MeetingFormValues
 import MeetingItem from "@/components/MeetingItem";
 import { Meeting } from "@/types/meeting";
 import { Task, DAYS_OF_WEEK_MAP } from "@/types/task";
@@ -203,7 +203,7 @@ const DailyPlanner: React.FC = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <MeetingForm
-                  initialData={selectedDate ? { date: format(selectedDate, "yyyy-MM-dd"), title: "", start_time: "" } as Meeting : undefined}
+                  initialData={selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined}
                   onMeetingSaved={refetchMeetings}
                   onClose={() => setIsMeetingFormOpen(false)}
                 />

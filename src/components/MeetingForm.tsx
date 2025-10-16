@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TimePicker from "./TimePicker";
-import { Meeting } from "@/types/meeting";
+import { Meeting } from "@/types/meeting"; // Mantido para referência, mas o tipo de prop foi alterado
 
 const meetingSchema = z.object({
   title: z.string().min(1, "O título da reunião é obrigatório."),
@@ -31,7 +31,7 @@ const meetingSchema = z.object({
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  initialData?: Meeting;
+  initialData?: (MeetingFormValues & { id: string }); // Para edição, o ID é necessário
   onMeetingSaved: () => void;
   onClose: () => void;
 }
@@ -46,12 +46,12 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
       ...initialData,
       date: new Date(initialData.date),
       start_time: initialData.start_time,
-      end_time: initialData.end_time || null, // Garante que seja null se vazio
+      end_time: initialData.end_time || null,
     } : {
       title: "",
       description: "",
       date: new Date(),
-      start_time: "", // Deve ser uma string vazia para validação inicial
+      start_time: "",
       end_time: null,
       location: "",
     },
@@ -68,13 +68,13 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         title: values.title,
         description: values.description || null,
         date: format(values.date, "yyyy-MM-dd"),
-        start_time: values.start_time, // Já validado pelo Zod
+        start_time: values.start_time,
         end_time: values.end_time || null,
         location: values.location || null,
         updated_at: new Date().toISOString(),
       };
 
-      if (initialData) {
+      if (initialData && initialData.id) { // Verifica se é uma edição e se o ID existe
         const { error } = await supabase
           .from("meetings")
           .update(dataToSave)
@@ -164,8 +164,8 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         <div>
           <Label htmlFor="start_time" className="text-foreground">Início</Label>
           <TimePicker
-            value={form.watch("start_time") || null} // Passa null se vazio
-            onChange={(time) => form.setValue("start_time", time || "")} // Converte null para "" para validação
+            value={form.watch("start_time") || null}
+            onChange={(time) => form.setValue("start_time", time || "")}
           />
           {form.formState.errors.start_time && (
             <p className="text-red-500 text-sm mt-1">
@@ -176,8 +176,8 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         <div>
           <Label htmlFor="end_time" className="text-foreground">Fim (Opcional)</Label>
           <TimePicker
-            value={form.watch("end_time") || null} // Passa null se vazio
-            onChange={(time) => form.setValue("end_time", time || null)} // Mantém null se vazio
+            value={form.watch("end_time") || null}
+            onChange={(time) => form.setValue("end_time", time || null)}
           />
         </div>
       </div>

@@ -9,7 +9,7 @@ import { Edit, Trash2, MapPin, Clock } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Meeting } from "@/types/meeting";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import MeetingForm from "./MeetingForm";
+import MeetingForm, { MeetingFormValues } from "./MeetingForm"; // Importar MeetingFormValues
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -23,7 +23,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   const queryClient = useQueryClient();
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingMeeting, setEditingMeeting] = React.useState<Meeting | undefined>(undefined);
+  const [editingMeeting, setEditingMeeting] = React.useState<(MeetingFormValues & { id: string }) | undefined>(undefined); // Tipo ajustado
 
   const handleDeleteMeeting = useMutation({
     mutationFn: async (meetingId: string) => {
@@ -51,7 +51,17 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   });
 
   const handleEditMeeting = (meeting: Meeting) => {
-    setEditingMeeting(meeting);
+    // Converte o objeto Meeting para o tipo esperado pelo MeetingForm para edição
+    const editableMeeting: MeetingFormValues & { id: string } = {
+      id: meeting.id,
+      title: meeting.title,
+      description: meeting.description || undefined,
+      date: parseISO(meeting.date), // Converte string para Date
+      start_time: meeting.start_time,
+      end_time: meeting.end_time || undefined,
+      location: meeting.location || undefined,
+    };
+    setEditingMeeting(editableMeeting);
     setIsFormOpen(true);
   };
 
