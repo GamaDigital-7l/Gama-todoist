@@ -43,6 +43,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
       showSuccess("Reunião deletada com sucesso!");
       refetchMeetings();
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["futureMeetings"] }); // Invalidate future meetings
     },
     onError: (err: any) => {
       showError("Erro ao deletar reunião: " + err.message);

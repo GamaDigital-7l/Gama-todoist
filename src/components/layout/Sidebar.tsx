@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             Dashboard
           </NavLink>
           <NavLink
-            to="/daily-planner"
+            to="/planner"
             className={({ isActive }) =>
               cn(
                 "nav-link-base",
@@ -62,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <CalendarDays className="h-4 w-4" />
-            Planejador Diário
+            Planner
           </NavLink>
           <NavLink
             to="/tasks"

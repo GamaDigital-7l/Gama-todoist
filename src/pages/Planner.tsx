@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDays, PlusCircle, Briefcase, ListTodo } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay, parseISO, getDay } from "date-fns";
+import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm"; // Importar MeetingFormValues
+import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm";
 import MeetingItem from "@/components/MeetingItem";
 import { Meeting } from "@/types/meeting";
 import { Task, DAYS_OF_WEEK_MAP } from "@/types/task";
@@ -29,6 +29,22 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
+const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
+  const today = format(new Date(), "yyyy-MM-dd");
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("date", today) // Apenas reuniões a partir de hoje
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(5); // Limitar a 5 próximas reuniões
   if (error) {
     throw error;
   }
@@ -112,6 +128,12 @@ const Planner: React.FC = () => {
     enabled: !!userId && !!selectedDate,
   });
 
+  const { data: futureMeetings, isLoading: isLoadingFutureMeetings, error: futureMeetingsError, refetch: refetchFutureMeetings } = useQuery<Meeting[], Error>({
+    queryKey: ["futureMeetings", userId],
+    queryFn: () => fetchFutureMeetings(userId!),
+    enabled: !!userId,
+  });
+
   const { data: tasks, isLoading: isLoadingTasks, error: tasksError, refetch: refetchTasks } = useQuery<Task[], Error>({
     queryKey: ["dailyPlannerTasks", userId, selectedDate?.toISOString()],
     queryFn: () => fetchTasksForDate(userId!, selectedDate!),
@@ -124,11 +146,19 @@ const Planner: React.FC = () => {
   if (tasksError) {
     showError("Erro ao carregar tarefas: " + tasksError.message);
   }
+  if (futureMeetingsError) {
+    showError("Erro ao carregar próximas reuniões: " + futureMeetingsError.message);
+  }
 
   const handleTaskAdded = () => {
     refetchTasks();
     queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] });
     queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+  };
+
+  const handleMeetingSaved = () => {
+    refetchMeetings();
+    refetchFutureMeetings(); // Refetch future meetings after a meeting is saved
   };
 
   const buildTaskTree = (allTasks: Task[]): Task[] => {
@@ -167,30 +197,67 @@ const Planner: React.FC = () => {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna do Calendário */}
-        <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center">
-          <CardHeader className="w-full text-center pb-2">
-            <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center p-0">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              initialFocus
-              locale={ptBR}
-              className="rounded-lg border bg-popover text-popover-foreground shadow-md"
-            />
-          </CardContent>
-        </Card>
+        {/* Coluna Esquerda: Calendário e Próximas Reuniões */}
+        <div className="flex flex-col gap-6">
+          <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center">
+            <CardHeader className="w-full text-center pb-2">
+              <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center p-0">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                initialFocus
+                locale={ptBR}
+                className="rounded-lg border bg-popover text-popover-foreground shadow-md"
+              />
+            </CardContent>
+          </Card>
 
-        {/* Colunas de Reuniões e Tarefas */}
+          <Card className="bg-card border border-border rounded-xl shadow-lg">
+            <CardHeader className="border-b border-border p-4">
+              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" /> Próximas Reuniões
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Um resumo das suas próximas reuniões.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {isLoadingFutureMeetings ? (
+                <p className="text-center text-muted-foreground">Carregando próximas reuniões...</p>
+              ) : futureMeetings && futureMeetings.length > 0 ? (
+                futureMeetings.map((meeting) => (
+                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                    <p className="text-sm font-medium text-foreground">{meeting.title}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
+                    </p>
+                    {meeting.location && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {meeting.location}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground">Nenhuma reunião futura agendada.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Colunas do Meio e Direita: Reuniões do Dia e Tarefas do Dia */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card de Reuniões */}
+          {/* Card de Reuniões do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" /> Reuniões
+                <Briefcase className="h-5 w-5 text-primary" /> Reuniões para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={setIsMeetingFormOpen}>
                 <DialogTrigger asChild>
@@ -207,7 +274,7 @@ const Planner: React.FC = () => {
                   </DialogHeader>
                   <MeetingForm
                     initialData={selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined}
-                    onMeetingSaved={refetchMeetings}
+                    onMeetingSaved={handleMeetingSaved}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />
                 </DialogContent>
@@ -218,7 +285,7 @@ const Planner: React.FC = () => {
                 <p className="text-center text-muted-foreground">Carregando reuniões...</p>
               ) : meetings && meetings.length > 0 ? (
                 meetings.map((meeting) => (
-                  <MeetingItem key={meeting.id} meeting={meeting} refetchMeetings={refetchMeetings} />
+                  <MeetingItem key={meeting.id} meeting={meeting} refetchMeetings={handleMeetingSaved} />
                 ))
               ) : (
                 <p className="text-center text-muted-foreground">Nenhuma reunião agendada para esta data.</p>
@@ -226,11 +293,11 @@ const Planner: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Card de Tarefas */}
+          {/* Card de Tarefas do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <ListTodo className="h-5 w-5 text-primary" /> Tarefas
+                <ListTodo className="h-5 w-5 text-primary" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
                 <DialogTrigger asChild>

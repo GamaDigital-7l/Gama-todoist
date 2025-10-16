@@ -41,12 +41,12 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
                 <Home className="h-5 w-5" /> Dashboard
               </NavLink>
               <NavLink
-                to="/daily-planner"
+                to="/planner"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
               >
-                <CalendarDays className="h-5 w-5" /> Planejador Diário
+                <CalendarDays className="h-5 w-5" /> Planner
               </NavLink>
               <NavLink
                 to="/tasks"
