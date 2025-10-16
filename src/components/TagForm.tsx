@@ -45,7 +45,7 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
     try {
       if (initialData) {
         const { error } = await supabase
-          .from("tags")
+          .from("tags", { schema: 'public' }) // Especificando o esquema
           .update({
             name: values.name,
             color: values.color,
@@ -57,7 +57,7 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
         if (error) throw error;
         showSuccess("Tag atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("tags").insert({
+        const { error } = await supabase.from("tags", { schema: 'public' }).insert({ // Especificando o esquema
           name: values.name,
           color: values.color,
           user_id: userId,

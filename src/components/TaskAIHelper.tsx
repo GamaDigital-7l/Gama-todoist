@@ -29,7 +29,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
-    .from("tasks")
+    .from("tasks", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .eq("is_completed", false)

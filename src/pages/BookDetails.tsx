@@ -21,7 +21,7 @@ interface Book {
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
-    .from("books")
+    .from("books", { schema: 'public' }) // Especificando o esquema
     .select("id, title, author, description, content, cover_image_url, pdf_url")
     .eq("id", bookId)
     .single();
@@ -56,9 +56,9 @@ const BookDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-3xl font-bold">Carregando Livro...</h1>
+        <h1 className="text-3xl font-bold mt-4">Carregando Livro...</h1>
         <p className="text-lg text-muted-foreground">Preparando os detalhes do livro.</p>
       </div>
     );
@@ -67,7 +67,7 @@ const BookDetails: React.FC = () => {
   if (error) {
     showError("Erro ao carregar livro: " + error.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <h1 className="text-3xl font-bold">Erro ao Carregar Livro</h1>
         <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
@@ -79,10 +79,10 @@ const BookDetails: React.FC = () => {
 
   if (!book) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O livro que você está procurando não existe ou foi removido.</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm } from "@hookform/resolvers/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,17 @@ interface BookFormProps {
   initialData?: BookFormValues & { id: string };
 }
 
+// Função para sanitizar o nome do arquivo
+const sanitizeFilename = (filename: string) => {
+  return filename
+    .normalize("NFD") // Normaliza caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacríticos
+    .replace(/[^a-zA-Z0-9.]/g, "-") // Substitui caracteres não alfanuméricos (exceto ponto) por hífen
+    .replace(/--+/g, "-") // Substitui múltiplos hífens por um único
+    .replace(/^-+|-+$/g, "") // Remove hífens do início e fim
+    .toLowerCase(); // Converte para minúsculas
+};
+
 const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -79,7 +90,8 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
 
       if (values.pdf_file) {
         const file = values.pdf_file;
-        const filePath = `public/${Date.now()}-${file.name}`;
+        const sanitizedFilename = sanitizeFilename(file.name); // Sanitiza o nome do arquivo
+        const filePath = `public/${Date.now()}-${sanitizedFilename}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("book-pdfs")
@@ -113,11 +125,11 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
       };
 
       if (initialData) {
-        const { error: updateError } = await supabase.from("books").update(dataToSave).eq("id", initialData.id);
+        const { error: updateError } = await supabase.from("books", { schema: 'public' }).update(dataToSave).eq("id", initialData.id); // Especificando o esquema
         if (updateError) throw updateError;
         showSuccess("Livro atualizado com sucesso!");
       } else {
-        const { error: insertError } = await supabase.from("books").insert(dataToSave);
+        const { error: insertError } = await supabase.from("books", { schema: 'public' }).insert(dataToSave); // Especificando o esquema
         if (insertError) throw insertError;
         showSuccess("Livro adicionado com sucesso!");
       }

@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, Scale, CalendarIcon, NotebookText, Target, Tr
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import HealthMetricForm, { HealthMetricFormValues } from "@/components/HealthMetricForm";
 import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -33,7 +33,7 @@ interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_d
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
   const { data, error } = await supabase
-    .from("health_metrics")
+    .from("health_metrics", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -46,7 +46,7 @@ const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
 
 const fetchHealthGoals = async (userId: string): Promise<HealthGoal[]> => {
   const { data, error } = await supabase
-    .from("health_goals")
+    .from("health_goals", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("target_date", { ascending: true });
@@ -76,7 +76,7 @@ const Health: React.FC = () => {
   const [editingMetric, setEditingMetric] = React.useState<HealthMetric | undefined>(undefined);
 
   const [isGoalFormOpen, setIsGoalFormOpen] = React.useState(false);
-  const [editingGoal, setEditingGoal] = React.useState<HealthGoal | undefined>(undefined);
+  const [editingGoal, setEditingGoal] = React.React.useState<HealthGoal | undefined>(undefined);
 
   const handleEditMetric = (metric: HealthMetric) => {
     setEditingMetric(metric);
@@ -91,7 +91,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta métrica de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_metrics")
+          .from("health_metrics", { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq("id", metricId)
           .eq("user_id", userId);
@@ -119,7 +119,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta meta de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_goals")
+          .from("health_goals", { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq("id", goalId)
           .eq("user_id", userId);
@@ -169,7 +169,7 @@ const Health: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
-        <div className="flex gap-2 flex-wrap justify-end"> {/* Adicionado flex-wrap e justify-end */}
+        <div className="flex gap-2 flex-wrap justify-end">
           <Dialog
             open={isGoalFormOpen}
             onOpenChange={(open) => {
@@ -185,6 +185,9 @@ const Health: React.FC = () => {
             <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Defina ou atualize uma meta para sua saúde.
+                </DialogDescription>
               </DialogHeader>
               <HealthGoalForm
                 initialData={editingGoal ? {
@@ -213,6 +216,9 @@ const Health: React.FC = () => {
             <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Registre ou atualize suas métricas de saúde.
+                </DialogDescription>
               </DialogHeader>
               <HealthMetricForm
                 initialData={editingMetric ? { ...editingMetric, date: parseISO(editingMetric.date) } : undefined}

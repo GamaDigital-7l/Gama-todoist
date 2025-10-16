@@ -79,7 +79,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
 
       if (initialData) {
         const { error } = await supabase
-          .from("health_goals")
+          .from("health_goals", { schema: 'public' }) // Especificando o esquema
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -87,7 +87,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
         if (error) throw error;
         showSuccess("Meta de saúde atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("health_goals").insert({
+        const { error } = await supabase.from("health_goals", { schema: 'public' }).insert({ // Especificando o esquema
           ...dataToSave,
           user_id: userId,
         });

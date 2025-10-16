@@ -65,7 +65,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
     try {
       if (initialData) {
         const { error } = await supabase
-          .from("goals")
+          .from("goals", { schema: 'public' }) // Especificando o esquema
           .update({
             title: values.title,
             description: values.description || null, // Garante que seja null se vazio
@@ -79,7 +79,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
         if (error) throw error;
         showSuccess("Meta atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("goals").insert({
+        const { error } = await supabase.from("goals", { schema: 'public' }).insert({ // Especificando o esquema
           title: values.title,
           description: values.description || null, // Garante que seja null se vazio
           target_date: values.target_date ? format(values.target_date, "yyyy-MM-dd") : null,

@@ -80,7 +80,7 @@ const WebPushToggle: React.FC = () => {
 
       // Salva a inscrição no banco de dados do Supabase
       const { data: existingSubscription, error: fetchError } = await supabase
-        .from('user_subscriptions')
+        .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
         .select('id')
         .eq('user_id', userId)
         .limit(1)
@@ -92,13 +92,13 @@ const WebPushToggle: React.FC = () => {
 
       if (existingSubscription) {
         const { error: updateError } = await supabase
-          .from('user_subscriptions')
+          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
           .update({ subscription: subscription.toJSON(), updated_at: new Date().toISOString() })
           .eq('id', existingSubscription.id);
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('user_subscriptions')
+          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
           .insert({ user_id: userId, subscription: subscription.toJSON() });
         if (insertError) throw insertError;
       }
@@ -127,7 +127,7 @@ const WebPushToggle: React.FC = () => {
         await subscription.unsubscribe();
         // Remove a inscrição do banco de dados
         const { error: deleteError } = await supabase
-          .from('user_subscriptions')
+          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq('user_id', userId)
           .eq('subscription', subscription.toJSON()); // Garante que a inscrição correta seja removida

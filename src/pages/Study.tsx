@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, BookOpen, CheckCircle2, Hourglass, Clock } fr
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import StudySessionForm, { StudySessionFormValues } from "@/components/StudySessionForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,7 +23,7 @@ interface StudySession extends Omit<StudySessionFormValues, 'session_date'> {
 
 const fetchStudySessions = async (userId: string): Promise<StudySession[]> => {
   const { data, error } = await supabase
-    .from("study_sessions")
+    .from("study_sessions", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("session_date", { ascending: false })
@@ -60,7 +60,7 @@ const Study: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta sessão de estudo?")) {
       try {
         const { error } = await supabase
-          .from("study_sessions")
+          .from("study_sessions", { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq("id", sessionId)
           .eq("user_id", userId);
@@ -82,7 +82,7 @@ const Study: React.FC = () => {
     }
     try {
       const { error } = await supabase
-        .from("study_sessions")
+        .from("study_sessions", { schema: 'public' }) // Especificando o esquema
         .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
         .eq("id", sessionId)
         .eq("user_id", userId);
@@ -134,6 +134,9 @@ const Study: React.FC = () => {
           <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {editingSession ? "Atualize os detalhes da sua sessão de estudo." : "Registre uma nova sessão de estudo."}
+              </DialogDescription>
             </DialogHeader>
             <StudySessionForm
               initialData={editingSession ? { ...editingSession, session_date: parseISO(editingSession.session_date) } : undefined}

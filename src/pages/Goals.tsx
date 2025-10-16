@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, CalendarIcon, CheckCircle2, Hourglass, PlayCi
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import GoalForm, { GoalFormValues } from "@/components/GoalForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,7 +22,7 @@ interface Goal extends Omit<GoalFormValues, 'target_date'> {
 
 const fetchGoals = async (userId: string): Promise<Goal[]> => {
   const { data, error } = await supabase
-    .from("goals")
+    .from("goals", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("target_date", { ascending: true, nullsFirst: false });
@@ -58,7 +58,7 @@ const Goals: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta meta?")) {
       try {
         const { error } = await supabase
-          .from("goals")
+          .from("goals", { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq("id", goalId)
           .eq("user_id", userId);
@@ -122,7 +122,7 @@ const Goals: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
-        <div className="flex gap-2 flex-wrap justify-end"> {/* Adicionado flex-wrap e justify-end */}
+        <div className="flex gap-2 flex-wrap justify-end">
           <Dialog
             open={isFormOpen}
             onOpenChange={(open) => {
@@ -138,6 +138,9 @@ const Goals: React.FC = () => {
             <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {editingGoal ? "Atualize os detalhes da sua meta." : "Crie uma nova meta para acompanhar seu progresso."}
+                </DialogDescription>
               </DialogHeader>
               <GoalForm
                 initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? parseISO(editingGoal.target_date) : undefined } : undefined}

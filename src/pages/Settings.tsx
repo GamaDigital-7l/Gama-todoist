@@ -51,7 +51,7 @@ const Settings: React.FC = () => {
       if (!userId) return;
 
       const { data, error } = await supabase
-        .from("settings")
+        .from("settings", { schema: 'public' }) // Especificando o esquema
         .select("*")
         .eq("user_id", userId)
         .limit(1)
@@ -86,7 +86,7 @@ const Settings: React.FC = () => {
 
       if (settingsId) {
         const { error } = await supabase
-          .from("settings")
+          .from("settings", { schema: 'public' }) // Especificando o esquema
           .update(updateData)
           .eq("id", settingsId)
           .eq("user_id", userId);
@@ -95,7 +95,7 @@ const Settings: React.FC = () => {
         showSuccess("Configurações atualizadas com sucesso!");
       } else {
         const { data, error } = await supabase
-          .from("settings")
+          .from("settings", { schema: 'public' }) // Especificando o esquema
           .insert(updateData)
           .select()
           .single();

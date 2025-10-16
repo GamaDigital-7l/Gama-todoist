@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, BookOpen, Edit, Trash2, Target } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import BookForm from "@/components/BookForm";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ interface Book {
 
 const fetchBooks = async (userId: string): Promise<Book[]> => {
   const { data, error } = await supabase
-    .from("books")
+    .from("books", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
@@ -70,7 +70,7 @@ const Books: React.FC = () => {
     mutationFn: async ({ bookId, newPage }: { bookId: string; newPage: number }) => {
       if (!userId) throw new Error("Usuário não autenticado.");
       const { error: updateError } = await supabase
-        .from("books")
+        .from("books", { schema: 'public' }) // Especificando o esquema
         .update({ 
           current_page: newPage, 
           last_read_date: new Date().toISOString().split('T')[0],
@@ -94,7 +94,7 @@ const Books: React.FC = () => {
     mutationFn: async (bookId: string) => {
       if (!userId) throw new Error("Usuário não autenticado.");
       const { error: deleteError } = await supabase
-        .from("books")
+        .from("books", { schema: 'public' }) // Especificando o esquema
         .delete()
         .eq("id", bookId)
         .eq("user_id", userId);
@@ -162,6 +162,9 @@ const Books: React.FC = () => {
           <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {editingBook ? "Atualize os detalhes do seu livro." : "Adicione um novo livro à sua biblioteca."}
+              </DialogDescription>
             </DialogHeader>
             <BookForm
               initialData={editingBook}
@@ -225,7 +228,7 @@ const Books: React.FC = () => {
                         type="number"
                         min="0"
                         max={book.total_pages}
-                        value={currentPageInput[book.id]}
+                        value={currentPageInput[book.id] ?? 0} {/* Corrigido para sempre ter um valor */}
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
                         className="w-24 bg-input border-border text-foreground focus-visible:ring-ring"
                       />

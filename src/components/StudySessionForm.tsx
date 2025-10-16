@@ -73,7 +73,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
 
       if (initialData) {
         const { error } = await supabase
-          .from("study_sessions")
+          .from("study_sessions", { schema: 'public' }) // Especificando o esquema
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -81,7 +81,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
         if (error) throw error;
         showSuccess("Sessão de estudo atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("study_sessions").insert({
+        const { error } = await supabase.from("study_sessions", { schema: 'public' }).insert({ // Especificando o esquema
           ...dataToSave,
           user_id: userId,
         });

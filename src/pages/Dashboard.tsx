@@ -12,7 +12,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import { isToday, parseISO, differenceInDays, format, getDay, subDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import TaskForm from "@/components/TaskForm";
 
 interface Profile {
@@ -52,7 +52,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
-    .from("profiles")
+    .from("profiles", { schema: 'public' }) // Especificando o esquema
     .select("id, points")
     .eq("id", userId)
     .single();
@@ -65,7 +65,7 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks").select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Incluído task_type
+  const { data, error } = await supabase.from("tasks", { schema: 'public' }).select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Especificando o esquema
   if (error) {
     console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
@@ -75,7 +75,7 @@ const fetchUserTasks = async (): Promise<Task[]> => {
 
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
-    .from("health_metrics")
+    .from("health_metrics", { schema: 'public' }) // Especificando o esquema
     .select("id, date, weight_kg")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -91,7 +91,7 @@ const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | n
 
 const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
   const { data, error } = await supabase
-    .from("health_goals")
+    .from("health_goals", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
     .eq("is_completed", false)
@@ -224,6 +224,9 @@ const Dashboard: React.FC = () => {
           <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Crie uma nova tarefa para organizar seu dia.
+              </DialogDescription>
             </DialogHeader>
             <TaskForm
               onTaskSaved={() => {

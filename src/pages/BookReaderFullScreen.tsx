@@ -22,7 +22,7 @@ interface Book {
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
-    .from("books")
+    .from("books", { schema: 'public' }) // Especificando o esquema
     .select("id, title, pdf_url, current_page")
     .eq("id", bookId)
     .single();
@@ -130,7 +130,7 @@ const BookReaderFullScreen: React.FC = () => {
     if (!id) return;
     try {
       await supabase
-        .from("books")
+        .from("books", { schema: 'public' }) // Especificando o esquema
         .update({ current_page: newPage, last_read_date: new Date().toISOString().split('T')[0] })
         .eq("id", id);
     } catch (err) {

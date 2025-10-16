@@ -66,7 +66,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
 
       if (initialData) {
         const { error } = await supabase
-          .from("health_metrics")
+          .from("health_metrics", { schema: 'public' }) // Especificando o esquema
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -74,7 +74,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
         if (error) throw error;
         showSuccess("Métrica de saúde atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("health_metrics").insert({
+        const { error } = await supabase.from("health_metrics", { schema: 'public' }).insert({ // Especificando o esquema
           ...dataToSave,
           user_id: userId,
         });

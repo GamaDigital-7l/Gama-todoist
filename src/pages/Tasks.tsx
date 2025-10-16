@@ -12,7 +12,7 @@ import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
@@ -48,7 +48,7 @@ const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
-    .from("tasks")
+    .from("tasks", { schema: 'public' }) // Especificando o esquema
     .select(`
       *,
       tags (id, name, color)
@@ -83,7 +83,7 @@ const Tasks: React.FC = () => {
     }
     try {
       const { error } = await supabase
-        .from("tasks")
+        .from("tasks", { schema: 'public' }) // Especificando o esquema
         .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
         .eq("id", taskId)
         .eq("user_id", userId);
@@ -104,10 +104,10 @@ const Tasks: React.FC = () => {
     }
     if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
       try {
-        await supabase.from("task_tags").delete().eq("task_id", taskId);
+        await supabase.from("task_tags", { schema: 'public' }).delete().eq("task_id", taskId); // Especificando o esquema
 
         const { error } = await supabase
-          .from("tasks")
+          .from("tasks", { schema: 'public' }) // Especificando o esquema
           .delete()
           .eq("id", taskId)
           .eq("user_id", userId);
@@ -314,6 +314,9 @@ const Tasks: React.FC = () => {
           <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para organizar seu dia."}
+              </DialogDescription>
             </DialogHeader>
             <TaskForm
               initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}

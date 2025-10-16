@@ -51,7 +51,7 @@ const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
 
 const fetchTasks = async (): Promise<Task[]> => {
   const { data, error } = await supabase
-    .from("tasks")
+    .from("tasks", { schema: 'public' }) // Especificando o esquema
     .select(`
       *,
       tags (id, name, color)
@@ -77,7 +77,7 @@ const DashboardTaskList: React.FC = () => {
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
       const { error: updateError } = await supabase
-        .from("tasks")
+        .from("tasks", { schema: 'public' }) // Especificando o esquema
         .update({ 
           is_completed: !currentStatus, 
           updated_at: new Date().toISOString(),
@@ -93,7 +93,7 @@ const DashboardTaskList: React.FC = () => {
       if (!currentStatus && session?.user?.id) {
         let currentPoints = 0;
         const { data: existingProfile, error: fetchProfileError } = await supabase
-          .from("profiles")
+          .from("profiles", { schema: 'public' }) // Especificando o esquema
           .select("points")
           .eq("id", session.user.id)
           .single();
@@ -106,7 +106,7 @@ const DashboardTaskList: React.FC = () => {
           currentPoints = existingProfile.points || 0;
         } else {
           const { error: insertProfileError } = await supabase
-            .from("profiles")
+            .from("profiles", { schema: 'public' }) // Especificando o esquema
             .insert({ id: session.user.id, points: 0 });
 
           if (insertProfileError) {
@@ -116,7 +116,7 @@ const DashboardTaskList: React.FC = () => {
 
         const newPoints = currentPoints + POINTS_PER_TASK;
         const { error: pointsError } = await supabase
-          .from("profiles")
+          .from("profiles", { schema: 'public' }) // Especificando o esquema
           .update({ points: newPoints })
           .eq("id", session.user.id);
 

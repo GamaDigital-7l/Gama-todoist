@@ -18,7 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import TagForm from "./TagForm";
 import { Label } from "@/components/ui/label";
 
@@ -35,7 +35,7 @@ interface TagSelectorProps {
 
 const fetchTags = async (userId: string): Promise<Tag[]> => {
   const { data, error } = await supabase
-    .from("tags")
+    .from("tags", { schema: 'public' }) // Especificando o esquema
     .select("id, name, color")
     .eq("user_id", userId)
     .order("name", { ascending: true });
@@ -134,6 +134,9 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                   <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
                     <DialogHeader>
                       <DialogTitle className="text-foreground">Criar Nova Tag</DialogTitle>
+                      <DialogDescription className="text-muted-foreground">
+                        Adicione uma nova tag para organizar suas tarefas.
+                      </DialogDescription>
                     </DialogHeader>
                     <TagForm onTagSaved={refetch} onClose={() => setIsTagFormOpen(false)} />
                   </DialogContent>

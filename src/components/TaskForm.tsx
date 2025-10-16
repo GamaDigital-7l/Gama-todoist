@@ -150,7 +150,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
 
       if (initialData) {
         const { data, error } = await supabase
-          .from("tasks")
+          .from("tasks", { schema: 'public' }) // Especificando o esquema
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId)
@@ -161,7 +161,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         taskId = data.id;
         showSuccess("Tarefa atualizada com sucesso!");
       } else {
-        const { data, error } = await supabase.from("tasks").insert({
+        const { data, error } = await supabase.from("tasks", { schema: 'public' }).insert({ // Especificando o esquema
           ...dataToSave,
           is_completed: false,
           user_id: userId,
@@ -172,14 +172,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         showSuccess("Tarefa adicionada com sucesso!");
       }
 
-      await supabase.from("task_tags").delete().eq("task_id", taskId);
+      await supabase.from("task_tags", { schema: 'public' }).delete().eq("task_id", taskId); // Especificando o esquema
 
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
         const taskTagsToInsert = values.selected_tag_ids.map(tagId => ({
           task_id: taskId,
           tag_id: tagId,
         }));
-        const { error: tagInsertError } = await supabase.from("task_tags").insert(taskTagsToInsert);
+        const { error: tagInsertError } = await supabase.from("task_tags", { schema: 'public' }).insert(taskTagsToInsert); // Especificando o esquema
         if (tagInsertError) throw tagInsertError;
       }
 
