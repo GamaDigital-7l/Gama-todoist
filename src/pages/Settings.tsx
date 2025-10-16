@@ -17,9 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BellRing, Sun, CalendarCheck } from "lucide-react"; // Importar CalendarCheck
+import { BellRing, Sun, CalendarCheck, Link as LinkIcon, Unlink } from "lucide-react"; // Importar Link e Unlink
 import { useSession } from "@/integrations/supabase/auth";
 import WebPushToggle from "@/components/WebPushToggle";
+import { useSearchParams } from "react-router-dom"; // Importar useSearchParams
 
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
@@ -36,7 +37,11 @@ const Settings: React.FC = () => {
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSendingBriefTest, setIsSendingBriefTest] = useState(false);
-  const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false); // Novo estado
+  const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams(); // Hook para parâmetros da URL
+
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -47,27 +52,53 @@ const Settings: React.FC = () => {
     },
   });
 
+  const fetchSettingsAndGoogleStatus = async () => {
+    if (!userId) return;
+
+    const { data, error } = await supabase
+      .from("settings")
+      .select("*")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      showError("Erro ao carregar configurações: " + error.message);
+    } else if (data) {
+      form.reset(data);
+      setSettingsId(data.id);
+    }
+
+    // Verificar status da conexão Google
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("google_access_token")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("Erro ao verificar status do Google Calendar:", profileError);
+    } else if (profileData && profileData.google_access_token) {
+      setIsGoogleConnected(true);
+    } else {
+      setIsGoogleConnected(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!userId) return;
+    fetchSettingsAndGoogleStatus();
 
-      const { data, error } = await supabase
-        .from("settings")
-        .select("*")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        showError("Erro ao carregar configurações: " + error.message);
-      } else if (data) {
-        form.reset(data);
-        setSettingsId(data.id);
-      }
-    };
-
-    fetchSettings();
-  }, [form, userId]);
+    // Lidar com o callback do Google OAuth
+    const googleAuthSuccess = searchParams.get("google_auth_success");
+    if (googleAuthSuccess === "true") {
+      showSuccess("Google Calendar conectado com sucesso!");
+      setSearchParams({}, { replace: true }); // Limpar o parâmetro da URL
+      fetchSettingsAndGoogleStatus(); // Recarregar o status
+    } else if (searchParams.get("google_auth_error")) {
+      showError("Erro ao conectar Google Calendar. Tente novamente.");
+      setSearchParams({}, { replace: true }); // Limpar o parâmetro da URL
+    }
+  }, [form, userId, searchParams, setSearchParams]);
 
   const onSubmit = async (values: SettingsFormValues) => {
     if (!userId) {
@@ -165,7 +196,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSendWeeklyBriefTest = async () => { // Nova função para o brief semanal
+  const handleSendWeeklyBriefTest = async () => {
     if (!userId) {
       showError("Usuário não autenticado. Faça login para enviar o resumo semanal.");
       return;
@@ -192,6 +223,65 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleConnectGoogleCalendar = async () => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para conectar o Google Calendar.");
+      return;
+    }
+    setIsConnectingGoogle(true);
+    try {
+      // Redirecionar para a Edge Function que inicia o fluxo OAuth
+      // A URL da Edge Function deve ser configurada como GOOGLE_REDIRECT_URI no Google Cloud Console
+      // e também como uma variável de ambiente no Supabase.
+      const { data, error } = await supabase.functions.invoke('google-oauth/init', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+      // A Edge Function deve retornar um redirecionamento 302, então o navegador será redirecionado automaticamente.
+      // Se a função retornar dados, significa que algo deu errado ou não houve redirecionamento.
+      console.log("Iniciando conexão Google Calendar:", data);
+    } catch (err: any) {
+      showError("Erro ao iniciar conexão com Google Calendar: " + err.message);
+      console.error("Erro ao iniciar conexão com Google Calendar:", err);
+    } finally {
+      setIsConnectingGoogle(false);
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = async () => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    if (!window.confirm("Tem certeza que deseja desconectar o Google Calendar?")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          google_access_token: null,
+          google_refresh_token: null,
+          google_token_expiry: null,
+          google_calendar_id: null,
+        })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      showSuccess("Google Calendar desconectado com sucesso!");
+      setIsGoogleConnected(false);
+    } catch (err: any) {
+      showError("Erro ao desconectar Google Calendar: " + err.message);
+      console.error("Erro ao desconectar Google Calendar:", err);
+    }
+  };
+
   const notificationChannel = form.watch("notification_channel");
 
   return (
@@ -200,6 +290,43 @@ const Settings: React.FC = () => {
       <p className="text-lg text-muted-foreground">
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>
+
+      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-foreground">Integrações</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Conecte serviços externos para expandir as funcionalidades do Nexus Flow.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="border-b border-border pb-4">
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Google Calendar</h3>
+              {isGoogleConnected ? (
+                <Button
+                  type="button"
+                  onClick={handleDisconnectGoogleCalendar}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  <Unlink className="mr-2 h-4 w-4" />
+                  Desconectar Google Calendar
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleConnectGoogleCalendar}
+                  disabled={isConnectingGoogle}
+                  className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                >
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  {isConnectingGoogle ? "Conectando..." : "Conectar Google Calendar"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
         <CardHeader>
@@ -257,7 +384,7 @@ const Settings: React.FC = () => {
                   </Button>
                   <Button
                     type="button"
-                    onClick={handleSendWeeklyBriefTest} // Novo botão para o brief semanal
+                    onClick={handleSendWeeklyBriefTest}
                     disabled={isSendingWeeklyBriefTest}
                     className="w-full bg-purple-600 text-white hover:bg-purple-700"
                   >
