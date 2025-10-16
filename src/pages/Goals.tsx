@@ -92,7 +92,7 @@ const Goals: React.FC = () => {
         return "Pendente";
       case "in_progress":
         return "Em Progresso";
-      case "Concluída":
+      case "completed":
         return "Concluída";
       default:
         return "";

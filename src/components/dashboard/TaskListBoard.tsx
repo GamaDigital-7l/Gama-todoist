@@ -12,7 +12,7 @@ import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
 import TaskItem from "@/components/TaskItem";
-import { parseISO } from "date-fns"; // Adicionado: Importar parseISO
+import { parseISO } from "date-fns";
 
 interface TaskListBoardProps {
   title: string;

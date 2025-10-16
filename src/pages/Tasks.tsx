@@ -179,12 +179,10 @@ const Tasks: React.FC = () => {
       return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
     };
 
-    // Prioriza o origin_board para os quadros "Hoje"
     if (filterType === "daily") {
       return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today";
     }
 
-    // Para tarefas recorrentes, verifica a recorrência
     if (task.recurrence_type !== "none") {
       switch (filterType) {
         case "weekly":
@@ -197,7 +195,6 @@ const Tasks: React.FC = () => {
       }
     }
 
-    // Para tarefas não recorrentes, verifica a due_date
     if (!task.due_date) return false;
     const dueDate = parseISO(task.due_date);
 
@@ -212,7 +209,6 @@ const Tasks: React.FC = () => {
     }
   };
 
-  // Função para construir a estrutura de tarefas e subtarefas
   const buildTaskTree = (allTasks: Task[]): Task[] => {
     const taskMap = new Map<string, Task>();
     allTasks.forEach(task => {
@@ -228,7 +224,6 @@ const Tasks: React.FC = () => {
       }
     });
 
-    // Ordenar subtarefas por created_at
     rootTasks.forEach(task => {
       if (task.subtasks) {
         task.subtasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());

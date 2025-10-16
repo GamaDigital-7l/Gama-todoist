@@ -133,7 +133,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
 
-  // Efeito para definir a data de vencimento e tags com base no initialOriginBoard
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
       if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {

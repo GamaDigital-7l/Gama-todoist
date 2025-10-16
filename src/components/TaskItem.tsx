@@ -15,6 +15,7 @@ import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import { Task, DAYS_OF_WEEK_LABELS, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
+import { cn } from "@/lib/utils"; // Importar cn
 
 interface TaskItemProps {
   task: Task;
@@ -109,7 +110,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     },
     onSuccess: () => {
       refetchTasks();
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] }); // Invalida todas as tarefas da dashboard
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] });
     },
     onError: (err: any) => {
       showError("Erro ao atualizar tarefa: " + err.message);
@@ -124,10 +125,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     }
     if (window.confirm("Tem certeza que deseja deletar esta tarefa e todas as suas subtarefas?")) {
       try {
-        // Deletar task_tags associadas
         await supabase.from("task_tags").delete().eq("task_id", taskId);
 
-        // Deletar a tarefa (ON DELETE CASCADE cuidará das subtarefas)
         const { error } = await supabase
           .from("tasks")
           .delete()
@@ -168,8 +167,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
 
   return (
-    <div className={`space-y-3 ${level > 0 ? 'ml-6 border-l pl-3 border-border' : ''}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+    <div className={`space-y-2 ${level > 0 ? 'ml-6 border-l pl-3 border-border' : ''}`}>
+      <div className={cn(
+        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-md shadow-sm",
+        level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
+      )}>
         <div className="flex items-center gap-3 flex-grow min-w-0">
           <Checkbox
             id={`task-${task.id}`}
@@ -180,28 +182,42 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
           <div className="grid gap-1.5 flex-grow min-w-0">
             <label
               htmlFor={`task-${task.id}`}
-              className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground"
-              }`}
+              className={cn(
+                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
+                level === 0 ? "text-sm" : "text-xs"
+              )}
             >
               {task.title}
             </label>
             {task.description && (
-              <p className="text-sm text-muted-foreground break-words">{task.description}</p>
+              <p className={cn(
+                "text-muted-foreground break-words",
+                level === 0 ? "text-sm" : "text-xs"
+              )}>{task.description}</p>
             )}
             {task.due_date && task.recurrence_type === "none" && (
-              <p className="text-xs text-muted-foreground">
+              <p className={cn(
+                "text-xs text-muted-foreground",
+                level > 0 && "text-[0.65rem]" // Ainda menor para subtarefas aninhadas
+              )}>
                 Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
               </p>
             )}
             {task.time && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {task.time}
+              <p className={cn(
+                "text-xs text-muted-foreground flex items-center gap-1",
+                level > 0 && "text-[0.65rem]"
+              )}>
+                <Clock className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {task.time}
               </p>
             )}
             {task.recurrence_type !== "none" && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
+              <p className={cn(
+                "text-xs text-muted-foreground flex items-center gap-1",
+                level > 0 && "text-[0.65rem]"
+              )}>
+                <Repeat className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
               </p>
             )}
             {task.tags && task.tags.length > 0 && (
@@ -256,7 +272,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       </div>
 
       {task.subtasks && task.subtasks.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {task.subtasks.map(subtask => (
             <TaskItem key={subtask.id} task={subtask} refetchTasks={refetchTasks} level={level + 1} />
           ))}

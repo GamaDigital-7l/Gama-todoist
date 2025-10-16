@@ -70,7 +70,7 @@ const BookDetails: React.FC = () => {
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
         <h1 className="text-3xl font-bold">Erro ao Carregar Livro</h1>
         <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>

@@ -50,7 +50,7 @@ interface TemplateTaskFormProps {
     id: string;
     recurrence_details?: string | null;
     tags?: { id: string; name: string; color: string }[];
-    origin_board: TemplateFormOriginBoard; // Usar o tipo restrito aqui
+    origin_board: TemplateFormOriginBoard;
   };
   onTemplateTaskSaved: () => void;
   onClose: () => void;

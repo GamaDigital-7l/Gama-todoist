@@ -136,7 +136,7 @@ const WebPushToggle: React.FC = () => {
           .from('user_subscriptions')
           .delete()
           .eq('user_id', userId)
-          .eq('subscription', subscription.toJSON()); // Garante que a inscrição correta seja removida
+          .eq('subscription', subscription.toJSON());
         if (deleteError) throw deleteError;
       }
       showSuccess('Desinscrito das notificações push.');

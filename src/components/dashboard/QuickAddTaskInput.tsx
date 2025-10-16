@@ -44,13 +44,11 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
     setIsLoading(true);
 
     try {
-      // Valores padrão para a tarefa rápida
       let finalDueDate: string | null = null;
       let finalTags: string[] = [];
       let tagName: string | undefined;
       let tagColor: string | undefined;
 
-      // Define a data de vencimento e tags com base no originBoard
       if (originBoard === "today_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
@@ -106,7 +104,6 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       if (insertError) throw insertError;
 
-      // Associar tags
       if (finalTags.length > 0) {
         const taskTagsToInsert = finalTags.map(tagId => ({
           task_id: newTask.id,

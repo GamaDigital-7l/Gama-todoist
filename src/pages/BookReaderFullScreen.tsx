@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import type { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Importação corrigida
+import type { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";

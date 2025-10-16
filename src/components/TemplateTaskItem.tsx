@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { TemplateTask, DAYS_OF_WEEK_LABELS, TemplateFormOriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
+import { cn } from "@/lib/utils"; // Importar cn
 
 interface TemplateTaskItemProps {
   templateTask: TemplateTask;
