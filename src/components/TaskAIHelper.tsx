@@ -14,17 +14,27 @@ import { Task, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importar Task e DAYS_O
 const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
-    .select("*")
+    .select(`
+      *,
+      task_tags(
+        tags(id, name, color)
+      )
+    `)
     .eq("user_id", userId)
-    .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
+    .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
     .order("time", { ascending: true, nullsFirst: false });
 
   if (error) {
     throw error;
   }
   
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+
   // Filtra as tarefas que são devidas hoje e não estão concluídas para o período
-  return (data || []).filter(task => !getAdjustedTaskCompletionStatus(task));
+  return mappedData.filter(task => !getAdjustedTaskCompletionStatus(task));
 };
 
 const TaskAIHelper: React.FC = () => {

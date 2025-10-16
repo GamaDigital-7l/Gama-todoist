@@ -16,14 +16,20 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      tags (id, name, color)
+      task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
-  return data || [];
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
 };
 
 const DashboardTaskList: React.FC = () => {

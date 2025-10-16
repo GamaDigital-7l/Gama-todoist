@@ -27,14 +27,21 @@ const fetchTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      tags (id, name, color)
+      task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
-  return data || [];
+  // Mapeia os dados para a estrutura esperada da interface Task
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
 };
 
 const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
@@ -42,14 +49,21 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
     .from("template_tasks")
     .select(`
       *,
-      tags (id, name, color)
+      template_task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
     throw error;
   }
-  return data || [];
+  // Mapeia os dados para a estrutura esperada da interface TemplateTask
+  const mappedData = data?.map((templateTask: any) => ({
+    ...templateTask,
+    tags: templateTask.template_task_tags.map((ttt: any) => ttt.tags),
+  })) || [];
+  return mappedData;
 };
 
 const Tasks: React.FC = () => {

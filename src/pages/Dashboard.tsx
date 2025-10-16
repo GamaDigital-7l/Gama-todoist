@@ -58,7 +58,9 @@ const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Prom
     .from("tasks")
     .select(`
       *,
-      tags (id, name, color)
+      task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .eq("origin_board", board)
@@ -66,7 +68,11 @@ const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Prom
   if (error) {
     throw error;
   }
-  return data || [];
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
 };
 
 const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
@@ -74,7 +80,9 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      tags (id, name, color)
+      task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .neq("recurrence_type", "none")
@@ -82,7 +90,11 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
   if (error) {
     throw error;
   }
-  return data || [];
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
 };
 
 const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
@@ -90,7 +102,9 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       *,
-      tags (id, name, color)
+      task_tags(
+        tags(id, name, color)
+      )
     `)
     .eq("user_id", userId)
     .eq("origin_board", "completed")
@@ -98,7 +112,11 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
   if (error) {
     throw error;
   }
-  return data || [];
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
 };
 
 
