@@ -63,7 +63,8 @@ serve(async (req) => {
     const { taskTitle, taskDescription, obstacle } = await req.json();
 
     const prompt = `Eu tenho uma tarefa chamada "${taskTitle}" com a descrição: "${taskDescription || 'Nenhuma descrição fornecida.'}". Meu obstáculo para completar esta tarefa é: "${obstacle}".
-    Como um coach de produtividade, me dê uma sugestão concreta e acionável para superar este obstáculo. Seja direto e focado em uma ou duas ações.`;
+    Como um coach de produtividade, me dê uma sugestão concreta e acionável para superar este obstáculo. Seja direto e focado em uma ou duas ações.
+    Os tipos de tarefa podem ser: general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001.`; // Adicionado os novos tipos de tarefa
 
     const chatCompletion = await aiClient.chat.completions.create({
       messages: [{ role: "user", content: prompt }],

@@ -40,7 +40,7 @@ const templateTaskSchema = z.object({
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
-  task_type: z.enum(["general", "reading", "exercise", "study"]).default("general"),
+  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Atualizado
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
@@ -124,7 +124,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     try {
       let templateTaskId: string;
 
-      const isTargetValueRelevant = values.task_type !== "general";
+      // Ajusta a lógica para que os novos tipos de tarefa não exijam target_value
+      const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type);
       const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
 
       const dataToSave = {
@@ -193,7 +194,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
 
     setIsGeneratingAISuggestions(true);
     try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um quadro de origem (general, today_priority, today_no_priority, jobs_woe_today), um tipo de tarefa (general, reading, exercise, study) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "recurrence_type", "recurrence_details", "origin_board", "task_type", "target_value".`;
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um quadro de origem (general, today_priority, today_no_priority, jobs_woe_today), um tipo de tarefa (general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "recurrence_type", "recurrence_details", "origin_board", "task_type", "target_value".`;
 
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [{ role: "user", content: prompt }] },
@@ -286,11 +287,15 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
             <SelectItem value="reading">Leitura</SelectItem>
             <SelectItem value="exercise">Exercício</SelectItem>
             <SelectItem value="study">Estudos</SelectItem>
+            <SelectItem value="cliente_fixo">Cliente Fixo</SelectItem>
+            <SelectItem value="frella">Frella</SelectItem>
+            <SelectItem value="agencia">Agência</SelectItem>
+            <SelectItem value="copa_2001">Copa 2001</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {(taskType === "reading" || taskType === "exercise" || taskType === "study") && (
+      {(["reading", "exercise", "study"].includes(taskType)) && (
         <div>
           <Label htmlFor="target_value" className="text-foreground">
             Valor Alvo ({taskType === "reading" ? "Páginas" : taskType === "study" ? "Minutos de Estudo" : "Repetições/Minutos"})

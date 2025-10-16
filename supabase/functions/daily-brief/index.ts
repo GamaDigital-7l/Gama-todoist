@@ -186,13 +186,14 @@ serve(async (req) => {
         return isTaskDueToday && !getAdjustedTaskCompletionStatus(task); // Filtrar apenas tarefas não concluídas para o período
       });
 
-      const taskList = todayTasks.map(task => `- ${task.title}${task.time ? ` às ${task.time}` : ''}`).join("\n");
+      const taskList = todayTasks.map(task => `- ${task.title}${task.time ? ` às ${task.time}` : ''} (Tipo: ${task.task_type})`).join("\n"); // Incluído o tipo de tarefa no prompt
 
       const prompt = `Crie um breve resumo motivacional para a ${timeOfDay === 'morning' ? 'manhã' : 'noite'}. Inclua:
       - 3 pontos principais para focar hoje (baseado nas tarefas: ${taskList || 'Nenhuma tarefa importante.'}).
       - 1 hábito sagrado para praticar hoje.
       - 1 micro-meta alcançável para o dia.
       - Uma previsão de bloqueios potenciais (ex: "Cuidado com distrações no meio da tarde").
+      Os tipos de tarefa podem ser: general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001.
       Formate a resposta em JSON com as chaves: "main_points", "sacred_habit", "micro_goal", "potential_blockages".`;
 
       const chatCompletion = await aiClient.chat.completions.create({

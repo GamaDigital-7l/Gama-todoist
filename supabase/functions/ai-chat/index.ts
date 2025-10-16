@@ -78,14 +78,14 @@ serve(async (req) => {
         /ex: 'Monday' para semanal, '15' para mensal, caso contrário null/,
         "ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null"
       );
-      // Atualizar o prompt para incluir o novo tipo de tarefa 'study'
+      // Atualizar o prompt para incluir os novos tipos de tarefa
       messages[0].content = messages[0].content.replace(
-        /tipo de tarefa \(general, reading, exercise\)/,
-        "tipo de tarefa (general, reading, exercise, study)"
+        /tipo de tarefa \(general, reading, exercise, study\)/,
+        "tipo de tarefa (general, reading, exercise, study, cliente_fixo, frella, agencia, copa_2001)"
       );
       messages[0].content = messages[0].content.replace(
-        /valor alvo \(numeric, se aplicável, caso contrário null\)/,
-        "valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos)"
+        /valor alvo \(numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos\)/,
+        "valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos. Para 'cliente_fixo', 'frella', 'agencia', 'copa_2001' o valor alvo deve ser null)"
       );
     }
 
