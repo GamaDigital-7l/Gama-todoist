@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS } from "@/types/task"; // Importar Task, Tag e constantes
+import TaskItem from "@/components/TaskItem"; // Importar o novo componente TaskItem
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -215,83 +216,44 @@ const Tasks: React.FC = () => {
     }
   };
 
+  // Função para construir a estrutura de tarefas e subtarefas
+  const buildTaskTree = (allTasks: Task[]): Task[] => {
+    const taskMap = new Map<string, Task>();
+    allTasks.forEach(task => {
+      taskMap.set(task.id, { ...task, subtasks: [] });
+    });
+
+    const rootTasks: Task[] = [];
+    allTasks.forEach(task => {
+      if (task.parent_task_id && taskMap.has(task.parent_task_id)) {
+        taskMap.get(task.parent_task_id)?.subtasks?.push(taskMap.get(task.id)!);
+      } else {
+        rootTasks.push(taskMap.get(task.id)!);
+      }
+    });
+
+    // Ordenar subtarefas por created_at
+    rootTasks.forEach(task => {
+      if (task.subtasks) {
+        task.subtasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      }
+    });
+
+    return rootTasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  };
+
+  const taskTree = buildTaskTree(tasks || []);
+
   const renderTaskList = (filteredTasks: Task[]) => {
-    if (filteredTasks.length === 0) {
+    const filteredTaskTree = buildTaskTree(filteredTasks);
+    if (filteredTaskTree.length === 0) {
       return <p className="text-muted-foreground">Nenhuma tarefa encontrada para esta categoria.</p>;
     }
     return (
       <div className="space-y-3">
-        {filteredTasks.map((task) => {
-          const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
-          return (
-            <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-              <div className="flex items-center gap-3 flex-grow min-w-0">
-                <Checkbox
-                  id={`task-${task.id}`}
-                  checked={isTaskCompletedForPeriod}
-                  onCheckedChange={() => handleToggleComplete(task.id, isTaskCompletedForPeriod)}
-                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                />
-                <div className="grid gap-1.5 flex-grow min-w-0">
-                  <label
-                    htmlFor={`task-${task.id}`}
-                    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                      isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground"
-                    }`}
-                  >
-                    {task.title}
-                  </label>
-                  {task.description && (
-                    <p className="text-sm text-muted-foreground break-words">{task.description}</p>
-                  )}
-                  {task.due_date && task.recurrence_type === "none" && (
-                    <p className="text-xs text-muted-foreground">
-                      Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
-                    </p>
-                  )}
-                  {task.time && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {task.time}
-                    </p>
-                  )}
-                  {task.recurrence_type !== "none" && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
-                    </p>
-                  )}
-                  {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
-                    </p>
-                  )}
-                  {task.tags && task.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {task.tags.map((tag) => (
-                        <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
-                  <Brain className="h-4 w-4" />
-                  <span className="sr-only">Obter Ajuda da IA</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
-                  <Edit className="h-4 w-4" />
-                  <span className="sr-only">Editar Tarefa</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Deletar Tarefa</span>
-                </Button>
-              </div>
-            </div>
-          );
-        })}
+        {filteredTaskTree.map((task) => (
+          <TaskItem key={task.id} task={task} refetchTasks={refetch} />
+        ))}
       </div>
     );
   };

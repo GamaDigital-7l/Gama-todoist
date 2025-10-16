@@ -26,7 +26,7 @@ import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
-import { OriginBoard, RecurrenceType, TaskType } from "@/types/task"; // Importar tipos
+import { OriginBoard, RecurrenceType, TaskType, Task } from "@/types/task"; // Importar tipos e Task
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -52,6 +52,7 @@ const taskSchema = z.object({
   ),
   selected_tag_ids: z.array(z.string()).optional(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"), // Atualizado
+  parent_task_id: z.string().nullable().optional(), // Novo campo
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
@@ -66,9 +67,23 @@ interface TaskFormProps {
   onTaskSaved: () => void;
   onClose: () => void;
   initialOriginBoard?: OriginBoard; // Novo prop
+  initialParentTaskId?: string; // Novo prop para subtarefas
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general" }) => {
+const fetchUserTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title")
+    .eq("user_id", userId)
+    .is("parent_task_id", null) // Apenas tarefas principais
+    .order("title", { ascending: true });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general", initialParentTaskId }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const [isGeneratingAISuggestions, setIsGeneratingAISuggestions] = useState(false);
@@ -84,6 +99,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       target_value: initialData.target_value || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || initialOriginBoard, // Usa initialData.origin_board ou initialOriginBoard
+      parent_task_id: initialData.parent_task_id || initialParentTaskId || null, // Define parent_task_id
     } : {
       title: "",
       description: "",
@@ -95,6 +111,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       target_value: undefined,
       selected_tag_ids: [],
       origin_board: initialOriginBoard, // Define o valor inicial do quadro
+      parent_task_id: initialParentTaskId || null, // Define parent_task_id inicial
     },
   });
 
@@ -103,8 +120,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const watchedRecurrenceDetails = form.watch("recurrence_details");
   const watchedOriginBoard = form.watch("origin_board");
+  const watchedParentTaskId = form.watch("parent_task_id");
 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+  const { data: userTasks, isLoading: isLoadingUserTasks } = useQuery<Task[], Error>({
+    queryKey: ["userTasksForParentSelection", userId],
+    queryFn: () => fetchUserTasks(userId!),
+    enabled: !!userId && !initialParentTaskId, // Só busca se não for uma subtarefa sendo criada
+  });
 
   useEffect(() => {
     if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
@@ -212,6 +236,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         current_daily_target: finalTargetValue,
         updated_at: new Date().toISOString(),
         origin_board: values.origin_board, // Salva o quadro de origem
+        parent_task_id: values.parent_task_id || null, // Salva a tarefa pai
       };
 
       if (initialData) {
@@ -527,6 +552,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           </SelectContent>
         </Select>
       </div>
+
+      {!initialParentTaskId && ( // Só mostra o seletor de tarefa pai se não estiver criando uma subtarefa
+        <div>
+          <Label htmlFor="parent_task_id" className="text-foreground">Tarefa Pai (Opcional)</Label>
+          <Select
+            onValueChange={(value: string) => form.setValue("parent_task_id", value === "" ? null : value)}
+            value={watchedParentTaskId || ""}
+            disabled={isLoadingUserTasks}
+          >
+            <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+              <SelectValue placeholder="Selecionar tarefa pai" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+              <SelectItem value="">Nenhuma</SelectItem>
+              {userTasks?.map(task => (
+                <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <TagSelector
         selectedTagIds={selectedTagIds}

@@ -30,11 +30,12 @@ serve(async (req) => {
     console.log(`Executando daily-reset para o dia: ${todaySaoPaulo}. Verificando tarefas de: ${yesterdaySaoPaulo}`);
 
     // 1. Mover tarefas não concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'overdue'
+    // Inclui subtarefas na busca, mas a lógica de movimentação se aplica a todas as tarefas que se encaixam
     const { data: uncompletedTodayTasks, error: fetchUncompletedError } = await supabase
       .from('tasks')
-      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board')
-      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
-      .eq('is_completed', false); // Apenas as que ainda estão marcadas como false
+      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
+      .eq('is_completed', false);
 
     if (fetchUncompletedError) throw fetchUncompletedError;
 
@@ -65,11 +66,12 @@ serve(async (req) => {
     }
 
     // 2. Mover tarefas concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'completed'
+    // Inclui subtarefas na busca
     const { data: completedTodayTasks, error: fetchCompletedError } = await supabase
       .from('tasks')
-      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board')
-      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
-      .eq('is_completed', true); // Apenas as que estão marcadas como true
+      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
+      .eq('is_completed', true);
 
     if (fetchCompletedError) throw fetchCompletedError;
 
@@ -94,9 +96,10 @@ serve(async (req) => {
     }
 
     // 3. Resetar o status 'is_completed' para tarefas recorrentes que são devidas hoje
+    // Inclui subtarefas na busca
     const { data: recurrentTasks, error: fetchRecurrentError } = await supabase
       .from('tasks')
-      .select('id, recurrence_type, recurrence_details, is_completed, last_successful_completion_date')
+      .select('id, recurrence_type, recurrence_details, is_completed, last_successful_completion_date, parent_task_id')
       .neq('recurrence_type', 'none');
 
     if (fetchRecurrentError) throw fetchRecurrentError;
@@ -141,9 +144,10 @@ serve(async (req) => {
     }
 
     // 4. Mover tarefas de 'overdue' para 'general' se a data de vencimento for no futuro ou se for recorrente e não estiver atrasada
+    // Inclui subtarefas na busca
     const { data: overdueTasks, error: fetchOverdueError } = await supabase
       .from('tasks')
-      .select('id, due_date, recurrence_type, recurrence_details, origin_board')
+      .select('id, due_date, recurrence_type, recurrence_details, origin_board, parent_task_id')
       .eq('origin_board', 'overdue');
 
     if (fetchOverdueError) throw fetchOverdueError;

@@ -27,6 +27,8 @@ export interface Task {
   completed_at?: string | null; // Adicionado para tarefas finalizadas
   last_moved_to_overdue_at?: string | null; // Adicionado para tarefas atrasadas
   tags: Tag[];
+  parent_task_id?: string | null; // Novo campo para subtarefas
+  subtasks?: Task[]; // Para carregar subtarefas aninhadas
 }
 
 export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
