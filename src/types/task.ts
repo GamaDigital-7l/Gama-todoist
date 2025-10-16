@@ -6,7 +6,7 @@ export interface Tag {
 
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
 export type TaskType = "general" | "reading" | "exercise" | "study";
-export type OriginBoard = "general" | "urgent_today" | "non_urgent_today" | "overdue" | "completed" | "recurrent";
+export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today"; // Atualizado
 
 export interface Task {
   id: string;

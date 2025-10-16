@@ -29,11 +29,11 @@ serve(async (req) => {
 
     console.log(`Executando daily-reset para o dia: ${todaySaoPaulo}. Verificando tarefas de: ${yesterdaySaoPaulo}`);
 
-    // 1. Mover tarefas não concluídas de 'urgent_today' e 'non_urgent_today' para 'overdue'
+    // 1. Mover tarefas não concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'overdue'
     const { data: uncompletedTodayTasks, error: fetchUncompletedError } = await supabase
       .from('tasks')
       .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board')
-      .in('origin_board', ['urgent_today', 'non_urgent_today'])
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
       .eq('is_completed', false); // Apenas as que ainda estão marcadas como false
 
     if (fetchUncompletedError) throw fetchUncompletedError;
@@ -64,11 +64,11 @@ serve(async (req) => {
       console.log(`Movidas ${tasksToMoveToOverdue.length} tarefas para 'overdue'.`);
     }
 
-    // 2. Mover tarefas concluídas de 'urgent_today' e 'non_urgent_today' para 'completed'
+    // 2. Mover tarefas concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'completed'
     const { data: completedTodayTasks, error: fetchCompletedError } = await supabase
       .from('tasks')
       .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board')
-      .in('origin_board', ['urgent_today', 'non_urgent_today'])
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
       .eq('is_completed', true); // Apenas as que estão marcadas como true
 
     if (fetchCompletedError) throw fetchCompletedError;
@@ -147,6 +147,16 @@ serve(async (req) => {
       .eq('origin_board', 'overdue');
 
     if (fetchOverdueError) throw fetchOverdueError;
+
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      const dayMap: { [key: string]: number } = {
+        "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+        "Thursday": 4, "Friday": 5, "Saturday": 6
+      };
+      return days.some(day => dayMap[day] === dayIndex);
+    };
 
     const tasksToMoveFromOverdueToGeneral = overdueTasks.filter(task => {
       const currentDayOfWeek = nowSaoPaulo.getDay();

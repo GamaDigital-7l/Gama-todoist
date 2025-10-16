@@ -184,7 +184,7 @@ const Tasks: React.FC = () => {
 
     // Prioriza o origin_board para os quadros "Hoje"
     if (filterType === "daily") {
-      return task.origin_board === "urgent_today" || task.origin_board === "non_urgent_today";
+      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today"; // Atualizado
     }
 
     // Para tarefas recorrentes, verifica a recorrência

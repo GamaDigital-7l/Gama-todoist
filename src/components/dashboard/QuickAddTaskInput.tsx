@@ -63,38 +63,51 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       const parsedTask = JSON.parse(aiData.response);
 
-      // Ajustar due_date e tags para "urgent_today" e "non_urgent_today"
+      // Ajustar due_date e tags com base no originBoard
       let finalDueDate = parsedTask.due_date;
       let finalTags = [];
 
-      if (originBoard === "urgent_today" || originBoard === "non_urgent_today") {
+      let tagName: string | undefined;
+      let tagColor: string | undefined;
+
+      if (originBoard === "today_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
-        const { data: tagData, error: tagError } = await supabase
+        tagName = 'hoje-prioridade';
+        tagColor = '#EF4444'; // Vermelho
+      } else if (originBoard === "today_no_priority") {
+        finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
+        tagName = 'hoje-sem-prioridade';
+        tagColor = '#3B82F6'; // Azul
+      } else if (originBoard === "jobs_woe_today") {
+        finalDueDate = format(new Date(), "yyyy-MM-dd"); // Força a data de hoje
+        tagName = 'jobs-woe-hoje';
+        tagColor = '#8B5CF6'; // Roxo
+      }
+
+      if (tagName && tagColor) {
+        let tagId: string | undefined;
+        const { data: existingTag, error: fetchTagError } = await supabase
           .from('tags')
           .select('id')
           .eq('user_id', userId)
-          .eq('name', originBoard === "urgent_today" ? 'hoje-urgente' : 'hoje-sem-urgencia')
+          .eq('name', tagName)
           .single();
 
-        if (tagError && tagError.code !== 'PGRST116') { // PGRST116 = no rows found
-          throw tagError;
-        }
-
-        if (tagData) {
-          finalTags.push(tagData.id);
+        if (fetchTagError && fetchTagError.code !== 'PGRST116') {
+          throw fetchTagError;
+        } else if (existingTag) {
+          tagId = existingTag.id;
         } else {
-          // Criar a tag se não existir
           const { data: newTag, error: createTagError } = await supabase
             .from('tags')
-            .insert({
-              user_id: userId,
-              name: originBoard === "urgent_today" ? 'hoje-urgente' : 'hoje-sem-urgencia',
-              color: originBoard === "urgent_today" ? '#EF4444' : '#3B82F6', // Vermelho para urgente, Azul para sem urgência
-            })
+            .insert({ user_id: userId, name: tagName, color: tagColor })
             .select('id')
             .single();
           if (createTagError) throw createTagError;
           finalTags.push(newTag.id);
+        }
+        if (tagId) {
+          finalTags.push(tagId);
         }
       }
 

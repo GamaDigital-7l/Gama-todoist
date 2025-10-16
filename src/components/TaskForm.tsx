@@ -51,7 +51,7 @@ const taskSchema = z.object({
     z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
   ),
   selected_tag_ids: z.array(z.string()).optional(),
-  origin_board: z.enum(["general", "urgent_today", "non_urgent_today", "overdue", "completed", "recurrent"]).default("general"), // Adicionado
+  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"), // Atualizado
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
@@ -117,11 +117,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   // Efeito para definir a data de vencimento e tags com base no initialOriginBoard
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
-      if (!initialData && userId && (initialOriginBoard === "urgent_today" || initialOriginBoard === "non_urgent_today")) {
+      if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
         form.setValue("due_date", new Date()); // Define a data de hoje
         
-        const tagName = initialOriginBoard === "urgent_today" ? 'hoje-urgente' : 'hoje-sem-urgencia';
-        const tagColor = initialOriginBoard === "urgent_today" ? '#EF4444' : '#3B82F6';
+        let tagName: string;
+        let tagColor: string;
+
+        if (initialOriginBoard === "today_priority") {
+          tagName = 'hoje-prioridade';
+          tagColor = '#EF4444'; // Vermelho
+        } else if (initialOriginBoard === "today_no_priority") {
+          tagName = 'hoje-sem-prioridade';
+          tagColor = '#3B82F6'; // Azul
+        } else { // jobs_woe_today
+          tagName = 'jobs-woe-hoje';
+          tagColor = '#8B5CF6'; // Roxo
+        }
 
         let tagId: string | undefined;
 
@@ -507,8 +518,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="general">Geral</SelectItem>
-            <SelectItem value="urgent_today">Hoje - Urgente</SelectItem>
-            <SelectItem value="non_urgent_today">Hoje - Sem Urgência</SelectItem>
+            <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
+            <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
+            <SelectItem value="jobs_woe_today">Jobs Woe hoje</SelectItem>
             <SelectItem value="overdue">Atrasadas</SelectItem>
             <SelectItem value="completed">Finalizadas</SelectItem>
             <SelectItem value="recurrent">Recorrentes</SelectItem>

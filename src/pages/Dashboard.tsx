@@ -145,15 +145,21 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   });
 
-  const { data: urgentTodayTasks, isLoading: isLoadingUrgentToday, error: errorUrgentToday, refetch: refetchUrgentToday } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "urgent_today", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "urgent_today"),
+  const { data: todayPriorityTasks, isLoading: isLoadingTodayPriority, error: errorTodayPriority, refetch: refetchTodayPriority } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "today_priority", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "today_priority"),
     enabled: !!userId,
   });
 
-  const { data: nonUrgentTodayTasks, isLoading: isLoadingNonUrgentToday, error: errorNonUrgentToday, refetch: refetchNonUrgentToday } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "non_urgent_today", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "non_urgent_today"),
+  const { data: todayNoPriorityTasks, isLoading: isLoadingTodayNoPriority, error: errorTodayNoPriority, refetch: refetchTodayNoPriority } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "today_no_priority", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "today_no_priority"),
+    enabled: !!userId,
+  });
+
+  const { data: jobsWoeTodayTasks, isLoading: isLoadingJobsWoeToday, error: errorJobsWoeToday, refetch: refetchJobsWoeToday } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "jobs_woe_today", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "jobs_woe_today"),
     enabled: !!userId,
   });
 
@@ -189,11 +195,11 @@ const Dashboard: React.FC = () => {
 
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
 
-  const getTodayCompletedTasksCount = (urgentTasks: Task[], nonUrgentTasks: Task[]): { completed: number; total: number } => {
+  const getTodayCompletedTasksCount = (priorityTasks: Task[], noPriorityTasks: Task[], jobsWoeTasks: Task[]): { completed: number; total: number } => {
     let completedToday = 0;
     let totalToday = 0;
 
-    [...urgentTasks, ...nonUrgentTasks].forEach(task => {
+    [...priorityTasks, ...noPriorityTasks, ...jobsWoeTasks].forEach(task => {
       totalToday++;
       if (getAdjustedTaskCompletionStatus(task)) {
         completedToday++;
@@ -203,7 +209,7 @@ const Dashboard: React.FC = () => {
     return { completed: completedToday, total: totalToday };
   };
 
-  const todayTasksStats = getTodayCompletedTasksCount(urgentTodayTasks || [], nonUrgentTodayTasks || []);
+  const todayTasksStats = getTodayCompletedTasksCount(todayPriorityTasks || [], todayNoPriorityTasks || [], jobsWoeTodayTasks || []);
 
   const currentWeight = latestHealthMetric?.weight_kg || null;
   let healthGoalProgress = {
@@ -231,8 +237,9 @@ const Dashboard: React.FC = () => {
   }
 
   const handleTaskAdded = () => {
-    refetchUrgentToday();
-    refetchNonUrgentToday();
+    refetchTodayPriority();
+    refetchTodayNoPriority();
+    refetchJobsWoeToday();
     refetchOverdue();
     refetchRecurrent();
     refetchCompleted();
@@ -266,22 +273,31 @@ const Dashboard: React.FC = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <TaskListBoard
-          title="Hoje – Urgente"
-          tasks={urgentTodayTasks || []}
-          isLoading={isLoadingUrgentToday}
-          error={errorUrgentToday}
+          title="Hoje Prioridade"
+          tasks={todayPriorityTasks || []}
+          isLoading={isLoadingTodayPriority}
+          error={errorTodayPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="urgent_today" onTaskAdded={handleTaskAdded} />}
-          originBoard="urgent_today"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_priority"
         />
         <TaskListBoard
-          title="Hoje – Sem Urgência"
-          tasks={nonUrgentTodayTasks || []}
-          isLoading={isLoadingNonUrgentToday}
-          error={errorNonUrgentToday}
+          title="Hoje sem Prioridade"
+          tasks={todayNoPriorityTasks || []}
+          isLoading={isLoadingTodayNoPriority}
+          error={errorTodayNoPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="non_urgent_today" onTaskAdded={handleTaskAdded} />}
-          originBoard="non_urgent_today"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_no_priority"
+        />
+        <TaskListBoard
+          title="Jobs Woe hoje"
+          tasks={jobsWoeTodayTasks || []}
+          isLoading={isLoadingJobsWoeToday}
+          error={errorJobsWoeToday}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
+          originBoard="jobs_woe_today"
         />
         <TaskListBoard
           title="Atrasadas"
@@ -322,7 +338,7 @@ const Dashboard: React.FC = () => {
             <ListTodo className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            {(isLoadingUrgentToday || isLoadingNonUrgentToday) ? (
+            {(isLoadingTodayPriority || isLoadingTodayNoPriority || isLoadingJobsWoeToday) ? (
               <div className="text-3xl font-bold text-foreground">Carregando...</div>
             ) : (
               <div className="text-3xl font-bold text-foreground">{todayTasksStats.completed}/{todayTasksStats.total} Concluídas</div>

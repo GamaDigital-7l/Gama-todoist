@@ -16,7 +16,7 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
-    .in('origin_board', ['urgent_today', 'non_urgent_today']) // Busca apenas dos quadros de hoje
+    .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today']) // Atualizado
     .order("time", { ascending: true, nullsFirst: false });
 
   if (error) {
