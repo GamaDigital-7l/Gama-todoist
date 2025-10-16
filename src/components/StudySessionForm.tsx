@@ -106,7 +106,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           id="title"
           {...form.register("title")}
           placeholder="Ex: Revisar React Hooks"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -121,7 +121,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           type="number"
           {...form.register("duration_minutes", { valueAsNumber: true })}
           placeholder="Ex: 60"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.duration_minutes && (
           <p className="text-red-500 text-sm mt-1">
@@ -135,7 +135,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           id="notes"
           {...form.register("notes")}
           placeholder="O que você estudou ou aprendeu..."
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>

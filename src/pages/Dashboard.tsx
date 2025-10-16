@@ -240,11 +240,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
             </Button>
           </DialogTrigger>

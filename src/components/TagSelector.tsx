@@ -131,7 +131,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                       <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Tag
                     </CommandItem>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
                     <DialogHeader>
                       <DialogTitle className="text-foreground">Criar Nova Tag</DialogTitle>
                       <DialogDescription className="text-muted-foreground">

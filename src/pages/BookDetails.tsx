@@ -96,7 +96,7 @@ const BookDetails: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
-        <div>
+        <div className="flex-1 min-w-0"> {/* Adicionado flex-1 min-w-0 para o título e autor */}
           <h1 className="text-3xl font-bold break-words">{book.title}</h1>
           {book.author && <p className="text-lg text-muted-foreground break-words">Por {book.author}</p>}
         </div>

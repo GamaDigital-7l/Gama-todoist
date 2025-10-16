@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
           id="name"
           {...form.register("name")}
           placeholder="Ex: Trabalho, Pessoal, Urgente"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.name && (
           <p className="text-red-500 text-sm mt-1">

@@ -62,7 +62,7 @@ const TaskObstacleCoach: React.FC<TaskObstacleCoachProps> = ({ isOpen, onClose, 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[475px] bg-card border border-border rounded-lg shadow-lg">
+      <DialogContent className="sm:max-w-[475px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
         <DialogHeader>
           <DialogTitle className="text-foreground">Coach de Obstáculos da IA</DialogTitle>
           <DialogDescription className="text-muted-foreground break-words">

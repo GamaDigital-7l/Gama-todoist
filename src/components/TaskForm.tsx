@@ -312,7 +312,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -326,7 +326,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa..."
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       
@@ -352,7 +352,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           }
           value={taskType}
         >
-          <SelectTrigger id="task_type" className="bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="task_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar tipo" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
@@ -379,7 +379,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               taskType === "study" ? "Ex: 60 minutos" :
               "Ex: 30 minutos"
             }
-            className="bg-input border-border text-foreground focus-visible:ring-ring"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
           />
           {form.formState.errors.target_value && (
             <p className="text-red-500 text-sm mt-1">
@@ -437,7 +437,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type" className="bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
@@ -485,7 +485,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             max="31"
             {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
-            className="bg-input border-border text-foreground focus-visible:ring-ring"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
           />
           {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
@@ -502,7 +502,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           value={watchedOriginBoard}
           disabled={!!initialData} // Desabilita a mudança do quadro se estiver editando
         >
-          <SelectTrigger id="origin_board" className="bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar quadro" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">

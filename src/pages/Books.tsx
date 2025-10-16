@@ -110,15 +110,6 @@ const Books: React.FC = () => {
     },
   });
 
-  const handleUpdatePage = (bookId: string) => {
-    const newPage = currentPageInput[bookId];
-    if (newPage !== undefined && newPage >= 0) {
-      updateBookPageMutation.mutate({ bookId, newPage });
-    } else {
-      showError("Página inválida.");
-    }
-  };
-
   const handleEditBook = (book: Book) => {
     setEditingBook(book);
     setIsFormOpen(true);
@@ -145,7 +136,7 @@ const Books: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <Dialog
           open={isFormOpen}
@@ -155,11 +146,11 @@ const Books: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingBook(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingBook(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -221,7 +212,7 @@ const Books: React.FC = () => {
                 </div>
                 <div className="mt-4 space-y-2">
                   {book.total_pages && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2"> {/* Adicionado flex-col para mobile */}
                       <Label htmlFor={`current-page-${book.id}`} className="sr-only">Página Atual</Label>
                       <Input
                         id={`current-page-${book.id}`}
@@ -230,12 +221,12 @@ const Books: React.FC = () => {
                         max={book.total_pages}
                         value={currentPageInput[book.id] ?? 0} 
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
-                        className="w-24 bg-input border-border text-foreground focus-visible:ring-ring"
+                        className="w-full sm:w-24 bg-input border-border text-foreground focus-visible:ring-ring" {/* w-full para mobile */}
                       />
                       <Button
                         onClick={() => handleUpdatePage(book.id)}
                         size="sm"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90" {/* w-full para mobile */}
                         disabled={updateBookPageMutation.isPending}
                       >
                         Atualizar

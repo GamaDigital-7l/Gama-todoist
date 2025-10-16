@@ -151,7 +151,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           id="title"
           {...form.register("title")}
           placeholder="Ex: O Senhor dos Anéis"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -165,7 +165,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           id="author"
           {...form.register("author")}
           placeholder="Ex: J.R.R. Tolkien"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
@@ -174,7 +174,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           id="cover_image_url"
           {...form.register("cover_image_url")}
           placeholder="Ex: https://exemplo.com/capa.jpg"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.cover_image_url && (
           <p className="text-red-500 text-sm mt-1">
@@ -188,7 +188,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           id="description"
           {...form.register("description")}
           placeholder="Uma breve descrição do livro..."
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
@@ -198,7 +198,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           type="number"
           {...form.register("total_pages", { valueAsNumber: true })}
           placeholder="Ex: 500"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.total_pages && (
           <p className="text-red-500 text-sm mt-1">
@@ -213,7 +213,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           type="number"
           {...form.register("daily_reading_target_pages", { valueAsNumber: true })}
           placeholder="Ex: 10"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.daily_reading_target_pages && (
           <p className="text-red-500 text-sm mt-1">
@@ -228,7 +228,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           type="file"
           accept="application/pdf"
           onChange={(e) => form.setValue("pdf_file", e.target.files?.[0])}
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.pdf_file && (
           <p className="text-red-500 text-sm mt-1">
@@ -244,7 +244,7 @@ const BookForm: React.FC<BookFormProps> = ({ onBookAdded, onClose, initialData }
           }
           value={form.watch("read_status")}
         >
-          <SelectTrigger id="read_status" className="bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="read_status" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">

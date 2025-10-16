@@ -112,7 +112,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           id="title"
           {...form.register("title")}
           placeholder="Ex: Perder 10kg"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -128,7 +128,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           step="0.1"
           {...form.register("initial_weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 80.5"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.initial_weight_kg && (
           <p className="text-red-500 text-sm mt-1">
@@ -144,7 +144,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           step="0.1"
           {...form.register("target_weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 70.0"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.target_weight_kg && (
           <p className="text-red-500 text-sm mt-1">

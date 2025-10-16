@@ -137,7 +137,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col sm:flex-row gap-2"> {/* Alterado para flex-col em mobile, flex-row em sm+ */}
       <Input
         type="text"
         placeholder="Adicionar tarefa rapidamente (ex: 'revisar proposta amanhã 9h urgente')"
@@ -147,13 +147,13 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
         disabled={isLoading}
       />
-      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <PlusCircle className="h-4 w-4" />
         )}
-        <span className="sr-only">Adicionar</span>
+        <span className="sr-only sm:not-sr-only sm:ml-2">Adicionar</span> {/* Texto visível em sm+ */}
       </Button>
     </div>
   );

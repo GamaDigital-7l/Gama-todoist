@@ -193,7 +193,7 @@ const Settings: React.FC = () => {
                   }
                   value={notificationChannel}
                 >
-                  <SelectTrigger id="notification_channel" className="bg-input border-border text-foreground focus-visible:ring-ring">
+                  <SelectTrigger id="notification_channel" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
                     <SelectValue placeholder="Selecionar canal" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
@@ -240,7 +240,7 @@ const Settings: React.FC = () => {
                   id="groq_api_key"
                   {...form.register("groq_api_key")}
                   placeholder="Sua chave da Groq API"
-                  className="bg-input border-border text-foreground focus-visible:ring-ring"
+                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
                 />
                 {form.formState.errors.groq_api_key && (
                   <p className="text-red-500 text-sm mt-1">
@@ -254,7 +254,7 @@ const Settings: React.FC = () => {
                   id="openai_api_key"
                   {...form.register("openai_api_key")}
                   placeholder="Sua chave da OpenAI API"
-                  className="bg-input border-border text-foreground focus-visible:ring-ring"
+                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
                 />
                 {form.formState.errors.openai_api_key && (
                   <p className="text-red-500 text-sm mt-1">
@@ -270,7 +270,7 @@ const Settings: React.FC = () => {
                   }
                   value={form.watch("ai_provider_preference")}
                 >
-                  <SelectTrigger id="ai_provider_preference" className="bg-input border-border text-foreground focus-visible:ring-ring">
+                  <SelectTrigger id="ai_provider_preference" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
                     <SelectValue placeholder="Selecionar provedor de IA" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">

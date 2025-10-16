@@ -120,9 +120,9 @@ const Goals: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
-        <div className="flex gap-2 flex-wrap justify-end">
+        <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto"> {/* w-full para mobile */}
           <Dialog
             open={isFormOpen}
             onOpenChange={(open) => {
@@ -131,11 +131,11 @@ const Goals: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingGoal(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

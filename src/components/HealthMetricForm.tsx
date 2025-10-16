@@ -130,7 +130,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
           step="0.1"
           {...form.register("weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 75.5"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.weight_kg && (
           <p className="text-red-500 text-sm mt-1">
@@ -144,7 +144,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
           id="notes"
           {...form.register("notes")}
           placeholder="Observações sobre sua saúde..."
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">

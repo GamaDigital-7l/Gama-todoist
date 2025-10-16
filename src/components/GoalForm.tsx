@@ -107,7 +107,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
           id="title"
           {...form.register("title")}
           placeholder="Ex: Aprender um novo idioma"
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -121,7 +121,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da meta..."
-          className="bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
@@ -161,7 +161,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
           }
           value={form.watch("status")}
         >
-          <SelectTrigger id="status" className="bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="status" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
