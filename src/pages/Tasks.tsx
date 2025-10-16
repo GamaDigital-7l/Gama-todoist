@@ -33,6 +33,7 @@ interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
   recurrence_details?: string | null;
   task_type: "general" | "reading" | "exercise" | "study";
   target_value?: number | null;
+  tags: Tag[]; // Adicionado a propriedade tags
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
