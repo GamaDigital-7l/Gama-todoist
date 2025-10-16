@@ -13,7 +13,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Palette, PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
+import { PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -49,7 +49,7 @@ const checklistItemSchema = z.object({
 const noteSchema = z.object({
   title: z.string().optional(),
   content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
-  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FEEFC3"),
+  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FFFFFF"), // Cor padrão branca
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
@@ -101,7 +101,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     } : {
       title: "",
       content: "",
-      color: "#FEEFC3",
+      color: "#FFFFFF", // Cor padrão branca
       type: "text",
       selected_tag_ids: [],
       reminder_date: undefined,
@@ -112,7 +112,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     },
   });
 
-  const selectedColor = form.watch("color");
+  const selectedColor = form.watch("color"); // Ainda observamos a cor, mas não a usamos para o fundo
   const noteType = form.watch("type");
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
   const selectedTagIds = form.watch("selected_tag_ids") || [];
@@ -320,7 +320,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
-      <div className="relative p-4" style={{ backgroundColor: selectedColor }}>
+      <div className="relative p-4 bg-card"> {/* Usando bg-card para fundo adaptável */}
         {/* Imagem Principal */}
         {imagePreview && (
           <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
@@ -356,7 +356,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar" // Removido min-h-[80px] daqui
+            className="bg-transparent text-foreground quill-no-toolbar min-h-[80px]" // Adicionado min-h aqui
           />
         ) : (
           <div className="space-y-2">
@@ -409,29 +409,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       {/* Barra de Ações Inferior */}
       <div className="flex items-center justify-between p-2 border-t border-border bg-card">
         <div className="flex items-center gap-1">
-          {/* Ícone de Cor */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                <Palette className="h-5 w-5" />
-                <span className="sr-only">Mudar Cor</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 bg-popover border-border rounded-md shadow-lg flex flex-wrap gap-1">
-              {COLORS.map((color) => (
-                <Button
-                  key={color.hex}
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600"
-                  style={{ backgroundColor: color.hex }}
-                  onClick={() => form.setValue("color", color.hex)}
-                  title={color.name}
-                />
-              ))}
-            </PopoverContent>
-          </Popover>
-
           {/* Ícone de Lembrete */}
           <Popover>
             <PopoverTrigger asChild>

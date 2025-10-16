@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Image as ImageIcon, ListTodo, Palette, Bell } from "lucide-react";
+import { PlusCircle, Image as ImageIcon, ListTodo, Bell } from "lucide-react"; // Removido Palette
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes"; // Importar a interface Note
@@ -31,7 +31,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
   const handleOpenFormWithDefaults = (type: "text" | "checklist", color?: string, withImagePicker?: boolean) => {
     setInitialNoteData({
       type,
-      color: color || "#FEEFC3",
+      color: "#FFFFFF", // Cor padrão branca
       content: type === "text" ? "" : "[]", // Conteúdo inicial como string JSON para checklist
       pinned: false,
       archived: false,
@@ -67,27 +67,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ImageIcon className="h-5 w-5" />
               <span className="sr-only">Adicionar Imagem</span>
             </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                  <Palette className="h-5 w-5" />
-                  <span className="sr-only">Mudar Cor</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2 bg-popover border-border rounded-md shadow-lg flex flex-wrap gap-1">
-                {COLORS.map((color) => (
-                  <Button
-                    key={color.hex}
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600"
-                    style={{ backgroundColor: color.hex }}
-                    onClick={() => handleOpenFormWithDefaults("text", color.hex)}
-                    title={color.name}
-                  />
-                ))}
-              </PopoverContent>
-            </Popover>
+            {/* Popover de seleção de cor removido */}
           </div>
         </CardContent>
       </Card>

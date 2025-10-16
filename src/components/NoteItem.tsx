@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Removido Palette
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -110,9 +110,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     updateNoteMutation.mutate({ trashed: false, archived: false, pinned: false }); // Restaurar para notas ativas
   };
 
-  const handleChangeColor = (color: string) => {
-    updateNoteMutation.mutate({ color });
-  };
+  // A função handleChangeColor e o Popover de Palette foram removidos
 
   const handleChecklistItemToggle = async (index: number, checked: boolean) => {
     if (note.type !== "checklist") return;
@@ -160,7 +158,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   };
 
   return (
-    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group" style={{ backgroundColor: note.color }}>
+    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card"> {/* Usando bg-card para fundo adaptável */}
       {note.image_url && (
         <img src={note.image_url} alt={note.title || "Nota com imagem"} className="w-full h-auto object-cover rounded-t-lg" />
       )}
@@ -178,38 +176,18 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
           </>
         ) : (
           <>
-            <Button variant="ghost" size="icon" onClick={handlePinToggle} className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
+            <Button variant="ghost" size="icon" onClick={handlePinToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               {note.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
               <span className="sr-only">{note.pinned ? "Desafixar" : "Fixar"}</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleArchiveToggle} className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
+            <Button variant="ghost" size="icon" onClick={handleArchiveToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               {note.archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
               <span className="sr-only">{note.archived ? "Desarquivar" : "Arquivar"}</span>
             </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
-                  <Palette className="h-4 w-4" />
-                  <span className="sr-only">Mudar Cor</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2 bg-popover border-border rounded-md shadow-lg flex flex-wrap gap-1">
-                {COLORS.map((color) => (
-                  <Button
-                    key={color.hex}
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-full border border-gray-300 dark:border-gray-600"
-                    style={{ backgroundColor: color.hex }}
-                    onClick={() => handleChangeColor(color.hex)}
-                    title={color.name}
-                  />
-                ))}
-              </PopoverContent>
-            </Popover>
+            {/* Popover de seleção de cor removido */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
                   <MoreVertical className="h-4 w-4" />
                   <span className="sr-only">Mais Ações</span>
                 </Button>
