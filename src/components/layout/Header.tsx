@@ -7,7 +7,7 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react"; // Importar NotebookText para o ícone de notas
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -19,7 +19,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-      {isMobile && (
+      {/* Gatilho do Sheet para mobile */}
+      {isMobile ? (
         <Sheet open={isSidebarOpen} onOpenChange={toggleSidebar}>
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="sm:hidden">
@@ -34,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                onClick={toggleSidebar} // Fecha a sidebar ao clicar em um link
+                onClick={toggleSidebar}
               >
                 <Home className="h-5 w-5" /> Dashboard
               </NavLink>
@@ -83,7 +84,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
               >
                 <HeartPulse className="h-5 w-5" /> Saúde
               </NavLink>
-              {/* Novo link para Notas */}
               <NavLink
                 to="/notes"
                 className={({ isActive }) =>
@@ -114,7 +114,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
             </nav>
           </SheetContent>
         </Sheet>
+      ) : (
+        // Botão de alternância da Sidebar para desktop
+        !isSidebarOpen && (
+          <Button size="icon" variant="outline" onClick={toggleSidebar} className="hidden md:flex">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Abrir Menu</span>
+          </Button>
+        )
       )}
+
       <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Nexus Flow</h1>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />

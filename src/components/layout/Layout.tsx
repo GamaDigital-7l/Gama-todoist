@@ -4,7 +4,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import { useIsMobile } from "@/hooks/use-mobile"; // Importar o hook
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout: React.FC = () => {
   const isMobile = useIsMobile();
@@ -21,10 +21,15 @@ const Layout: React.FC = () => {
     }
   }, [isMobile, isSidebarOpen]);
 
+  // Determinar as colunas do grid com base no estado da sidebar e tamanho da tela
+  const gridColsClass = isSidebarOpen
+    ? "md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]"
+    : "md:grid-cols-[0px_1fr] lg:grid-cols-[0px_1fr]"; // Sidebar colapsada em desktop
+
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      {/* Sidebar para desktop */}
-      {!isMobile && <Sidebar />}
+    <div className={`grid min-h-screen w-full ${gridColsClass}`}>
+      {/* Sidebar para desktop e mobile (controlada internamente) */}
+      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-col">
         <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
