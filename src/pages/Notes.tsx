@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, NotebookText, Archive, Trash2, Tag as TagIcon } from "lucide-react"; // Adicionado TagIcon
+import { PlusCircle, Search, NotebookText, Archive, Trash2, Tag as TagIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
@@ -15,12 +15,12 @@ import { ptBR } from "date-fns/locale";
 import NoteForm from "@/components/NoteForm";
 import NoteItem from "@/components/NoteItem";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tag } from "@/types/task"; // Reutilizar o tipo Tag existente
+import { Tag } from "@/types/task";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import TagForm from "@/components/TagForm"; // Para criar novas tags
+import TagForm from "@/components/TagForm";
 
 // Definir o tipo para um item de checklist
 interface ChecklistItem {
@@ -31,15 +31,17 @@ interface ChecklistItem {
 export interface Note {
   id: string;
   title?: string | null;
-  content: string | ChecklistItem[]; // Conteúdo pode ser string ou array de checklist items
-  type: "text" | "checklist"; // Simplificado para text e checklist
+  content: string | ChecklistItem[];
+  type: "text" | "checklist";
   color: string;
   pinned: boolean;
   archived: boolean;
   trashed: boolean;
   created_at: string;
   updated_at: string;
-  tags?: Tag[]; // Adicionado para tags
+  tags?: Tag[];
+  reminder_date?: string | null; // Novo campo para data do lembrete
+  reminder_time?: string | null; // Novo campo para hora do lembrete
 }
 
 const fetchNotes = async (userId: string): Promise<Note[]> => {
@@ -52,15 +54,13 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
       )
     `)
     .eq("user_id", userId)
-    .order("pinned", { ascending: false }) // Pinned notes first
+    .order("pinned", { ascending: false })
     .order("updated_at", { ascending: false });
   if (error) {
     throw error;
   }
   const mappedData = data?.map((note: any) => ({
     ...note,
-    // Se o tipo for checklist, o conteúdo já virá como objeto/array do JSONB
-    // Caso contrário, será uma string
     content: note.type === "checklist" ? note.content : String(note.content),
     tags: note.note_tags.map((nt: any) => nt.tags),
   })) || [];
@@ -100,7 +100,7 @@ const Notes: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilterTagIds, setSelectedFilterTagIds] = useState<string[]>([]);
   const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
-  const [isTagFormOpen, setIsTagFormOpen] = useState(false); // Para criar novas tags no filtro
+  const [isTagFormOpen, setIsTagFormOpen] = useState(false);
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
@@ -115,7 +115,7 @@ const Notes: React.FC = () => {
 
   const handleCloseTagForm = () => {
     setIsTagFormOpen(false);
-    refetchTags(); // Refetch tags after creating a new one
+    refetchTags();
   };
 
   const filteredNotes = allNotes?.filter(note => {
@@ -274,7 +274,7 @@ const Notes: React.FC = () => {
                     <DialogTrigger asChild>
                       <CommandItem onSelect={() => {
                         setIsTagFormOpen(true);
-                        setIsTagFilterOpen(false); // Close popover when opening dialog
+                        setIsTagFilterOpen(false);
                       }} className="text-primary hover:bg-accent hover:text-accent-foreground">
                         <PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Rótulo
                       </CommandItem>
@@ -320,7 +320,7 @@ const Notes: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {unpinnedActiveNotes.map((note) => (
                 <NoteItem key={note.id} note={note} refetchNotes={refetch} />
-              ))}
+                ))}
             </div>
           ) : (
             <p className="text-muted-foreground">Nenhuma nota ativa encontrada. Adicione uma nova nota!</p>

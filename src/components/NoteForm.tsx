@@ -13,7 +13,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Palette, PlusCircle, XCircle } from "lucide-react";
+import { Palette, PlusCircle, XCircle, CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import TagSelector from "./TagSelector"; // Importar TagSelector
+import TagSelector from "./TagSelector";
+import TimePicker from "./TimePicker"; // Importar TimePicker
+import { Calendar } from "@/components/ui/calendar"; // Importar Calendar
+import { cn } from "@/lib/utils"; // Importar cn
+import { format, parseISO } from "date-fns"; // Importar format e parseISO
 
 const COLORS = [
   { name: "Amarelo", hex: "#FEEFC3" },
@@ -43,8 +47,10 @@ const noteSchema = z.object({
   title: z.string().optional(),
   content: z.union([z.string().min(1, "O conteúdo da nota é obrigatório."), z.array(checklistItemSchema).min(1, "A checklist deve ter pelo menos um item.")]),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FEEFC3"),
-  type: z.enum(["text", "checklist"]).default("text"), // Simplificado para text e checklist
-  selected_tag_ids: z.array(z.string()).optional(), // Adicionado para tags
+  type: z.enum(["text", "checklist"]).default("text"),
+  selected_tag_ids: z.array(z.string()).optional(),
+  reminder_date: z.date().optional().nullable(), // Novo campo para data do lembrete
+  reminder_time: z.string().optional().nullable(), // Novo campo para hora do lembrete
 });
 
 export type NoteFormValues = z.infer<typeof noteSchema>;
@@ -63,17 +69,20 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
       ...initialData,
-      // Se for checklist, parse o JSON para um array de objetos
       content: initialData.type === "checklist" && typeof initialData.content === 'string'
         ? JSON.parse(initialData.content)
         : initialData.content,
-      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [], // Preencher tags iniciais
+      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
+      reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined, // Parse string to Date
+      reminder_time: initialData.reminder_time || undefined,
     } : {
       title: "",
       content: "",
       color: "#FEEFC3",
       type: "text",
       selected_tag_ids: [],
+      reminder_date: undefined,
+      reminder_time: undefined,
     },
   });
 
@@ -137,6 +146,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         content: finalContent,
         color: values.color,
         type: values.type,
+        reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
+        reminder_time: values.reminder_time || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -174,6 +185,28 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         if (tagInsertError) throw tagInsertError;
       }
 
+      // Se um lembrete foi definido, invocar a Edge Function
+      if (values.reminder_date && values.reminder_time && session?.access_token) {
+        const reminderDateTime = new Date(values.reminder_date);
+        const [hours, minutes] = values.reminder_time.split(':').map(Number);
+        reminderDateTime.setHours(hours, minutes, 0, 0);
+
+        // A Edge Function será invocada para enviar o lembrete.
+        // A lógica de agendamento real (e.g., com pg_cron) seria mais complexa e fora do escopo de uma única invocação.
+        // Por simplicidade, a função `send-note-reminder` será invocada, e ela mesma verificará se o lembrete é para agora.
+        // Em um cenário real, você agendaria um job para o futuro.
+        // Para este exemplo, vamos apenas invocar a função e ela pode decidir se envia imediatamente ou não.
+        // Ou, para simular um agendamento, podemos apenas registrar que o lembrete foi salvo.
+        // Por enquanto, vamos apenas salvar no DB e a Edge Function será chamada por um cron job externo.
+        // A invocação direta aqui seria apenas para testes ou lembretes "imediatos".
+        // Para um lembrete futuro, um cron job no Supabase seria o ideal.
+        // Por simplicidade, não vou adicionar a invocação direta aqui, apenas o salvamento no DB.
+        // O usuário precisaria configurar um cron job no Supabase para chamar a Edge Function periodicamente.
+        // Ou, se a intenção é que o lembrete seja enviado *agora* se a data/hora for no passado/presente,
+        // a Edge Function pode ser invocada. Mas para lembretes futuros, um cron é mais adequado.
+        // Vou manter a simplicidade e apenas salvar no DB.
+      }
+
       form.reset();
       onNoteSaved();
       onClose();
@@ -200,7 +233,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         <Select
           onValueChange={(value: "text" | "checklist") => {
             form.setValue("type", value);
-            // Reset content when changing type
             form.setValue("content", value === "text" ? "" : []);
           }}
           value={noteType}
@@ -301,10 +333,52 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           </PopoverContent>
         </Popover>
       </div>
+
       <TagSelector
         selectedTagIds={selectedTagIds}
         onTagSelectionChange={handleTagSelectionChange}
       />
+
+      {/* Campos de Lembrete */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="reminder_date" className="text-foreground">Data do Lembrete (Opcional)</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                  !form.watch("reminder_date") && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {form.watch("reminder_date") ? (
+                  format(form.watch("reminder_date")!, "PPP")
+                ) : (
+                  <span>Escolha uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
+              <Calendar
+                mode="single"
+                selected={form.watch("reminder_date") || undefined}
+                onSelect={(date) => form.setValue("reminder_date", date || null)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div>
+          <Label htmlFor="reminder_time" className="text-foreground">Hora do Lembrete (Opcional)</Label>
+          <TimePicker
+            value={form.watch("reminder_time") || null}
+            onChange={(time) => form.setValue("reminder_time", time || null)}
+          />
+        </div>
+      </div>
+
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {initialData ? "Atualizar Nota" : "Adicionar Nota"}
       </Button>

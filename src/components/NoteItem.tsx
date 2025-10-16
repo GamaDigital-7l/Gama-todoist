@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical } from "lucide-react";
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell } from "lucide-react"; // Adicionado Bell
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -14,7 +14,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge"; // Importar Badge
+import { Badge } from "@/components/ui/badge";
+import { format, parseISO } from "date-fns"; // Importar format e parseISO
+import { ptBR } from "date-fns/locale"; // Importar locale
 
 interface NoteItemProps {
   note: Note;
@@ -226,6 +228,11 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
               </Badge>
             ))}
           </div>
+        )}
+        {note.reminder_date && note.reminder_time && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+            <Bell className="h-3 w-3 text-blue-500" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
+          </p>
         )}
       </CardContent>
 
