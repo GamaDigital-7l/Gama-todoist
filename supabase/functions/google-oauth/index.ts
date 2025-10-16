@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { addMinutes } from "https://esm.sh/date-fns@2.30.0"; // Importar addMinutes
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,7 +54,7 @@ serve(async (req) => {
     // 2. Callback do Google (receber o código e trocar por tokens)
     if (path.endsWith("/callback")) {
       const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state"); // Opcional, para segurança CSRF
+      // const state = url.searchParams.get("state"); // Opcional, para segurança CSRF
 
       if (!code) {
         return new Response(
@@ -111,7 +112,6 @@ serve(async (req) => {
       // const googleUserId = userInfo.sub; // ID único do usuário Google
 
       // Encontrar o user_id do Supabase associado ao email do Google
-      // Agora que a tabela 'profiles' tem a coluna 'email', podemos usá-la.
       const { data: supabaseProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
@@ -134,23 +134,44 @@ serve(async (req) => {
       }
 
       // Calcular a data de expiração
-      const expiryDate = new Date(Date.now() + expiresIn * 1000);
+      const expiryDate = addMinutes(new Date(), expiresIn / 60); // expiresIn is in seconds
 
-      // Armazenar os tokens no banco de dados do Supabase
+      // Buscar a lista de calendários do usuário para obter o ID do calendário principal
+      let primaryCalendarId = null;
+      try {
+        const calendarListResponse = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (calendarListResponse.ok) {
+          const calendarListData = await calendarListResponse.json();
+          const primaryCalendar = calendarListData.items.find((cal: any) => cal.primary);
+          primaryCalendarId = primaryCalendar ? primaryCalendar.id : calendarListData.items[0]?.id; // Pega o primeiro se não houver primário
+        } else {
+          console.warn("Não foi possível buscar a lista de calendários do Google. Continuar sem calendar_id.");
+        }
+      } catch (calendarError) {
+        console.error("Erro ao buscar lista de calendários do Google:", calendarError);
+      }
+
+      // Armazenar os tokens e o ID do calendário no banco de dados do Supabase
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           google_access_token: accessToken,
           google_refresh_token: refreshToken,
           google_token_expiry: expiryDate.toISOString(),
-          // google_calendar_id: userInfo.email, // Pode ser o email ou o ID do calendário principal
+          google_calendar_id: primaryCalendarId, // Salvar o ID do calendário principal
         })
         .eq("id", userIdToUpdate); // Usar o ID do perfil encontrado
 
       if (updateError) {
-        console.error("Erro ao salvar tokens no Supabase:", updateError);
+        console.error("Erro ao salvar tokens e calendar_id no Supabase:", updateError);
         return new Response(
-          JSON.stringify({ error: "Failed to save Google tokens.", details: updateError }),
+          JSON.stringify({ error: "Failed to save Google tokens and calendar ID.", details: updateError }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
