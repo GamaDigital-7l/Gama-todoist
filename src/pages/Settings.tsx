@@ -223,34 +223,15 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleConnectGoogleCalendar = async () => {
+  const handleConnectGoogleCalendar = () => {
     if (!userId) {
       showError("Usuário não autenticado. Faça login para conectar o Google Calendar.");
       return;
     }
     setIsConnectingGoogle(true);
-    try {
-      // Redirecionar para a Edge Function que inicia o fluxo OAuth
-      // A URL da Edge Function deve ser configurada como GOOGLE_REDIRECT_URI no Google Cloud Console
-      // e também como uma variável de ambiente no Supabase.
-      const { data, error } = await supabase.functions.invoke('google-oauth/init', {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-      // A Edge Function deve retornar um redirecionamento 302, então o navegador será redirecionado automaticamente.
-      // Se a função retornar dados, significa que algo deu errado ou não houve redirecionamento.
-      console.log("Iniciando conexão Google Calendar:", data);
-    } catch (err: any) {
-      showError("Erro ao iniciar conexão com Google Calendar: " + err.message);
-      console.error("Erro ao iniciar conexão com Google Calendar:", err);
-    } finally {
-      setIsConnectingGoogle(false);
-    }
+    // Redirecionar o navegador diretamente para a Edge Function que inicia o fluxo OAuth
+    // Isso evita problemas de CORS com a API fetch e garante que o navegador lide com o redirecionamento 302.
+    window.location.href = `${supabase.functions.getUrl('google-oauth/init')}`;
   };
 
   const handleDisconnectGoogleCalendar = async () => {
