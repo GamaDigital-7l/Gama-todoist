@@ -5,12 +5,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Adicionado: Importar Button
 import { PlusCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
-import TaskItem from "@/components/TaskItem"; // Importar o novo componente TaskItem
+import TaskItem from "@/components/TaskItem";
 
 interface TaskListBoardProps {
   title: string;
@@ -20,7 +21,7 @@ interface TaskListBoardProps {
   refetchTasks: () => void;
   showAddButton?: boolean;
   quickAddTaskInput?: React.ReactNode;
-  originBoard?: OriginBoard; // Para o TaskForm
+  originBoard?: OriginBoard;
 }
 
 const TaskListBoard: React.FC<TaskListBoardProps> = ({
@@ -39,7 +40,6 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
 
-  // Função para construir a estrutura de tarefas e subtarefas
   const buildTaskTree = (allTasks: Task[]): Task[] => {
     const taskMap = new Map<string, Task>();
     allTasks.forEach(task => {
@@ -55,7 +55,6 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
       }
     });
 
-    // Ordenar subtarefas por created_at
     rootTasks.forEach(task => {
       if (task.subtasks) {
         task.subtasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -121,7 +120,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
                 initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
                 onTaskSaved={refetchTasks}
                 onClose={() => setIsTaskFormOpen(false)}
-                initialOriginBoard={originBoard} // Passa o quadro de origem
+                initialOriginBoard={originBoard}
               />
             </DialogContent>
           </Dialog>
