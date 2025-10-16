@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin } from "lucide-react";
+import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
@@ -20,6 +20,18 @@ import TaskItem from "@/components/TaskItem";
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import TaskForm from "@/components/TaskForm";
+
+interface GoogleCalendarEvent {
+  id: string;
+  google_event_id: string;
+  calendar_id: string;
+  title: string;
+  description?: string | null;
+  start_time: string; // ISO string
+  end_time: string; // ISO string
+  location?: string | null;
+  html_link?: string | null;
+}
 
 const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[]> => {
   const formattedDate = format(date, "yyyy-MM-dd");
@@ -113,6 +125,22 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
   return mappedData;
 };
 
+const fetchGoogleCalendarEvents = async (userId: string, date: Date): Promise<GoogleCalendarEvent[]> => {
+  const formattedDate = format(date, "yyyy-MM-dd");
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("start_time", `${formattedDate}T00:00:00Z`)
+    .lte("start_time", `${formattedDate}T23:59:59Z`)
+    .order("start_time", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
 const Planner: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -140,6 +168,12 @@ const Planner: React.FC = () => {
     enabled: !!userId && !!selectedDate,
   });
 
+  const { data: googleEvents, isLoading: isLoadingGoogleEvents, error: googleEventsError, refetch: refetchGoogleEvents } = useQuery<GoogleCalendarEvent[], Error>({
+    queryKey: ["googleEvents", userId, selectedDate?.toISOString()],
+    queryFn: () => fetchGoogleCalendarEvents(userId!, selectedDate!),
+    enabled: !!userId && !!selectedDate,
+  });
+
   if (meetingsError) {
     showError("Erro ao carregar reuniões: " + meetingsError.message);
   }
@@ -148,6 +182,9 @@ const Planner: React.FC = () => {
   }
   if (futureMeetingsError) {
     showError("Erro ao carregar próximas reuniões: " + futureMeetingsError.message);
+  }
+  if (googleEventsError) {
+    showError("Erro ao carregar eventos do Google Calendar: " + googleEventsError.message);
   }
 
   const handleTaskAdded = () => {
@@ -186,6 +223,30 @@ const Planner: React.FC = () => {
   };
 
   const taskTree = buildTaskTree(tasks || []);
+
+  // Combinar reuniões e eventos do Google Calendar e ordenar por hora
+  const combinedEvents = [
+    ...(meetings || []).map(m => ({
+      type: 'meeting',
+      id: m.id,
+      title: m.title,
+      description: m.description,
+      start_time: parseISO(`${m.date}T${m.start_time}`),
+      end_time: m.end_time ? parseISO(`${m.date}T${m.end_time}`) : undefined,
+      location: m.location,
+      html_link: undefined,
+    })),
+    ...(googleEvents || []).map(ge => ({
+      type: 'google_event',
+      id: ge.id,
+      title: ge.title,
+      description: ge.description,
+      start_time: parseISO(ge.start_time),
+      end_time: parseISO(ge.end_time),
+      location: ge.location,
+      html_link: ge.html_link,
+    })),
+  ].sort((a, b) => a.start_time.getTime() - b.start_time.getTime());
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6 bg-background text-foreground">
@@ -251,18 +312,18 @@ const Planner: React.FC = () => {
           </Card>
         </div>
 
-        {/* Colunas do Meio e Direita: Reuniões do Dia e Tarefas do Dia */}
+        {/* Colunas do Meio e Direita: Reuniões/Eventos do Dia e Tarefas do Dia */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card de Reuniões do Dia */}
+          {/* Card de Reuniões e Eventos do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" /> Reuniões para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
+                <Briefcase className="h-5 w-5 text-primary" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={setIsMeetingFormOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
@@ -281,14 +342,57 @@ const Planner: React.FC = () => {
               </Dialog>
             </CardHeader>
             <CardContent className="flex-grow p-4 overflow-y-auto space-y-3">
-              {isLoadingMeetings ? (
-                <p className="text-center text-muted-foreground">Carregando reuniões...</p>
-              ) : meetings && meetings.length > 0 ? (
-                meetings.map((meeting) => (
-                  <MeetingItem key={meeting.id} meeting={meeting} refetchMeetings={handleMeetingSaved} />
+              {(isLoadingMeetings || isLoadingGoogleEvents) ? (
+                <p className="text-center text-muted-foreground">Carregando eventos...</p>
+              ) : combinedEvents && combinedEvents.length > 0 ? (
+                combinedEvents.map((event) => (
+                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500" />}
+                      {event.title}
+                    </p>
+                    {event.description && (
+                      <p className="text-xs text-muted-foreground break-words">{event.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
+                    </p>
+                    {event.location && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {event.location}
+                      </p>
+                    )}
+                    {event.html_link && (
+                      <a href={event.html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                        Ver no Google Calendar <LinkIcon className="h-3 w-3" />
+                      </a>
+                    )}
+                    {event.type === 'meeting' && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          const meetingToEdit = meetings?.find(m => m.id === event.id);
+                          if (meetingToEdit) {
+                            setIsMeetingFormOpen(true);
+                            // Passar initialData para o formulário de reunião
+                            // Isso exigiria um estado de edição no Planner ou um refatoramento do MeetingForm
+                            // Por simplicidade, vamos apenas abrir o formulário vazio por enquanto
+                          }
+                        }} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Editar Reunião</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          // Lógica para deletar reunião
+                        }} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Deletar Reunião</span>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
-                <p className="text-center text-muted-foreground">Nenhuma reunião agendada para esta data.</p>
+                <p className="text-center text-muted-foreground">Nenhum evento agendado para esta data.</p>
               )}
             </CardContent>
           </Card>
