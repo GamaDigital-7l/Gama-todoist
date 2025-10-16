@@ -44,30 +44,33 @@ const Settings: React.FC = () => {
   const fetchSettingsAndGoogleStatus = useCallback(async () => {
     if (!userId) return;
 
-    const { data, error } = await supabase
+    // Fetch user settings
+    const { data: settingsData, error: settingsError } = await supabase
       .from("settings")
       .select("*")
       .eq("user_id", userId)
       .limit(1)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      showError("Erro ao carregar configurações: " + error.message);
-    } else if (data) {
-      form.reset(data);
-      setSettingsId(data.id);
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      showError("Erro ao carregar configurações: " + settingsError.message);
+    } else if (settingsData) {
+      form.reset(settingsData);
+      setSettingsId(settingsData.id);
     }
 
+    // Fetch user profile to check Google connection status and email
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("google_access_token, email")
-      .eq("id", userId)
+      .eq("id", userId) // Ensure we query by the user's auth ID
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Erro ao verificar status do Google Calendar:", profileError);
+      console.error("Erro ao verificar status do Google Calendar ou e-mail do perfil:", profileError);
     } else if (profileData) {
       setIsGoogleConnected(!!profileData.google_access_token);
+      // No need to update form.setValue for email here, as it's handled by ProfileManagementCard
     } else {
       setIsGoogleConnected(false);
     }
@@ -131,7 +134,7 @@ const Settings: React.FC = () => {
         userEmail={userEmail}
         isUpdatingProfileEmail={isUpdatingProfileEmail}
         setIsUpdatingProfileEmail={setIsUpdatingProfileEmail}
-        onProfileEmailSynced={fetchSettingsAndGoogleStatus}
+        onProfileEmailSynced={fetchSettingsAndGoogleStatus} // Re-fetch all settings and status after email sync
       />
 
       <IntegrationsCard
@@ -141,7 +144,7 @@ const Settings: React.FC = () => {
         setIsGoogleConnected={setIsGoogleConnected}
         isConnectingGoogle={isConnectingGoogle}
         setIsConnectingGoogle={setIsConnectingGoogle}
-        onGoogleAuthComplete={fetchSettingsAndGoogleStatus}
+        onGoogleAuthComplete={fetchSettingsAndGoogleStatus} // Re-fetch all settings and status after Google auth
       />
 
       <NotificationSettingsCard
