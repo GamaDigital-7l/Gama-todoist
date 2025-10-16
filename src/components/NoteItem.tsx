@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Adicionado Bell e ImageIcon
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -115,13 +115,13 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   };
 
   const handleChecklistItemToggle = async (index: number, checked: boolean) => {
-    if (note.type !== "checklist" || !Array.isArray(note.content)) return;
+    if (note.type !== "checklist") return;
 
     try {
-      const updatedChecklist = [...note.content];
-      if (updatedChecklist[index]) {
-        updatedChecklist[index].completed = checked;
-        await updateNoteMutation.mutateAsync({ content: JSON.stringify(updatedChecklist) });
+      const currentContent = JSON.parse(note.content);
+      if (Array.isArray(currentContent) && currentContent[index]) {
+        currentContent[index].completed = checked;
+        await updateNoteMutation.mutateAsync({ content: JSON.stringify(currentContent) });
       }
     } catch (err) {
       console.error("Erro ao atualizar item da checklist:", err);
@@ -130,25 +130,33 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   };
 
   const renderNoteContent = () => {
-    if (note.type === "checklist" && Array.isArray(note.content)) {
-      return (
-        <ul className="space-y-1 text-sm text-gray-800 dark:text-gray-100">
-          {note.content.map((item: { text: string; completed: boolean }, index: number) => (
-            <li key={index} className="flex items-center gap-2">
-              <Checkbox
-                checked={item.completed}
-                onCheckedChange={(checked) => handleChecklistItemToggle(index, checked as boolean)}
-                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-              />
-              <span className={cn(item.completed ? "line-through text-muted-foreground" : "")}>
-                {item.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-      );
+    if (note.type === "checklist") {
+      try {
+        const checklistItems = JSON.parse(note.content);
+        if (!Array.isArray(checklistItems)) return <p className="text-sm text-red-500">Conteúdo da checklist inválido.</p>;
+        return (
+          <ul className="space-y-1 text-sm text-gray-800 dark:text-gray-100">
+            {checklistItems.map((item: { text: string; completed: boolean }, index: number) => (
+              <li key={index} className="flex items-center gap-2">
+                <Checkbox
+                  checked={item.completed}
+                  onCheckedChange={(checked) => handleChecklistItemToggle(index, checked as boolean)}
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                />
+                <span className={cn(item.completed ? "line-through text-muted-foreground" : "")}>
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        );
+      } catch (e) {
+        console.error("Erro ao parsear conteúdo da checklist:", e);
+        return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
+      }
     }
-    return <p className="text-sm text-gray-800 dark:text-gray-100 break-words">{note.content as string}</p>;
+    // Para notas de texto, renderizar HTML
+    return <div className="prose dark:prose-invert max-w-none text-sm text-gray-800 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: note.content }} />;
   };
 
   return (

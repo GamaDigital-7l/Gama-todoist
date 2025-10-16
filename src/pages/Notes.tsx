@@ -22,6 +22,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TagForm from "@/components/TagForm";
 import { Badge } from "@/components/ui/badge"; // Importação explícita do Badge
+import QuickNoteCreator from "@/components/QuickNoteCreator"; // Importar o novo componente
 
 // Definir o tipo para um item de checklist
 interface ChecklistItem {
@@ -32,7 +33,7 @@ interface ChecklistItem {
 export interface Note {
   id: string;
   title?: string | null;
-  content: string | ChecklistItem[];
+  content: string; // Agora sempre string (HTML para texto, JSON string para checklist)
   type: "text" | "checklist";
   color: string;
   pinned: boolean;
@@ -63,7 +64,7 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
   }
   const mappedData = data?.map((note: any) => ({
     ...note,
-    content: note.type === "checklist" ? note.content : String(note.content),
+    // O conteúdo já virá como string do DB, seja HTML ou JSON string
     tags: note.note_tags.map((nt: any) => nt.tags),
   })) || [];
   return mappedData;
@@ -122,10 +123,18 @@ const Notes: React.FC = () => {
 
   const filteredNotes = allNotes?.filter(note => {
     let contentText = "";
-    if (note.type === "text" && typeof note.content === 'string') {
-      contentText = note.content;
-    } else if (note.type === "checklist" && Array.isArray(note.content)) {
-      contentText = note.content.map(item => item.text).join(" ");
+    if (note.type === "text") {
+      // Remover tags HTML para busca de texto
+      contentText = note.content.replace(/<[^>]*>?/gm, '');
+    } else if (note.type === "checklist") {
+      try {
+        const checklistItems = JSON.parse(note.content);
+        if (Array.isArray(checklistItems)) {
+          contentText = checklistItems.map(item => item.text).join(" ");
+        }
+      } catch (e) {
+        console.error("Erro ao parsear conteúdo da checklist:", e);
+      }
     }
 
     const matchesSearch = (note.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,36 +188,13 @@ const Notes: React.FC = () => {
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
           <NotebookText className="h-7 w-7 text-primary" /> Segundo Cérebro (Notas)
         </h1>
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) setEditingNote(undefined);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingNote(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nota
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">{editingNote ? "Editar Nota" : "Criar Nova Nota"}</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                {editingNote ? "Atualize o conteúdo da sua nota." : "Escreva uma nova nota para o seu segundo cérebro."}
-              </DialogDescription>
-            </DialogHeader>
-            <NoteForm
-              initialData={editingNote}
-              onNoteSaved={refetch}
-              onClose={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {/* O botão "Adicionar Nota" será substituído pelo QuickNoteCreator */}
       </div>
       <p className="text-lg text-muted-foreground">
         Seu caderno digital para todas as suas ideias, pensamentos e informações importantes.
       </p>
+
+      <QuickNoteCreator onNoteCreated={refetch} /> {/* Novo componente de criação rápida */}
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-grow">

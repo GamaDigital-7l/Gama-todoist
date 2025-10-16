@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,10 +23,13 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import TagSelector from "./TagSelector";
-import TimePicker from "./TimePicker"; // Importar TimePicker
-import { Calendar } from "@/components/ui/calendar"; // Importar Calendar
-import { cn } from "@/lib/utils"; // Importar cn
-import { format, parseISO } from "date-fns"; // Importar format e parseISO
+import TimePicker from "./TimePicker";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
+
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
 
 const COLORS = [
   { name: "Amarelo", hex: "#FEEFC3" },
@@ -45,17 +48,17 @@ const checklistItemSchema = z.object({
 
 const noteSchema = z.object({
   title: z.string().optional(),
-  content: z.union([z.string().min(1, "O conteúdo da nota é obrigatório."), z.array(checklistItemSchema).min(1, "A checklist deve ter pelo menos um item.")]),
+  content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FEEFC3"),
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
-  reminder_date: z.date().optional().nullable(), // Novo campo para data do lembrete
-  reminder_time: z.string().optional().nullable(), // Novo campo para hora do lembrete
+  reminder_date: z.date().optional().nullable(),
+  reminder_time: z.string().optional().nullable(),
   image_file: z
     .instanceof(File)
     .optional()
     .refine((file) => !file || (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024), "Apenas imagens (até 5MB) são permitidas."),
-  existing_image_url: z.string().optional().nullable(), // Para manter a URL da imagem existente
+  existing_image_url: z.string().optional().nullable(),
 });
 
 export type NoteFormValues = z.infer<typeof noteSchema>;
@@ -80,19 +83,18 @@ const sanitizeFilename = (filename: string) => {
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const quillRef = useRef<ReactQuill>(null);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
       ...initialData,
-      content: initialData.type === "checklist" && typeof initialData.content === 'string'
-        ? JSON.parse(initialData.content)
-        : initialData.content,
+      content: initialData.content, // Já é string
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
-      reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined, // Parse string to Date
+      reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
-      existing_image_url: initialData.image_url || undefined, // Carregar URL da imagem existente
-      image_file: undefined, // Não pré-preencher o input de arquivo
+      existing_image_url: initialData.image_url || undefined,
+      image_file: undefined,
     } : {
       title: "",
       content: "",
@@ -115,12 +117,17 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   const [imagePreview, setImagePreview] = useState<string | null>(existingImageUrl || null);
 
   useEffect(() => {
-    if (noteType === "checklist" && Array.isArray(form.getValues("content"))) {
-      setChecklistItems(form.getValues("content") as { text: string; completed: boolean }[]);
+    if (noteType === "checklist" && initialData?.type === "checklist") {
+      try {
+        setChecklistItems(JSON.parse(initialData.content) as { text: string; completed: boolean }[]);
+      } catch (e) {
+        console.error("Erro ao parsear conteúdo da checklist inicial:", e);
+        setChecklistItems([]);
+      }
     } else if (noteType === "text") {
       setChecklistItems([]);
     }
-  }, [noteType, form.getValues("content")]);
+  }, [noteType, initialData]);
 
   useEffect(() => {
     if (imageFile) {
@@ -156,13 +163,81 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     setImagePreview(null);
   };
 
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file && userId) {
+        const quill = quillRef.current?.getEditor();
+        const range = quill?.getSelection(true);
+
+        if (quill && range) {
+          const sanitizedFilename = sanitizeFilename(file.name);
+          const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
+
+          try {
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from("note-assets")
+              .upload(filePath, file, {
+                cacheControl: "3600",
+                upsert: false,
+              });
+
+            if (uploadError) {
+              throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
+            }
+
+            const { data: publicUrlData } = supabase.storage
+              .from("note-assets")
+              .getPublicUrl(filePath);
+            
+            quill.insertEmbed(range.index, 'image', publicUrlData.publicUrl);
+            quill.setSelection(range.index + 1, 0); // Move cursor after image
+            showSuccess("Imagem inserida com sucesso!");
+          } catch (err: any) {
+            showError("Erro ao inserir imagem: " + err.message);
+            console.error("Erro ao inserir imagem:", err);
+          }
+        }
+      } else if (!userId) {
+        showError("Usuário não autenticado para upload de imagem.");
+      }
+    };
+  };
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image'
+  ];
+
   const onSubmit = async (values: NoteFormValues) => {
     if (!userId) {
       showError("Usuário não autenticado.");
       return;
     }
 
-    let finalContent: string | { text: string; completed: boolean }[];
+    let finalContent: string;
 
     if (noteType === "checklist") {
       const filteredItems = checklistItems.filter(item => item.text.trim() !== "");
@@ -172,7 +247,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       }
       finalContent = JSON.stringify(filteredItems);
     } else {
-      if (typeof values.content !== 'string' || values.content.trim() === "") {
+      if (values.content.trim() === "" || values.content === "<p><br></p>") { // Verifica se o editor está vazio
         showError("O conteúdo da nota não pode estar vazio.");
         return;
       }
@@ -188,7 +263,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("note-assets") // Usar um bucket específico para assets de notas
+        .from("note-assets")
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
@@ -219,7 +294,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
-        image_url: imageUrlToSave, // Salvar a URL da imagem
+        image_url: imageUrlToSave,
         updated_at: new Date().toISOString(),
       };
 
@@ -253,7 +328,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           note_id: noteId,
           tag_id: tagId,
         }));
-        const { error: tagInsertError } = await supabase.from("note_tags").insert(taskTagsToInsert);
+        const { error: tagInsertError } = await supabase.from("note_tags").insert(noteTagsToInsert);
         if (tagInsertError) throw tagInsertError;
       }
 
@@ -278,10 +353,10 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         />
       </div>
 
-      {/* Image Upload Section */}
+      {/* Image Upload Section (for main/cover image) */}
       <div>
         <Label htmlFor="image_file" className="text-foreground flex items-center gap-2">
-          <ImageIcon className="h-4 w-4" /> Imagem (Opcional)
+          <ImageIcon className="h-4 w-4" /> Imagem Principal (Opcional)
         </Label>
         {imagePreview && (
           <div className="relative w-full h-48 mb-2 rounded-md overflow-hidden">
@@ -317,7 +392,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         <Select
           onValueChange={(value: "text" | "checklist") => {
             form.setValue("type", value);
-            form.setValue("content", value === "text" ? "" : []);
+            form.setValue("content", value === "text" ? "" : "[]"); // Conteúdo inicial para checklist
           }}
           value={noteType}
         >
@@ -334,11 +409,15 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       {noteType === "text" ? (
         <div>
           <Label htmlFor="note-content" className="text-foreground">Conteúdo da Nota</Label>
-          <Textarea
-            id="note-content"
-            {...form.register("content")}
+          <ReactQuill
+            ref={quillRef}
+            theme="snow"
+            value={form.watch("content")}
+            onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
+            modules={modules}
+            formats={formats}
             placeholder="Comece a escrever sua nota aqui..."
-            className="w-full bg-input border-border text-foreground focus-visible:ring-ring min-h-[150px]"
+            className="bg-input text-foreground rounded-md"
           />
           {form.formState.errors.content && (
             <p className="text-red-500 text-sm mt-1">
@@ -356,12 +435,16 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
                   checked={item.completed}
                   onCheckedChange={(checked) => {
                     setChecklistItems(prev => prev.map((i, idx) => idx === index ? { ...i, completed: checked as boolean } : i));
+                    form.setValue("content", JSON.stringify(checklistItems), { shouldDirty: true }); // Atualiza o form content
                   }}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
                 <Input
                   value={item.text}
-                  onChange={(e) => updateChecklistItem(index, e.target.value)}
+                  onChange={(e) => {
+                    updateChecklistItem(index, e.target.value);
+                    form.setValue("content", JSON.stringify(checklistItems), { shouldDirty: true }); // Atualiza o form content
+                  }}
                   placeholder={`Item ${index + 1}`}
                   className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
                 />
