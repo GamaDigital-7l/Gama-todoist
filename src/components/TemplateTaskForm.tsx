@@ -139,8 +139,6 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       return;
     }
 
-    // console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values); // Log de depuração removido
-
     try {
       let templateTaskId: string;
 
@@ -157,8 +155,6 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         target_value: finalTargetValue,
         updated_at: new Date().toISOString(),
       };
-
-      // console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave); // Log de depuração removido
 
       if (initialData) {
         const { data, error } = await supabase
@@ -202,8 +198,6 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       console.error("Erro ao salvar tarefa padrão:", error);
     }
   };
-
-  // handleGenerateAISuggestions removido
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">

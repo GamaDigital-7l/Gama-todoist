@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Loader2 } from "lucide-react"; // Brain removido
+import { CalendarIcon, Loader2 } from "lucide-react"; 
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -235,8 +235,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       return;
     }
 
-    // console.log("Valores do formulário antes de salvar (TaskForm):", values); // Log de depuração removido
-
     try {
       let taskId: string;
 
@@ -257,8 +255,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         origin_board: values.origin_board,
         parent_task_id: values.parent_task_id || null,
       };
-
-      // console.log("Dados a serem salvos (TaskForm):", dataToSave); // Log de depuração removido
 
       if (initialData) {
         const { data, error } = await supabase
@@ -303,8 +299,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       console.error("Erro ao salvar tarefa:", error);
     }
   };
-
-  // handleGenerateAISuggestions removido
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">

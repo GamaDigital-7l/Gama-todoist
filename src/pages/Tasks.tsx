@@ -83,7 +83,6 @@ const Tasks: React.FC = () => {
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
-  // isObstacleCoachOpen e selectedTaskForCoach removidos
 
   const [isTemplateFormOpen, setIsTemplateFormOpen] = React.useState(false);
   const [editingTemplateTask, setEditingTemplateTask] = React.useState<TemplateTask | undefined>(undefined);
@@ -170,8 +169,6 @@ const Tasks: React.FC = () => {
     setEditingTask(task);
     setIsFormOpen(true);
   };
-
-  // handleOpenObstacleCoach removido
 
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
     const today = new Date();
@@ -380,8 +377,6 @@ const Tasks: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* TaskObstacleCoach removido */}
     </div>
   );
 };

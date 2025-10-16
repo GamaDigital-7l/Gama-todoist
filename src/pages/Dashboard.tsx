@@ -349,8 +349,6 @@ const Dashboard: React.FC = () => {
         <DashboardTaskList /> {/* Este agora é o quadro "Geral" */}
       </div>
 
-      {/* TaskAIHelper removido daqui */}
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

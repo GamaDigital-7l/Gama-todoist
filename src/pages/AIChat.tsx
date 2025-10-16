@@ -39,6 +39,9 @@ const AIChat: React.FC = () => {
     try {
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [...messages, userMessage] },
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`, // Adicionado token de autorização
+        },
       });
 
       if (error) {

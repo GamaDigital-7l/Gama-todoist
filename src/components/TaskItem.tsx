@@ -150,8 +150,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     setIsTaskFormOpen(true);
   };
 
-  // handleOpenObstacleCoach removido
-
   const getRecurrenceText = (task: Task) => {
     switch (task.recurrence_type) {
       case "daily":
@@ -270,7 +268,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             </DialogContent>
           </Dialog>
 
-          {/* Botão de IA removido */}
           <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Editar Tarefa</span>
@@ -281,33 +278,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
           </Button>
         </div>
       </div>
-
-      {/* TaskObstacleCoach removido */}
-
-      {isTaskFormOpen && (
-        <Dialog
-          open={isTaskFormOpen}
-          onOpenChange={(open) => {
-            setIsTaskFormOpen(open);
-            if (!open) setEditingTask(undefined);
-          }}
-        >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para organizar seu dia."}
-              </DialogDescription>
-            </DialogHeader>
-            <TaskForm
-              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
-              onTaskSaved={refetchTasks}
-              onClose={() => setIsTaskFormOpen(false)}
-              initialOriginBoard={task.origin_board}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
 
       {task.subtasks && task.subtasks.length > 0 && (
         <div className="space-y-3">
