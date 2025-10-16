@@ -7,7 +7,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Edit, Trash2, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
+import { Repeat, Edit, Trash2 } from "lucide-react"; // BookOpen, Dumbbell, GraduationCap removidos
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { TemplateTask, DAYS_OF_WEEK_LABELS } from "@/types/task";
@@ -81,24 +81,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
     }
   };
 
-  const getTaskTypeIcon = (taskType: TemplateTask['task_type']) => {
-    switch (taskType) {
-      case "reading": return <BookOpen className="h-3 w-3" />;
-      case "exercise": return <Dumbbell className="h-3 w-3" />;
-      case "study": return <GraduationCap className="h-3 w-3" />;
-      default: return null;
-    }
-  };
-
-  const getTaskTypeLabel = (taskType: TemplateTask['task_type'], targetValue: number | null | undefined) => {
-    if (targetValue === null || targetValue === undefined) return null;
-    switch (taskType) {
-      case "reading": return `Meta: ${targetValue} páginas`;
-      case "exercise": return `Meta: ${targetValue} minutos/reps`;
-      case "study": return `Meta: ${targetValue} minutos de estudo`;
-      default: return null;
-    }
-  };
+  // getTaskTypeIcon e getTaskTypeLabel removidos
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
@@ -116,11 +99,12 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
           <p className="text-xs text-muted-foreground">
             Quadro de Origem: {getOriginBoardText(templateTask.origin_board)}
           </p>
-          {(templateTask.task_type !== "general") && templateTask.target_value !== null && templateTask.target_value !== undefined && (
+          {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
+          {/* {(templateTask.task_type !== "general") && templateTask.target_value !== null && templateTask.target_value !== undefined && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               {getTaskTypeIcon(templateTask.task_type)} {getTaskTypeLabel(templateTask.task_type, templateTask.target_value)}
             </p>
-          )}
+          )} */}
           {templateTask.tags && templateTask.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {templateTask.tags.map((tag) => (

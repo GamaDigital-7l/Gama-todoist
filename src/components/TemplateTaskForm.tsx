@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
-import { OriginBoard, RecurrenceType, TaskType, TemplateTask } from "@/types/task";
+import { OriginBoard, RecurrenceType, TemplateTask } from "@/types/task"; // TaskType removido
 import { parseISO } from "date-fns";
 
 const DAYS_OF_WEEK = [
@@ -40,31 +40,32 @@ const templateTaskSchema = z.object({
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
-  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"),
-  target_value: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().int().nullable().optional()
-  ),
+  // task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Removido
+  // target_value: z.preprocess( // Removido
+  //   (val) => (val === "" ? null : Number(val)),
+  //   z.number().int().nullable().optional()
+  // ),
   selected_tag_ids: z.array(z.string()).optional(),
-}).superRefine((data, ctx) => {
-  const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
-
-  if (isTargetValueRelevant) {
-    if (data.target_value === null || data.target_value === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "O valor alvo é obrigatório para este tipo de tarefa.",
-        path: ["target_value"],
-      });
-    } else if (data.target_value < 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "O valor alvo deve ser um número positivo.",
-        path: ["target_value"],
-      });
-    }
-  }
 });
+// .superRefine((data, ctx) => { // Removido superRefine
+//   const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
+
+//   if (isTargetValueRelevant) {
+//     if (data.target_value === null || data.target_value === undefined) {
+//       ctx.addIssue({
+//         code: z.ZodIssueCode.custom,
+//         message: "O valor alvo é obrigatório para este tipo de tarefa.",
+//         path: ["target_value"],
+//       });
+//     } else if (data.target_value < 1) {
+//       ctx.addIssue({
+//         code: z.ZodIssueCode.custom,
+//         message: "O valor alvo deve ser um número positivo.",
+//         path: ["target_value"],
+//       });
+//     }
+//   }
+// });
 
 export type TemplateTaskFormValues = z.infer<typeof templateTaskSchema>;
 
@@ -88,8 +89,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     defaultValues: initialData ? {
       ...initialData,
       recurrence_details: initialData.recurrence_details || undefined,
-      task_type: initialData.task_type || "general",
-      target_value: initialData.target_value || undefined,
+      // task_type: initialData.task_type || "general", // Removido
+      // target_value: initialData.target_value || undefined, // Removido
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || "general",
     } : {
@@ -98,14 +99,14 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       recurrence_type: "none",
       recurrence_details: undefined,
       origin_board: "general",
-      task_type: "general",
-      target_value: undefined,
+      // task_type: "general", // Removido
+      // target_value: undefined, // Removido
       selected_tag_ids: [],
     },
   });
 
   const recurrenceType = form.watch("recurrence_type");
-  const taskType = form.watch("task_type");
+  // const taskType = form.watch("task_type"); // Removido
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const watchedRecurrenceDetails = form.watch("recurrence_details");
 
@@ -142,8 +143,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     try {
       let templateTaskId: string;
 
-      const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type);
-      const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
+      // const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type); // Removido
+      // const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null; // Removido
 
       const dataToSave = {
         title: values.title,
@@ -151,8 +152,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         origin_board: values.origin_board,
-        task_type: values.task_type,
-        target_value: finalTargetValue,
+        // task_type: values.task_type, // Removido
+        // target_value: finalTargetValue, // Removido
         updated_at: new Date().toISOString(),
       };
 
@@ -220,14 +221,15 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         <Textarea
           id="description"
           {...form.register("description")}
-          placeholder="Detalhes da tarefa padrão..."
+          placeholder="Detalhes da tarefa padrão (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       
       {/* Botão de IA removido */}
 
-      <div>
+      {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
+      {/* <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
         <Select
           onValueChange={(value: TaskType) =>
@@ -249,9 +251,9 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
             <SelectItem value="copa_2001">Copa 2001</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </div> */}
 
-      {(["reading", "exercise", "study"].includes(taskType)) && (
+      {/* {(["reading", "exercise", "study"].includes(taskType)) && (
         <div>
           <Label htmlFor="target_value" className="text-foreground">
             Valor Alvo ({taskType === "reading" ? "Páginas" : taskType === "study" ? "Minutos de Estudo" : "Repetições/Minutos"})
@@ -274,7 +276,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
             </p>
           )}
         </div>
-      )}
+      )} */}
 
       <div>
         <Label htmlFor="recurrence_type" className="text-foreground">Recorrência</Label>

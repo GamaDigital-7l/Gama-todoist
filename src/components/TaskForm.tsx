@@ -26,7 +26,7 @@ import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
-import { OriginBoard, RecurrenceType, TaskType, Task } from "@/types/task";
+import { OriginBoard, RecurrenceType, Task } from "@/types/task"; // TaskType removido
 import { useQuery } from "@tanstack/react-query";
 
 const DAYS_OF_WEEK = [
@@ -46,33 +46,34 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
-  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"),
-  target_value: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().int().nullable().optional()
-  ),
+  // task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Removido
+  // target_value: z.preprocess( // Removido
+  //   (val) => (val === "" ? null : Number(val)),
+  //   z.number().int().nullable().optional()
+  // ),
   selected_tag_ids: z.array(z.string()).optional(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"),
   parent_task_id: z.string().nullable().optional(),
-}).superRefine((data, ctx) => {
-  const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
-
-  if (isTargetValueRelevant) {
-    if (data.target_value === null || data.target_value === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "O valor alvo é obrigatório para este tipo de tarefa.",
-        path: ["target_value"],
-      });
-    } else if (data.target_value < 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "O valor alvo deve ser um número positivo.",
-        path: ["target_value"],
-      });
-    }
-  }
 });
+// .superRefine((data, ctx) => { // Removido superRefine
+//   const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
+
+//   if (isTargetValueRelevant) {
+//     if (data.target_value === null || data.target_value === undefined) {
+//       ctx.addIssue({
+//         code: z.ZodIssueCode.custom,
+//         message: "O valor alvo é obrigatório para este tipo de tarefa.",
+//         path: ["target_value"],
+//       });
+//     } else if (data.target_value < 1) {
+//       ctx.addIssue({
+//         code: z.ZodIssueCode.custom,
+//         message: "O valor alvo deve ser um número positivo.",
+//         path: ["target_value"],
+//       });
+//     }
+//   }
+// });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
@@ -114,8 +115,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
       recurrence_details: initialData.recurrence_details || undefined,
-      task_type: initialData.task_type || "general",
-      target_value: initialData.target_value || undefined,
+      // task_type: initialData.task_type || "general", // Removido
+      // target_value: initialData.target_value || undefined, // Removido
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || initialOriginBoard,
       parent_task_id: initialData.parent_task_id || initialParentTaskId || null,
@@ -126,8 +127,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       time: undefined,
       recurrence_type: "none",
       recurrence_details: undefined,
-      task_type: "general",
-      target_value: undefined,
+      // task_type: "general", // Removido
+      // target_value: undefined, // Removido
       selected_tag_ids: [],
       origin_board: initialOriginBoard,
       parent_task_id: initialParentTaskId || null,
@@ -135,7 +136,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   });
 
   const recurrenceType = form.watch("recurrence_type");
-  const taskType = form.watch("task_type");
+  // const taskType = form.watch("task_type"); // Removido
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const watchedRecurrenceDetails = form.watch("recurrence_details");
   const watchedOriginBoard = form.watch("origin_board");
@@ -238,8 +239,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     try {
       let taskId: string;
 
-      const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type);
-      const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
+      // const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type); // Removido
+      // const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null; // Removido
 
       const dataToSave = {
         title: values.title,
@@ -248,9 +249,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         time: values.time || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
-        task_type: values.task_type,
-        target_value: finalTargetValue,
-        current_daily_target: finalTargetValue,
+        // task_type: values.task_type, // Removido
+        // target_value: finalTargetValue, // Removido
+        // current_daily_target: finalTargetValue, // Removido
         updated_at: new Date().toISOString(),
         origin_board: values.origin_board,
         parent_task_id: values.parent_task_id || null,
@@ -321,14 +322,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <Textarea
           id="description"
           {...form.register("description")}
-          placeholder="Detalhes da tarefa..."
+          placeholder="Detalhes da tarefa (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       
       {/* Botão de IA removido */}
 
-      <div>
+      {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
+      {/* <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
         <Select
           onValueChange={(value: TaskType) =>
@@ -350,9 +352,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             <SelectItem value="copa_2001">Copa 2001</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </div> */}
 
-      {(["reading", "exercise", "study"].includes(taskType)) && (
+      {/* {(["reading", "exercise", "study"].includes(taskType)) && (
         <div>
           <Label htmlFor="target_value" className="text-foreground">
             Valor Alvo ({taskType === "reading" ? "Páginas" : taskType === "study" ? "Minutos de Estudo" : "Repetições/Minutos"})
@@ -375,7 +377,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             </p>
           )}
         </div>
-      )}
+      )} */}
 
       <div>
         <Label htmlFor="due_date" className="text-foreground">Data de Vencimento (Opcional)</Label>

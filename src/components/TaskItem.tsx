@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, BookOpen, Dumbbell, GraduationCap, PlusCircle } from "lucide-react";
+import { Repeat, Clock, Edit, Trash2, PlusCircle } from "lucide-react"; // BookOpen, Dumbbell, GraduationCap removidos
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
@@ -165,24 +165,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     }
   };
 
-  const getTaskTypeIcon = (taskType: Task['task_type']) => {
-    switch (taskType) {
-      case "reading": return <BookOpen className="h-3 w-3" />;
-      case "exercise": return <Dumbbell className="h-3 w-3" />;
-      case "study": return <GraduationCap className="h-3 w-3" />;
-      default: return null;
-    }
-  };
-
-  const getTaskTypeLabel = (taskType: Task['task_type'], targetValue: number | null | undefined) => {
-    if (targetValue === null || targetValue === undefined) return null;
-    switch (taskType) {
-      case "reading": return `Meta: ${targetValue} páginas`;
-      case "exercise": return `Meta: ${targetValue} minutos/reps`;
-      case "study": return `Meta: ${targetValue} minutos de estudo`;
-      default: return null;
-    }
-  };
+  // getTaskTypeIcon e getTaskTypeLabel removidos
 
   const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
 
@@ -223,11 +206,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
               </p>
             )}
-            {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
+            {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
+            {/* {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
               </p>
-            )}
+            )} */}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (

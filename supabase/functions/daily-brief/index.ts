@@ -126,7 +126,7 @@ serve(async (req) => {
     } else {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type, is_completed, last_successful_completion_date")
+        .select("title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date") // task_type removido
         .eq("user_id", userId)
         .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
 

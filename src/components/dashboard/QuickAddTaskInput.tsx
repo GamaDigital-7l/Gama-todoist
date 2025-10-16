@@ -100,8 +100,8 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         time: null,
         recurrence_type: "none", // Não recorrente por padrão
         recurrence_details: null,
-        task_type: "general", // Tipo geral por padrão
-        target_value: null,
+        // task_type: "general", // Tipo geral por padrão - Removido
+        // target_value: null, // Removido
         origin_board: originBoard,
         is_completed: false,
       }).select("id").single();
