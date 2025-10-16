@@ -356,7 +356,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground min-h-[80px] quill-no-toolbar" // Classe para esconder o toolbar
+            className="bg-transparent text-foreground quill-no-toolbar" // Removido min-h-[80px] daqui
           />
         ) : (
           <div className="space-y-2">
