@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import NoteForm from "./NoteForm";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge"; // Importar Badge
 
 interface NoteItemProps {
   note: Note;
@@ -178,6 +179,15 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
       </CardHeader>
       <CardContent className="flex-grow" onClick={() => handleEditNote(note)}>
         <p className="text-sm text-gray-800 dark:text-gray-100 break-words">{note.content}</p>
+        {note.tags && note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {note.tags.map((tag) => (
+              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardContent>
 
       {isFormOpen && (
