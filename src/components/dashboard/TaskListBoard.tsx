@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, BookOpen, Dumbbell, Brain, GraduationCap } from "lucide-react";
+import { Repeat, Clock, Edit, Trash2, BookOpen, Dumbbell, Brain, GraduationCap, PlusCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
