@@ -121,3 +121,22 @@
 .nav-link-inactive {
   @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
 }
+
+/* Estilos para o Quill Editor no modo bubble */
+.quill-no-toolbar .ql-toolbar {
+  display: none; /* Esconde o toolbar */
+}
+
+.quill-no-toolbar .ql-container.ql-bubble:not(.ql-disabled) a::before {
+  content: attr(href); /* Mostra o link em vez do texto "Link" */
+}
+
+.quill-no-toolbar .ql-editor {
+  padding: 0; /* Remove padding padrão do editor */
+}
+
+.quill-no-toolbar .ql-editor.ql-blank::before {
+  left: 0;
+  font-style: normal;
+  color: hsl(var(--muted-foreground));
+}

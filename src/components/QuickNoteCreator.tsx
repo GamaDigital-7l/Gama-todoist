@@ -28,14 +28,16 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  const handleOpenFormWithDefaults = (type: "text" | "checklist", color?: string) => {
+  const handleOpenFormWithDefaults = (type: "text" | "checklist", color?: string, withImagePicker?: boolean) => {
     setInitialNoteData({
       type,
       color: color || "#FEEFC3",
-      content: type === "text" ? "" : [],
+      content: type === "text" ? "" : "[]", // Conteúdo inicial como string JSON para checklist
       pinned: false,
       archived: false,
       trashed: false,
+      // Se withImagePicker for true, o NoteForm pode abrir o seletor de arquivos automaticamente
+      // ou apenas mostrar o campo de upload de imagem.
     });
     setIsFormOpen(true);
   };
@@ -61,7 +63,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", "#FFFFFF")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", undefined, true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               <ImageIcon className="h-5 w-5" />
               <span className="sr-only">Adicionar Imagem</span>
             </Button>
@@ -93,10 +95,11 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Criar Nova Nota</DialogTitle>
+            {/* Título e descrição do Dialog podem ser mais genéricos ou removidos, pois o NoteForm terá seu próprio título */}
+            {/* <DialogTitle className="text-foreground">Criar Nova Nota</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               Escreva uma nova nota para o seu segundo cérebro.
-            </DialogDescription>
+            </DialogDescription> */}
           </DialogHeader>
           <NoteForm
             initialData={initialNoteData as Note} // Passa os dados iniciais
