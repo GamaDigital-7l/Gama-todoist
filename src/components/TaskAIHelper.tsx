@@ -6,77 +6,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Loader2, ListTodo } from "lucide-react";
-import { format, isToday, parseISO, getDay, isThisWeek, isThisMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth
+import { Brain, Loader2 } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
-import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
-
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  due_date?: string; // ISO string
-  time?: string; // Formato "HH:mm"
-  is_completed: boolean;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly";
-  recurrence_details?: string;
-  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
-  last_successful_completion_date?: string | null; // Adicionado
-}
-
-const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
-  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-  "Thursday": 4, "Friday": 5, "Saturday": 6
-};
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
+import { Task, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importar Task e DAYS_OF_WEEK_MAP
 
 const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
-    .from("tasks", { schema: 'public' }) // Especificando o esquema
+    .from("tasks")
     .select("*")
     .eq("user_id", userId)
+    .in('origin_board', ['urgent_today', 'non_urgent_today']) // Busca apenas dos quadros de hoje
     .order("time", { ascending: true, nullsFirst: false });
 
   if (error) {
     throw error;
   }
-
-  const today = new Date();
-  const currentDayOfWeek = getDay(today);
-  const currentDayOfMonth = today.getDate().toString();
-
-  const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-    if (!details) return false;
-    const days = details.split(',');
-    return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
-  };
-
-  return (data || []).filter(task => {
-    let isTaskDueToday = false;
-
-    if (task.recurrence_type !== "none") {
-      if (task.recurrence_type === "daily") {
-        isTaskDueToday = true;
-      }
-      if (task.recurrence_type === "weekly" && task.recurrence_details) {
-        if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
-          isTaskDueToday = true;
-        }
-      }
-      if (task.recurrence_type === "monthly" && task.recurrence_details) {
-        if (parseInt(task.recurrence_details) === parseInt(currentDayOfMonth)) {
-          isTaskDueToday = true;
-        }
-      }
-    } else if (task.due_date) {
-      const dueDate = parseISO(task.due_date);
-      if (isToday(dueDate)) {
-        isTaskDueToday = true;
-      }
-    }
-    
-    // A tarefa é devida hoje E não está concluída para o período atual
-    return isTaskDueToday && !getAdjustedTaskCompletionStatus(task);
-  });
+  
+  // Filtra as tarefas que são devidas hoje e não estão concluídas para o período
+  return (data || []).filter(task => !getAdjustedTaskCompletionStatus(task));
 };
 
 const TaskAIHelper: React.FC = () => {
@@ -163,13 +111,13 @@ const TaskAIHelper: React.FC = () => {
             {aiResponse && (
               <div className="mt-4 p-3 bg-secondary rounded-md text-secondary-foreground border border-border">
                 <p className="font-semibold mb-2">Dicas da IA:</p>
-                <p className="text-sm whitespace-pre-wrap break-words">{aiResponse}</p> {/* break-words */}
+                <p className="text-sm whitespace-pre-wrap break-words">{aiResponse}</p>
               </div>
             )}
           </>
         ) : (
           <p className="text-muted-foreground">
-            Parabéns! Nenhuma tarefa incompleta para hoje.
+            Parabéns! Nenhuma tarefa incompleta para hoje nos quadros "Hoje".
           </p>
         )}
       </CardContent>

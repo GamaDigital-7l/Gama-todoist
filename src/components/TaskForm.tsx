@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import TimePicker from "./TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OriginBoard, RecurrenceType, TaskType } from "@/types/task"; // Importar tipos
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -50,6 +51,7 @@ const taskSchema = z.object({
     z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
   ),
   selected_tag_ids: z.array(z.string()).optional(),
+  origin_board: z.enum(["general", "urgent_today", "non_urgent_today", "overdue", "completed", "recurrent"]).default("general"), // Adicionado
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
@@ -63,9 +65,10 @@ interface TaskFormProps {
   };
   onTaskSaved: () => void;
   onClose: () => void;
+  initialOriginBoard?: OriginBoard; // Novo prop
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general" }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const [isGeneratingAISuggestions, setIsGeneratingAISuggestions] = useState(false);
@@ -80,6 +83,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       task_type: initialData.task_type || "general",
       target_value: initialData.target_value || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
+      origin_board: initialData.origin_board || initialOriginBoard, // Usa initialData.origin_board ou initialOriginBoard
     } : {
       title: "",
       description: "",
@@ -90,6 +94,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       task_type: "general",
       target_value: undefined,
       selected_tag_ids: [],
+      origin_board: initialOriginBoard, // Define o valor inicial do quadro
     },
   });
 
@@ -97,6 +102,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
   const taskType = form.watch("task_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const watchedRecurrenceDetails = form.watch("recurrence_details");
+  const watchedOriginBoard = form.watch("origin_board");
 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
@@ -107,6 +113,55 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       setSelectedDays([]);
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
+
+  // Efeito para definir a data de vencimento e tags com base no initialOriginBoard
+  useEffect(() => {
+    const setupInitialBoardDefaults = async () => {
+      if (!initialData && userId && (initialOriginBoard === "urgent_today" || initialOriginBoard === "non_urgent_today")) {
+        form.setValue("due_date", new Date()); // Define a data de hoje
+        
+        const tagName = initialOriginBoard === "urgent_today" ? 'hoje-urgente' : 'hoje-sem-urgencia';
+        const tagColor = initialOriginBoard === "urgent_today" ? '#EF4444' : '#3B82F6';
+
+        let tagId: string | undefined;
+
+        // Tenta buscar a tag existente
+        const { data: existingTag, error: fetchTagError } = await supabase
+          .from('tags')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('name', tagName)
+          .single();
+
+        if (fetchTagError && fetchTagError.code !== 'PGRST116') { // PGRST116 = no rows found
+          console.error("Erro ao buscar tag:", fetchTagError);
+          showError("Erro ao buscar tag padrão.");
+        } else if (existingTag) {
+          tagId = existingTag.id;
+        } else {
+          // Se a tag não existe, cria
+          const { data: newTag, error: createTagError } = await supabase
+            .from('tags')
+            .insert({ user_id: userId, name: tagName, color: tagColor })
+            .select('id')
+            .single();
+          if (createTagError) {
+            console.error("Erro ao criar tag padrão:", createTagError);
+            showError("Erro ao criar tag padrão.");
+          } else {
+            tagId = newTag.id;
+          }
+        }
+
+        if (tagId) {
+          form.setValue("selected_tag_ids", [tagId]);
+        }
+      }
+    };
+
+    setupInitialBoardDefaults();
+  }, [initialData, initialOriginBoard, userId, form]);
+
 
   const handleDayToggle = (dayValue: string) => {
     setSelectedDays(prev => {
@@ -131,26 +186,26 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
     try {
       let taskId: string;
 
-      // Correção para tarefas gerais: target_value e current_daily_target devem ser null
       const isTargetValueRelevant = values.task_type !== "general";
       const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
 
       const dataToSave = {
         title: values.title,
-        description: values.description || null, // Garante que seja null se vazio
+        description: values.description || null,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         task_type: values.task_type,
         target_value: finalTargetValue,
-        current_daily_target: finalTargetValue, // current_daily_target também deve ser null para tarefas gerais
+        current_daily_target: finalTargetValue,
         updated_at: new Date().toISOString(),
+        origin_board: values.origin_board, // Salva o quadro de origem
       };
 
       if (initialData) {
         const { data, error } = await supabase
-          .from("tasks", { schema: 'public' }) // Especificando o esquema
+          .from("tasks")
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId)
@@ -161,7 +216,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         taskId = data.id;
         showSuccess("Tarefa atualizada com sucesso!");
       } else {
-        const { data, error } = await supabase.from("tasks", { schema: 'public' }).insert({ // Especificando o esquema
+        const { data, error } = await supabase.from("tasks").insert({
           ...dataToSave,
           is_completed: false,
           user_id: userId,
@@ -172,14 +227,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
         showSuccess("Tarefa adicionada com sucesso!");
       }
 
-      await supabase.from("task_tags", { schema: 'public' }).delete().eq("task_id", taskId); // Especificando o esquema
+      await supabase.from("task_tags").delete().eq("task_id", taskId);
 
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
         const taskTagsToInsert = values.selected_tag_ids.map(tagId => ({
           task_id: taskId,
           tag_id: tagId,
         }));
-        const { error: tagInsertError } = await supabase.from("task_tags", { schema: 'public' }).insert(taskTagsToInsert); // Especificando o esquema
+        const { error: tagInsertError } = await supabase.from("task_tags").insert(taskTagsToInsert);
         if (tagInsertError) throw tagInsertError;
       }
 
@@ -292,7 +347,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="task_type" className="text-foreground">Tipo de Tarefa</Label>
         <Select
-          onValueChange={(value: "general" | "reading" | "exercise" | "study") =>
+          onValueChange={(value: TaskType) =>
             form.setValue("task_type", value)
           }
           value={taskType}
@@ -375,7 +430,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
       <div>
         <Label htmlFor="recurrence_type" className="text-foreground">Recorrência</Label>
         <Select
-          onValueChange={(value: "none" | "daily" | "weekly" | "monthly") => {
+          onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
             form.setValue("recurrence_details", null);
             setSelectedDays([]);
@@ -439,6 +494,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose }
           )}
         </div>
       )}
+
+      <div>
+        <Label htmlFor="origin_board" className="text-foreground">Quadro de Origem</Label>
+        <Select
+          onValueChange={(value: OriginBoard) => form.setValue("origin_board", value)}
+          value={watchedOriginBoard}
+          disabled={!!initialData} // Desabilita a mudança do quadro se estiver editando
+        >
+          <SelectTrigger id="origin_board" className="bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Selecionar quadro" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="general">Geral</SelectItem>
+            <SelectItem value="urgent_today">Hoje - Urgente</SelectItem>
+            <SelectItem value="non_urgent_today">Hoje - Sem Urgência</SelectItem>
+            <SelectItem value="overdue">Atrasadas</SelectItem>
+            <SelectItem value="completed">Finalizadas</SelectItem>
+            <SelectItem value="recurrent">Recorrentes</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <TagSelector
         selectedTagIds={selectedTagIds}

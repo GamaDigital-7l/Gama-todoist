@@ -3,31 +3,24 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
-import DashboardTaskList from "@/components/DashboardTaskList";
+import DashboardTaskList from "@/components/DashboardTaskList"; // Agora é o quadro "Geral"
 import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, subDays, isThisWeek, isThisMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth
+import { isToday, parseISO, differenceInDays, format, getDay } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
-import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
+import { Task, OriginBoard, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importar Task, OriginBoard e DAYS_OF_WEEK_MAP
+import TaskListBoard from "@/components/dashboard/TaskListBoard"; // Importar o componente de quadro
+import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput"; // Importar o input rápido
 
 interface Profile {
   id: string;
   points: number;
-}
-
-interface Task {
-  id: string;
-  is_completed: boolean;
-  due_date?: string;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly";
-  recurrence_details?: string;
-  task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
-  last_successful_completion_date?: string | null; // Adicionado
 }
 
 interface HealthMetric {
@@ -46,14 +39,9 @@ interface HealthGoal {
   is_completed: boolean;
 }
 
-const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
-  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-  "Thursday": 4, "Friday": 5, "Saturday": 6
-};
-
 const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
-    .from("profiles", { schema: 'public' }) // Especificando o esquema
+    .from("profiles")
     .select("id, points")
     .eq("id", userId)
     .single();
@@ -65,18 +53,58 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   return data as Profile | null;
 };
 
-const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks", { schema: 'public' }).select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type, last_successful_completion_date"); // Especificando o esquema
+const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
+    .eq("user_id", userId)
+    .eq("origin_board", board)
+    .order("created_at", { ascending: false });
   if (error) {
-    console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
   }
   return data || [];
 };
 
+const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
+    .eq("user_id", userId)
+    .neq("recurrence_type", "none")
+    .order("created_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
+const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
+    .eq("user_id", userId)
+    .eq("origin_board", "completed")
+    .order("completed_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
+
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
-    .from("health_metrics", { schema: 'public' }) // Especificando o esquema
+    .from("health_metrics")
     .select("id, date, weight_kg")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -92,7 +120,7 @@ const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | n
 
 const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null> => {
   const { data, error } = await supabase
-    .from("health_goals", { schema: 'public' }) // Especificando o esquema
+    .from("health_goals")
     .select("*")
     .eq("user_id", userId)
     .eq("is_completed", false)
@@ -117,9 +145,33 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   });
 
-  const { data: tasks, isLoading: isLoadingTasks, refetch: refetchTasks } = useQuery<Task[], Error>({
-    queryKey: ["tasksForDashboard"],
-    queryFn: fetchUserTasks,
+  const { data: urgentTodayTasks, isLoading: isLoadingUrgentToday, error: errorUrgentToday, refetch: refetchUrgentToday } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "urgent_today", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "urgent_today"),
+    enabled: !!userId,
+  });
+
+  const { data: nonUrgentTodayTasks, isLoading: isLoadingNonUrgentToday, error: errorNonUrgentToday, refetch: refetchNonUrgentToday } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "non_urgent_today", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "non_urgent_today"),
+    enabled: !!userId,
+  });
+
+  const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "overdue", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "overdue"),
+    enabled: !!userId,
+  });
+
+  const { data: recurrentTasks, isLoading: isLoadingRecurrent, error: errorRecurrent, refetch: refetchRecurrent } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "recurrent", userId],
+    queryFn: () => fetchRecurrentTasks(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: completedTasks, isLoading: isLoadingCompleted, error: errorCompleted, refetch: refetchCompleted } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "completed", userId],
+    queryFn: () => fetchCompletedTasks(userId!),
     enabled: !!userId,
   });
 
@@ -137,56 +189,21 @@ const Dashboard: React.FC = () => {
 
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
 
-  const getTodayCompletedTasksCount = (allTasks: Task[]): { completed: number; total: number } => {
-    const today = new Date();
+  const getTodayCompletedTasksCount = (urgentTasks: Task[], nonUrgentTasks: Task[]): { completed: number; total: number } => {
     let completedToday = 0;
     let totalToday = 0;
-    const currentDayOfWeek = today.getDay();
-    const currentDayOfMonth = today.getDate().toString();
 
-    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-      if (!details) return false;
-      const days = details.split(',');
-      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
-    };
-
-    allTasks.forEach(task => {
-      let isTaskDueToday = false;
-
-      if (task.recurrence_type !== "none") {
-        if (task.recurrence_type === "daily") {
-          isTaskDueToday = true;
-        }
-        if (task.recurrence_type === "weekly" && task.recurrence_details) {
-          if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
-            isTaskDueToday = true;
-          }
-        }
-        if (task.recurrence_type === "monthly" && task.recurrence_details) {
-          if (parseInt(task.recurrence_details) === parseInt(currentDayOfMonth)) {
-            isTaskDueToday = true;
-          }
-        }
-      } else if (task.due_date) {
-        const dueDate = parseISO(task.due_date);
-        if (isToday(dueDate)) {
-          isTaskDueToday = true;
-        }
-      }
-
-      if (isTaskDueToday) {
-        totalToday++;
-        // Usar o status ajustado para contagem
-        if (getAdjustedTaskCompletionStatus(task)) {
-          completedToday++;
-        }
+    [...urgentTasks, ...nonUrgentTasks].forEach(task => {
+      totalToday++;
+      if (getAdjustedTaskCompletionStatus(task)) {
+        completedToday++;
       }
     });
 
     return { completed: completedToday, total: totalToday };
   };
 
-  const todayTasksStats = tasks ? getTodayCompletedTasksCount(tasks) : { completed: 0, total: 0 };
+  const todayTasksStats = getTodayCompletedTasksCount(urgentTodayTasks || [], nonUrgentTodayTasks || []);
 
   const currentWeight = latestHealthMetric?.weight_kg || null;
   let healthGoalProgress = {
@@ -213,9 +230,17 @@ const Dashboard: React.FC = () => {
     };
   }
 
+  const handleTaskAdded = () => {
+    refetchUrgentToday();
+    refetchNonUrgentToday();
+    refetchOverdue();
+    refetchRecurrent();
+    refetchCompleted();
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-2"> {/* flex-wrap para responsividade */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>
@@ -231,19 +256,62 @@ const Dashboard: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <TaskForm
-              onTaskSaved={() => {
-                refetchTasks();
-                setIsTaskFormOpen(false);
-              }}
+              onTaskSaved={handleTaskAdded}
               onClose={() => setIsTaskFormOpen(false)}
+              initialOriginBoard="general"
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* DailyMotivation removido */}
-
-      <DashboardTaskList />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TaskListBoard
+          title="Hoje – Urgente"
+          tasks={urgentTodayTasks || []}
+          isLoading={isLoadingUrgentToday}
+          error={errorUrgentToday}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="urgent_today" onTaskAdded={handleTaskAdded} />}
+          originBoard="urgent_today"
+        />
+        <TaskListBoard
+          title="Hoje – Sem Urgência"
+          tasks={nonUrgentTodayTasks || []}
+          isLoading={isLoadingNonUrgentToday}
+          error={errorNonUrgentToday}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="non_urgent_today" onTaskAdded={handleTaskAdded} />}
+          originBoard="non_urgent_today"
+        />
+        <TaskListBoard
+          title="Atrasadas"
+          tasks={overdueTasks || []}
+          isLoading={isLoadingOverdue}
+          error={errorOverdue}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="overdue"
+        />
+        <TaskListBoard
+          title="Recorrentes"
+          tasks={recurrentTasks || []}
+          isLoading={isLoadingRecurrent}
+          error={errorRecurrent}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="recurrent"
+        />
+        <TaskListBoard
+          title="Finalizadas"
+          tasks={completedTasks || []}
+          isLoading={isLoadingCompleted}
+          error={errorCompleted}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="completed"
+        />
+        <DashboardTaskList /> {/* Este agora é o quadro "Geral" */}
+      </div>
 
       <TaskAIHelper />
 
@@ -254,7 +322,7 @@ const Dashboard: React.FC = () => {
             <ListTodo className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            {isLoadingTasks ? (
+            {(isLoadingUrgentToday || isLoadingNonUrgentToday) ? (
               <div className="text-3xl font-bold text-foreground">Carregando...</div>
             ) : (
               <div className="text-3xl font-bold text-foreground">{todayTasksStats.completed}/{todayTasksStats.total} Concluídas</div>

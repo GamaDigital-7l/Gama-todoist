@@ -1,0 +1,40 @@
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
+export type TaskType = "general" | "reading" | "exercise" | "study";
+export type OriginBoard = "general" | "urgent_today" | "non_urgent_today" | "overdue" | "completed" | "recurrent";
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string | null;
+  due_date?: string | null; // ISO string
+  time?: string | null; // Formato "HH:mm"
+  is_completed: boolean;
+  recurrence_type: RecurrenceType;
+  recurrence_details?: string | null;
+  task_type: TaskType;
+  target_value?: number | null;
+  current_daily_target?: number | null;
+  last_successful_completion_date?: string | null;
+  origin_board: OriginBoard; // Novo campo para o quadro de origem
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null; // Adicionado para tarefas finalizadas
+  last_moved_to_overdue_at?: string | null; // Adicionado para tarefas atrasadas
+  tags: Tag[];
+}
+
+export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
+
+export const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
+  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
+  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
+};

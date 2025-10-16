@@ -12,46 +12,16 @@ import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Trash2, Repeat, Clock, Edit, PlusCircle, Brain, BookOpen, Dumbbell, GraduationCap } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
-import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
-
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
-  id: string;
-  is_completed: boolean;
-  created_at: string;
-  updated_at: string;
-  due_date?: string;
-  recurrence_type: "none" | "daily" | "weekly" | "monthly";
-  recurrence_details?: string | null;
-  task_type: "general" | "reading" | "exercise" | "study";
-  target_value?: number | null;
-  last_successful_completion_date?: string | null; // Adicionado
-  tags: Tag[];
-}
-
-const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
-  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-  "Thursday": 4, "Friday": 5, "Saturday": 6
-};
-
-const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
-  "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
-  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
-};
-
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
+import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS } from "@/types/task"; // Importar Task, Tag e constantes
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
-    .from("tasks", { schema: 'public' }) // Especificando o esquema
+    .from("tasks")
     .select(`
       *,
       tags (id, name, color)
@@ -85,12 +55,40 @@ const Tasks: React.FC = () => {
       return;
     }
     try {
+      const { data: taskToUpdate, error: fetchTaskError } = await supabase
+        .from("tasks")
+        .select("recurrence_type, origin_board")
+        .eq("id", taskId)
+        .single();
+
+      if (fetchTaskError) throw fetchTaskError;
+
+      let newOriginBoard = taskToUpdate.origin_board;
+      let completedAt = null;
+      let lastSuccessfulCompletionDate = null;
+
+      if (!currentStatus) { // Se a tarefa está sendo marcada como concluída
+        completedAt = new Date().toISOString();
+        lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
+        if (taskToUpdate.recurrence_type === "none") {
+          newOriginBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
+        }
+      } else { // Se a tarefa está sendo desmarcada
+        completedAt = null;
+        lastSuccessfulCompletionDate = null;
+        if (taskToUpdate.recurrence_type === "none") {
+          newOriginBoard = "general"; // Mover de volta para geral se não for recorrente
+        }
+      }
+
       const { error } = await supabase
-        .from("tasks", { schema: 'public' }) // Especificando o esquema
-        .update({ 
-          is_completed: !currentStatus, 
+        .from("tasks")
+        .update({
+          is_completed: !currentStatus,
           updated_at: new Date().toISOString(),
-          last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null,
+          last_successful_completion_date: lastSuccessfulCompletionDate,
+          completed_at: completedAt,
+          origin_board: newOriginBoard,
         })
         .eq("id", taskId)
         .eq("user_id", userId);
@@ -111,10 +109,10 @@ const Tasks: React.FC = () => {
     }
     if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
       try {
-        await supabase.from("task_tags", { schema: 'public' }).delete().eq("task_id", taskId); // Especificando o esquema
+        await supabase.from("task_tags").delete().eq("task_id", taskId);
 
         const { error } = await supabase
-          .from("tasks", { schema: 'public' }) // Especificando o esquema
+          .from("tasks")
           .delete()
           .eq("id", taskId)
           .eq("user_id", userId);
@@ -184,15 +182,17 @@ const Tasks: React.FC = () => {
       return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
     };
 
+    // Prioriza o origin_board para os quadros "Hoje"
+    if (filterType === "daily") {
+      return task.origin_board === "urgent_today" || task.origin_board === "non_urgent_today";
+    }
+
+    // Para tarefas recorrentes, verifica a recorrência
     if (task.recurrence_type !== "none") {
       switch (filterType) {
-        case "daily":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "weekly":
-          // Para tarefas semanais, incluir as diárias e as da semana atual
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
         case "monthly":
-          // Para tarefas mensais, incluir as diárias, semanais e as do mês atual
           return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "all":
         default:
@@ -200,12 +200,11 @@ const Tasks: React.FC = () => {
       }
     }
 
+    // Para tarefas não recorrentes, verifica a due_date
     if (!task.due_date) return false;
     const dueDate = parseISO(task.due_date);
 
     switch (filterType) {
-      case "daily":
-        return isToday(dueDate);
       case "weekly":
         return isThisWeek(dueDate, { weekStartsOn: 0 });
       case "monthly":
@@ -223,21 +222,21 @@ const Tasks: React.FC = () => {
     return (
       <div className="space-y-3">
         {filteredTasks.map((task) => {
-          const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task); // Usar o status ajustado
+          const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
           return (
             <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
               <div className="flex items-center gap-3 flex-grow min-w-0">
                 <Checkbox
                   id={`task-${task.id}`}
-                  checked={isTaskCompletedForPeriod} // Usar o status ajustado
-                  onCheckedChange={() => handleToggleComplete(task.id, isTaskCompletedForPeriod)} // Passar o status ajustado
+                  checked={isTaskCompletedForPeriod}
+                  onCheckedChange={() => handleToggleComplete(task.id, isTaskCompletedForPeriod)}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
                 <div className="grid gap-1.5 flex-grow min-w-0">
                   <label
                     htmlFor={`task-${task.id}`}
                     className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                      isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground" // Usar o status ajustado
+                      isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground"
                     }`}
                   >
                     {task.title}
