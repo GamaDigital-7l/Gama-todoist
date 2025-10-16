@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse } from "lucide-react"; // Importar HeartPulse
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react"; // Importar NotebookText
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -81,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               Estudos
             </NavLink>
             <NavLink
-              to="/health" // Novo link para saúde
+              to="/health"
               className={({ isActive }) =>
                 cn(
                   "nav-link-base",
@@ -89,10 +89,21 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 )
               }
             >
-              <HeartPulse className="h-4 w-4" /> {/* Ícone para saúde */}
+              <HeartPulse className="h-4 w-4" />
               Saúde
             </NavLink>
-            {/* Link de Motivação removido */}
+            <NavLink
+              to="/notes" {/* Novo link para Notas */}
+              className={({ isActive }) =>
+                cn(
+                  "nav-link-base",
+                  isActive ? "nav-link-active" : "nav-link-inactive"
+                )
+              }
+            >
+              <NotebookText className="h-4 w-4" /> {/* Ícone para Notas */}
+              Notas
+            </NavLink>
             <NavLink
               to="/ai-chat"
               className={({ isActive }) =>

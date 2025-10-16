@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BellRing, Sun } from "lucide-react";
+import { BellRing, Sun, CalendarCheck } from "lucide-react"; // Importar CalendarCheck
 import { useSession } from "@/integrations/supabase/auth";
 import WebPushToggle from "@/components/WebPushToggle";
 
@@ -36,6 +36,7 @@ const Settings: React.FC = () => {
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSendingBriefTest, setIsSendingBriefTest] = useState(false);
+  const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false); // Novo estado
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -164,6 +165,33 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleSendWeeklyBriefTest = async () => { // Nova função para o brief semanal
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para enviar o resumo semanal.");
+      return;
+    }
+    setIsSendingWeeklyBriefTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('weekly-brief', {
+        body: { type: 'weekly_brief' },
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+      showSuccess("Resumo semanal enviado com sucesso! Verifique seu navegador/celular.");
+      console.log("Resposta do resumo semanal:", data);
+    } catch (err: any) {
+      showError("Erro ao enviar resumo semanal: " + err.message);
+      console.error("Erro ao enviar resumo semanal:", err);
+    } finally {
+      setIsSendingWeeklyBriefTest(false);
+    }
+  };
+
   const notificationChannel = form.watch("notification_channel");
 
   return (
@@ -226,6 +254,15 @@ const Settings: React.FC = () => {
                   >
                     <Sun className="mr-2 h-4 w-4" />
                     {isSendingBriefTest ? "Enviando Brief..." : "Enviar Brief da Manhã (Teste)"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSendWeeklyBriefTest} // Novo botão para o brief semanal
+                    disabled={isSendingWeeklyBriefTest}
+                    className="w-full bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    <CalendarCheck className="mr-2 h-4 w-4" />
+                    {isSendingWeeklyBriefTest ? "Enviando Resumo Semanal..." : "Enviar Resumo Semanal (Teste)"}
                   </Button>
                 </div>
               )}

@@ -1,17 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, isToday, getDay, parseISO, isThisWeek, isThisMonth } from "https://esm.sh/date-fns@2.30.0"; // Adicionado isThisWeek, isThisMonth
-import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
+import { format, subWeeks, isToday, isThisWeek, isThisMonth, parseISO, getDay } from "https://esm.sh/date-fns@2.30.0";
+import { utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1";
+import OpenAI from "https://esm.sh/openai@4.52.2";
+import Groq from "https://esm.sh/groq-sdk@0.10.0";
 import webpush from "https://esm.sh/web-push@3.6.2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
-  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-  "Thursday": 4, "Friday": 5, "Saturday": 6
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
@@ -42,7 +39,7 @@ const getAdjustedTaskCompletionStatus = (task: any): boolean => {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -70,7 +67,7 @@ serve(async (req) => {
 
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("notification_channel")
+      .select("groq_api_key, openai_api_key, ai_provider_preference, notification_channel")
       .eq("user_id", userId)
       .limit(1)
       .single();
@@ -84,6 +81,7 @@ serve(async (req) => {
     }
 
     const NOTIFICATION_CHANNEL = settings?.notification_channel || "web_push";
+    const AI_PROVIDER = settings?.ai_provider_preference || 'groq';
 
     if (NOTIFICATION_CHANNEL === "none") {
       return new Response(
@@ -108,78 +106,99 @@ serve(async (req) => {
       VAPID_PRIVATE_KEY!
     );
 
-    const { timeOfDay } = await req.json();
+    const { type } = await req.json(); // 'test_notification' ou 'weekly_brief'
 
-    // Obter a data e hora atual no fuso horário de São Paulo
     const nowUtc = new Date();
     const nowSaoPaulo = utcToZonedTime(nowUtc, SAO_PAULO_TIMEZONE);
+    const oneWeekAgoSaoPaulo = format(subWeeks(nowSaoPaulo, 1), "yyyy-MM-dd", { timeZone: SAO_PAULO_TIMEZONE });
     const todaySaoPaulo = format(nowSaoPaulo, "yyyy-MM-dd", { timeZone: SAO_PAULO_TIMEZONE });
-    const currentDayOfWeekSaoPaulo = getDay(nowSaoPaulo); // 0 para domingo, 1 para segunda, etc.
 
     let briefMessage = "";
     let notificationTitle = "";
     let notificationUrl = "/dashboard";
 
-    if (timeOfDay === 'test_notification') {
-      notificationTitle = "Notificação de Teste";
-      briefMessage = "Esta é uma notificação de teste enviada com sucesso!";
-    } else {
+    if (type === 'test_notification') {
+      notificationTitle = "Notificação de Teste Semanal";
+      briefMessage = "Esta é uma notificação de teste semanal enviada com sucesso!";
+    } else if (type === 'weekly_brief') {
+      // Fetch tasks for the last week
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date")
+        .select("title, is_completed, created_at, completed_at, due_date, recurrence_type, last_successful_completion_date, origin_board")
         .eq("user_id", userId)
-        .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
+        .gte("created_at", oneWeekAgoSaoPaulo); // Tasks created in the last week
 
       if (tasksError) {
-        console.error("Erro ao buscar tarefas para o brief:", tasksError);
+        console.error("Erro ao buscar tarefas para o brief semanal:", tasksError);
         throw tasksError;
       }
 
-      const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-        if (!details) return false;
-        const days = details.split(',');
-        return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
-      };
+      const completedTasks = tasks?.filter(task => task.is_completed && task.completed_at && parseISO(task.completed_at) >= parseISO(oneWeekAgoSaoPaulo)) || [];
+      const overdueTasks = tasks?.filter(task => task.origin_board === 'overdue' && task.due_date && parseISO(task.due_date) < nowSaoPaulo && !task.is_completed) || [];
+      const totalTasksCreated = tasks?.length || 0;
 
-      const todayTasks = (tasks || []).filter(task => {
-        let isTaskDueToday = false;
+      let aiClient;
+      let modelName;
 
-        if (task.recurrence_type !== "none") {
-          if (task.recurrence_type === "daily") {
-            isTaskDueToday = true;
-          }
-          if (task.recurrence_type === "weekly" && task.recurrence_details) {
-            if (isDayIncluded(task.recurrence_details, currentDayOfWeekSaoPaulo)) {
-              isTaskDueToday = true;
-            }
-          }
-          if (task.recurrence_type === "monthly" && task.recurrence_details) {
-            if (parseInt(task.recurrence_details) === nowSaoPaulo.getDate()) {
-              isTaskDueToday = true;
-            }
-          }
-        } else if (task.due_date) {
-          return format(parseISO(task.due_date), "yyyy-MM-dd") === todaySaoPaulo;
+      if (AI_PROVIDER === 'groq') {
+        const groqApiKey = settings?.groq_api_key || Deno.env.get("GROQ_API_KEY");
+        if (!groqApiKey) {
+          return new Response(
+            JSON.stringify({ error: "Groq API Key not configured for weekly brief." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
         }
-        return isTaskDueToday && !getAdjustedTaskCompletionStatus(task);
+        aiClient = new Groq({ apiKey: groqApiKey });
+        modelName = "llama3-8b-8192";
+      } else if (AI_PROVIDER === 'openai') {
+        const openaiApiKey = settings?.openai_api_key || Deno.env.get("OPENAI_API_KEY");
+        if (!openaiApiKey) {
+          return new Response(
+            JSON.stringify({ error: "OpenAI API Key not configured for weekly brief." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        aiClient = new OpenAI({ apiKey: openaiApiKey });
+        modelName = "gpt-3.5-turbo";
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Provedor de IA não suportado para brief semanal." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const prompt = `
+        Generate a weekly summary for the user based on their task performance.
+        Here's the data for the last week (from ${oneWeekAgoSaoPaulo} to ${todaySaoPaulo}):
+        - Total tasks created: ${totalTasksCreated}
+        - Tasks completed: ${completedTasks.length}
+        - Tasks overdue: ${overdueTasks.length}
+        
+        Completed tasks: ${completedTasks.map(t => t.title).join(', ') || 'None'}
+        Overdue tasks: ${overdueTasks.map(t => t.title).join(', ') || 'None'}
+
+        Please provide:
+        1. A friendly greeting.
+        2. A summary of tasks completed and overdue.
+        3. The total number of tasks created this week.
+        4. A tip for improvement or a suggestion for a new recurring task based on overdue tasks or general productivity.
+        5. Keep it concise and encouraging.
+      `;
+
+      const chatCompletion = await aiClient.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: modelName,
+        temperature: 0.7,
+        max_tokens: 500,
       });
 
-      // Geração de mensagem estática ou simplificada, sem IA
-      notificationTitle = timeOfDay === 'morning' ? "Seu Brief da Manhã" : "Seu Brief da Noite";
-      briefMessage = `Olá! Aqui está seu resumo para a ${timeOfDay === 'morning' ? 'manhã' : 'noite'}:\n\n`;
-
-      if (todayTasks.length > 0) {
-        briefMessage += `Você tem ${todayTasks.length} tarefas pendentes para hoje:\n`;
-        todayTasks.slice(0, 3).forEach(task => {
-          briefMessage += `- ${task.title}${task.time ? ` às ${task.time}` : ''}\n`;
-        });
-        if (todayTasks.length > 3) {
-          briefMessage += `...e mais ${todayTasks.length - 3} tarefas!\n`;
-        }
-      } else {
-        briefMessage += "Nenhuma tarefa pendente para hoje. Ótimo trabalho!\n";
-      }
-      briefMessage += `\nTenha um dia produtivo!`;
+      briefMessage = chatCompletion.choices[0].message.content || "Não foi possível gerar o resumo semanal.";
+      notificationTitle = "Seu Resumo Semanal com IA";
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Tipo de notificação semanal inválido." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // Enviar notificação Web Push
@@ -222,12 +241,12 @@ serve(async (req) => {
     });
     await Promise.all(pushPromises);
 
-    return new Response(JSON.stringify({ message: "Brief da manhã/notificação de teste enviado com sucesso!" }), {
+    return new Response(JSON.stringify({ message: "Resumo semanal/notificação de teste enviado com sucesso!" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Erro na Edge Function daily-brief:", error);
+    console.error("Erro na Edge Function weekly-brief:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

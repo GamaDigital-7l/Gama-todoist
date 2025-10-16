@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client"; // Corrigido: importado de @tanstack/react-query-persist-client
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
@@ -11,11 +11,12 @@ import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
 import Settings from "./pages/Settings";
 import Books from "./pages/Books";
-import BookDetails from "./pages/BookDetails"; // Renomeado de BookReader
-import BookReaderFullScreen from "./pages/BookReaderFullScreen"; // Novo componente
+import BookDetails from "./pages/BookDetails";
+import BookReaderFullScreen from "./pages/BookReaderFullScreen";
 import AIChat from "./pages/AIChat";
 import Study from "./pages/Study";
 import Health from "./pages/Health";
+import Notes from "./pages/Notes"; // Importar a nova página de Notas
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -86,11 +87,11 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/books" element={<Books />} />
-                <Route path="/books/:id" element={<BookDetails />} /> {/* Rota para detalhes do livro */}
-                {/* Rota de Motivação removida */}
-                <Route path="/ai-chat" element={<AIChat />} />
+                <Route path="/books/:id" element={<BookDetails />} />
                 <Route path="/study" element={<Study />} />
                 <Route path="/health" element={<Health />} />
+                <Route path="/notes" element={<Notes />} /> {/* Nova rota para Notas */}
+                <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
