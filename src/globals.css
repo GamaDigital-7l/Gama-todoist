@@ -132,16 +132,22 @@
 }
 
 .quill-no-toolbar .ql-editor {
-  padding: 8px 12px; /* Adiciona um padding para facilitar a interação */
-  min-height: 80px; /* Garante uma altura mínima para o editor */
-  background-color: transparent; /* Garante que o fundo seja transparente para a cor da nota */
-  z-index: 10; /* Garante que o editor esteja acima de outros elementos */
-  position: relative; /* Necessário para z-index funcionar corretamente */
-  overflow-y: auto; /* Permite rolagem se o conteúdo exceder a altura mínima */
+  padding: 8px 12px;
+  min-height: 80px;
+  background-color: transparent;
+  z-index: 10;
+  position: relative;
+  overflow-y: auto;
+  /* Adicionado para depuração e interatividade */
+  border: 1px dashed var(--border); /* Borda temporária para visualizar a área */
+  cursor: text; /* Garante que o cursor de texto apareça */
+  pointer-events: auto; /* Garante que o elemento receba eventos do mouse */
+  /* Fundo temporário para ver a área de digitação */
+  background-color: hsl(var(--background)); 
 }
 
 .quill-no-toolbar .ql-editor.ql-blank::before {
-  left: 12px; /* Ajusta a posição do placeholder com o novo padding */
+  left: 12px;
   font-style: normal;
   color: hsl(var(--muted-foreground));
 }

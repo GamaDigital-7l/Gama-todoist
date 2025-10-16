@@ -82,7 +82,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       pinned: initialData.pinned,
     } : {
       title: "",
-      content: "",
+      content: "", // Conteúdo inicial vazio para o editor de texto
       type: "text",
       selected_tag_ids: [],
       reminder_date: undefined,
