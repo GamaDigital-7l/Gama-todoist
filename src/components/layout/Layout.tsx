@@ -32,7 +32,8 @@ const Layout: React.FC = () => {
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-col">
-        <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        {/* Pass setIsSidebarOpen para o Header para que o Sheet possa controlar seu próprio estado */}
+        <Header toggleSidebar={toggleSidebar} setIsSidebarOpen={setIsSidebarOpen} isSidebarOpen={isSidebarOpen} />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />
         </main>

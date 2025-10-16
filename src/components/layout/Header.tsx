@@ -11,17 +11,18 @@ import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, Gr
 
 interface HeaderProps {
   toggleSidebar: () => void;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>; // Adicionado para controle direto do Sheet
   isSidebarOpen: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
+const Header: React.FC<HeaderProps> = ({ toggleSidebar, setIsSidebarOpen, isSidebarOpen }) => {
   const isMobile = useIsMobile();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       {/* Gatilho do Sheet para mobile */}
       {isMobile ? (
-        <Sheet open={isSidebarOpen} onOpenChange={toggleSidebar}>
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}> {/* Usar setIsSidebarOpen aqui */}
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="sm:hidden">
               <Menu className="h-5 w-5" />
@@ -35,7 +36,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <Home className="h-5 w-5" /> Dashboard
               </NavLink>
@@ -44,7 +44,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <CalendarDays className="h-5 w-5" /> Planejador Diário
               </NavLink>
@@ -53,7 +52,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <ListTodo className="h-5 w-5" /> Tarefas
               </NavLink>
@@ -62,7 +60,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
                 >
                 <Target className="h-5 w-5" /> Metas
               </NavLink>
@@ -71,7 +68,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <BookOpen className="h-5 w-5" /> Livros
               </NavLink>
@@ -80,7 +76,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <GraduationCap className="h-5 w-5" /> Estudos
               </NavLink>
@@ -89,7 +84,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <HeartPulse className="h-5 w-5" /> Saúde
               </NavLink>
@@ -98,7 +92,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <NotebookText className="h-5 w-5" /> Notas
               </NavLink>
@@ -107,7 +100,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <MessageSquare className="h-5 w-5" /> Chat IA
               </NavLink>
@@ -116,7 +108,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
-                // onClick={toggleSidebar} // Removido para evitar fechamento imediato
               >
                 <Settings className="h-5 w-5" /> Configurações
               </NavLink>
