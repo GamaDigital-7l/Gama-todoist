@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell } from "lucide-react"; // Adicionado Bell
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Adicionado Bell e ImageIcon
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -15,8 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns"; // Importar format e parseISO
-import { ptBR } from "date-fns/locale"; // Importar locale
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface NoteItemProps {
   note: Note;
@@ -153,6 +153,9 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
 
   return (
     <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group" style={{ backgroundColor: note.color }}>
+      {note.image_url && (
+        <img src={note.image_url} alt={note.title || "Nota com imagem"} className="w-full h-auto object-cover rounded-t-lg" />
+      )}
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
         {note.trashed ? (
           <>

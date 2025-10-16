@@ -13,7 +13,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Palette, PlusCircle, XCircle, CalendarIcon } from "lucide-react";
+import { Palette, PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -51,6 +51,11 @@ const noteSchema = z.object({
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(), // Novo campo para data do lembrete
   reminder_time: z.string().optional().nullable(), // Novo campo para hora do lembrete
+  image_file: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024), "Apenas imagens (até 5MB) são permitidas."),
+  existing_image_url: z.string().optional().nullable(), // Para manter a URL da imagem existente
 });
 
 export type NoteFormValues = z.infer<typeof noteSchema>;
@@ -60,6 +65,17 @@ interface NoteFormProps {
   onNoteSaved: () => void;
   onClose: () => void;
 }
+
+// Função para sanitizar o nome do arquivo
+const sanitizeFilename = (filename: string) => {
+  return filename
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9.]/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+};
 
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }) => {
   const { session } = useSession();
@@ -75,6 +91,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined, // Parse string to Date
       reminder_time: initialData.reminder_time || undefined,
+      existing_image_url: initialData.image_url || undefined, // Carregar URL da imagem existente
+      image_file: undefined, // Não pré-preencher o input de arquivo
     } : {
       title: "",
       content: "",
@@ -83,6 +101,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       selected_tag_ids: [],
       reminder_date: undefined,
       reminder_time: undefined,
+      image_file: undefined,
+      existing_image_url: undefined,
     },
   });
 
@@ -90,6 +110,9 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   const noteType = form.watch("type");
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
   const selectedTagIds = form.watch("selected_tag_ids") || [];
+  const imageFile = form.watch("image_file");
+  const existingImageUrl = form.watch("existing_image_url");
+  const [imagePreview, setImagePreview] = useState<string | null>(existingImageUrl || null);
 
   useEffect(() => {
     if (noteType === "checklist" && Array.isArray(form.getValues("content"))) {
@@ -98,6 +121,18 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       setChecklistItems([]);
     }
   }, [noteType, form.getValues("content")]);
+
+  useEffect(() => {
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(imageFile);
+    } else if (!existingImageUrl) {
+      setImagePreview(null);
+    }
+  }, [imageFile, existingImageUrl]);
 
   const addChecklistItem = () => {
     setChecklistItems(prev => [...prev, { text: "", completed: false }]);
@@ -113,6 +148,12 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
   const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
     form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue("image_file", undefined);
+    form.setValue("existing_image_url", null);
+    setImagePreview(null);
   };
 
   const onSubmit = async (values: NoteFormValues) => {
@@ -138,6 +179,36 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       finalContent = values.content;
     }
 
+    let imageUrlToSave: string | null = values.existing_image_url || null;
+
+    // Se um novo arquivo de imagem foi selecionado, faça o upload
+    if (values.image_file) {
+      const file = values.image_file;
+      const sanitizedFilename = sanitizeFilename(file.name);
+      const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("note-assets") // Usar um bucket específico para assets de notas
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("note-assets")
+        .getPublicUrl(filePath);
+      
+      imageUrlToSave = publicUrlData.publicUrl;
+    } else if (values.existing_image_url === null) {
+      // Se a imagem existente foi removida
+      imageUrlToSave = null;
+    }
+
+
     try {
       let noteId: string;
 
@@ -148,6 +219,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
+        image_url: imageUrlToSave, // Salvar a URL da imagem
         updated_at: new Date().toISOString(),
       };
 
@@ -181,30 +253,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           note_id: noteId,
           tag_id: tagId,
         }));
-        const { error: tagInsertError } = await supabase.from("note_tags").insert(noteTagsToInsert);
+        const { error: tagInsertError } = await supabase.from("note_tags").insert(taskTagsToInsert);
         if (tagInsertError) throw tagInsertError;
-      }
-
-      // Se um lembrete foi definido, invocar a Edge Function
-      if (values.reminder_date && values.reminder_time && session?.access_token) {
-        const reminderDateTime = new Date(values.reminder_date);
-        const [hours, minutes] = values.reminder_time.split(':').map(Number);
-        reminderDateTime.setHours(hours, minutes, 0, 0);
-
-        // A Edge Function será invocada para enviar o lembrete.
-        // A lógica de agendamento real (e.g., com pg_cron) seria mais complexa e fora do escopo de uma única invocação.
-        // Por simplicidade, a função `send-note-reminder` será invocada, e ela mesma verificará se o lembrete é para agora.
-        // Em um cenário real, você agendaria um job para o futuro.
-        // Para este exemplo, vamos apenas invocar a função e ela pode decidir se envia imediatamente ou não.
-        // Ou, para simular um agendamento, podemos apenas registrar que o lembrete foi salvo.
-        // Por enquanto, vamos apenas salvar no DB e a Edge Function será chamada por um cron job externo.
-        // A invocação direta aqui seria apenas para testes ou lembretes "imediatos".
-        // Para um lembrete futuro, um cron job no Supabase seria o ideal.
-        // Por simplicidade, não vou adicionar a invocação direta aqui, apenas o salvamento no DB.
-        // O usuário precisaria configurar um cron job no Supabase para chamar a Edge Function periodicamente.
-        // Ou, se a intenção é que o lembrete seja enviado *agora* se a data/hora for no passado/presente,
-        // a Edge Function pode ser invocada. Mas para lembretes futuros, um cron é mais adequado.
-        // Vou manter a simplicidade e apenas salvar no DB.
       }
 
       form.reset();
@@ -226,6 +276,40 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           placeholder="Título da sua nota"
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
+      </div>
+
+      {/* Image Upload Section */}
+      <div>
+        <Label htmlFor="image_file" className="text-foreground flex items-center gap-2">
+          <ImageIcon className="h-4 w-4" /> Imagem (Opcional)
+        </Label>
+        {imagePreview && (
+          <div className="relative w-full h-48 mb-2 rounded-md overflow-hidden">
+            <img src={imagePreview} alt="Pré-visualização da imagem" className="w-full h-full object-cover" />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={handleRemoveImage}
+              className="absolute top-2 right-2 rounded-full"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Remover Imagem</span>
+            </Button>
+          </div>
+        )}
+        <Input
+          id="image_file"
+          type="file"
+          accept="image/*"
+          onChange={(e) => form.setValue("image_file", e.target.files?.[0])}
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.image_file && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.image_file.message as string}
+          </p>
+        )}
       </div>
 
       <div>

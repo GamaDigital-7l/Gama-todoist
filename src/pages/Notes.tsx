@@ -43,6 +43,7 @@ export interface Note {
   tags?: Tag[];
   reminder_date?: string | null; // Novo campo para data do lembrete
   reminder_time?: string | null; // Novo campo para hora do lembrete
+  image_url?: string | null; // Novo campo para URL da imagem
 }
 
 const fetchNotes = async (userId: string): Promise<Note[]> => {
