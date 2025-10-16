@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           </SheetContent>
         </Sheet>
       )}
-      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Meu App</h1> {/* Título genérico, por favor, me diga o novo nome */}
+      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Nexus Flow</h1>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
       </div>
