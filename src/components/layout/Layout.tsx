@@ -15,12 +15,8 @@ const Layout: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Fechar sidebar automaticamente em desktop se estiver aberta por engano
-  React.useEffect(() => {
-    if (!isMobile && isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  }, [isMobile, isSidebarOpen]);
+  // O useEffect problemático foi removido daqui.
+  // A sidebar desktop agora será controlada apenas pelos botões de toggle.
 
   // Determinar as colunas do grid com base no estado da sidebar e tamanho da tela
   const gridColsClass = isSidebarOpen
