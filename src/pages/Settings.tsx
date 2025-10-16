@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -227,7 +227,9 @@ const Settings: React.FC = () => {
       return;
     }
     setIsConnectingGoogle(true);
-    window.location.href = `${supabase.functions.getFunctionUrl('google-oauth/init')}`;
+    // Construindo a URL da Edge Function manualmente
+    const googleOAuthInitUrl = `https://qbhwjmwyrkfyxajaksfk.supabase.co/functions/v1/google-oauth/init`;
+    window.location.href = googleOAuthInitUrl;
   };
 
   const handleDisconnectGoogleCalendar = async () => {
