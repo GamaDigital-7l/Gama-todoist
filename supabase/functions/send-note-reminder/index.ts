@@ -78,7 +78,9 @@ serve(async (req) => {
       const totalItems = note.content.length;
       notificationBody = `Checklist: ${completedItems}/${totalItems} itens concluídos.`;
     } else {
-      notificationBody = String(note.content).substring(0, 100) + (String(note.content).length > 100 ? '...' : '');
+      // Remover tags HTML do conteúdo para a notificação
+      const plainTextContent = String(note.content).replace(/<[^>]*>?/gm, '');
+      notificationBody = plainTextContent.substring(0, 100) + (plainTextContent.length > 100 ? '...' : '');
     }
 
     const payload = {

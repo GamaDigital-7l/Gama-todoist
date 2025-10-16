@@ -16,8 +16,8 @@ import BookReaderFullScreen from "./pages/BookReaderFullScreen";
 import AIChat from "./pages/AIChat";
 import Study from "./pages/Study";
 import Health from "./pages/Health";
-import Notes from "./pages/Notes";
-import Planner from "./pages/Planner"; // Importar a página Planner
+import Notes from "./pages/Notes"; // Adicionado
+import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -91,8 +91,8 @@ const App = () => (
                 <Route path="/books/:id" element={<BookDetails />} />
                 <Route path="/study" element={<Study />} />
                 <Route path="/health" element={<Health />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/planner" element={<Planner />} /> {/* Nova rota para Planner */}
+                <Route path="/notes" element={<Notes />} /> {/* Adicionado */}
+                <Route path="/planner" element={<Planner />} />
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>

@@ -32,7 +32,6 @@ const checklistItemSchema = z.object({
 const noteSchema = z.object({
   title: z.string().optional(),
   content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
-  // A cor é fixada em #FFFFFF no backend, não há seleção de cor na UI
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
