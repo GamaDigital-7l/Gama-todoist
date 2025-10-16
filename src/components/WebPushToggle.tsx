@@ -71,6 +71,11 @@ const WebPushToggle: React.FC = () => {
       let subscription = await registration.pushManager.getSubscription();
 
       if (!subscription) {
+        if (!VAPID_PUBLIC_KEY) {
+          showError("Chave pública VAPID não configurada. Verifique seu arquivo .env.");
+          setIsLoading(false);
+          return;
+        }
         const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,

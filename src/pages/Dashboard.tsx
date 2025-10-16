@@ -3,7 +3,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
-import DailyMotivation from "@/components/DailyMotivation";
 import DashboardTaskList from "@/components/DashboardTaskList";
 import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
@@ -239,7 +238,7 @@ const Dashboard: React.FC = () => {
         </Dialog>
       </div>
 
-      <DailyMotivation />
+      {/* DailyMotivation removido */}
 
       <DashboardTaskList />
 

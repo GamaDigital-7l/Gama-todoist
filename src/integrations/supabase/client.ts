@@ -6,6 +6,7 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // Chave Pública VAPID para Web Push Notifications (AGORA LIDA DE VARIÁVEL DE AMBIENTE)
 // Certifique-se de que VITE_VAPID_PUBLIC_KEY esteja definido no seu arquivo .env
+// Exemplo: VITE_VAPID_PUBLIC_KEY="SUA_CHAVE_PUBLICA_VAPID_AQUI"
 export const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 // Adicione estes logs para verificar se as variáveis estão sendo carregadas

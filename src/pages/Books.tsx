@@ -228,7 +228,7 @@ const Books: React.FC = () => {
                         type="number"
                         min="0"
                         max={book.total_pages}
-                        value={currentPageInput[book.id] ?? 0} {/* Corrigido para sempre ter um valor */}
+                        value={currentPageInput[book.id] ?? 0} 
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
                         className="w-24 bg-input border-border text-foreground focus-visible:ring-ring"
                       />

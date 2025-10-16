@@ -92,18 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <HeartPulse className="h-4 w-4" /> {/* Ícone para saúde */}
               Saúde
             </NavLink>
-            <NavLink
-              to="/motivation"
-              className={({ isActive }) =>
-                cn(
-                  "nav-link-base",
-                  isActive ? "nav-link-active" : "nav-link-inactive"
-                )
-              }
-            >
-              <Sparkles className="h-4 w-4" />
-              Motivação
-            </NavLink>
+            {/* Link de Motivação removido */}
             <NavLink
               to="/ai-chat"
               className={({ isActive }) =>

@@ -76,14 +76,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               >
                 <HeartPulse className="h-5 w-5" /> Saúde
               </NavLink>
-              <NavLink
-                to="/motivation"
-                className={({ isActive }) =>
-                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
-                }
-              >
-                <Sparkles className="h-5 w-5" /> Motivação
-              </NavLink>
+              {/* Link de Motivação removido */}
               <NavLink
                 to="/ai-chat"
                 className={({ isActive }) =>
@@ -104,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           </SheetContent>
         </Sheet>
       )}
-      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Minha Netflix da Vida Pessoal</h1>
+      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Meu App</h1> {/* Título genérico, por favor, me diga o novo nome */}
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
       </div>

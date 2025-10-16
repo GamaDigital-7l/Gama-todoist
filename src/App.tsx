@@ -2,14 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { persistQueryClient } from "@tanstack/query-sync-storage-persister";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Goals from "./pages/Goals";
-import Motivation from "./pages/Motivation";
 import Settings from "./pages/Settings";
 import Books from "./pages/Books";
 import BookDetails from "./pages/BookDetails"; // Renomeado de BookReader
@@ -88,7 +87,7 @@ const App = () => (
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/books" element={<Books />} />
                 <Route path="/books/:id" element={<BookDetails />} /> {/* Rota para detalhes do livro */}
-                <Route path="/motivation" element={<Motivation />} />
+                {/* Rota de Motivação removida */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/study" element={<Study />} />
                 <Route path="/health" element={<Health />} />

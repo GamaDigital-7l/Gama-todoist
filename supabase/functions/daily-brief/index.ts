@@ -234,6 +234,8 @@ serve(async (req) => {
     });
     await Promise.all(pushPromises);
 
+    // A inserção na tabela daily_motivations foi removida.
+
     return new Response(JSON.stringify({ message: "Brief da manhã/notificação de teste enviado com sucesso!" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
