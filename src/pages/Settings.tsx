@@ -34,12 +34,14 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 const Settings: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const userEmail = session?.user?.email; // Obter o e-mail da sessão
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isSendingBriefTest, setIsSendingBriefTest] = useState(false);
   const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [isUpdatingProfileEmail, setIsUpdatingProfileEmail] = useState(false); // Novo estado
   const [searchParams, setSearchParams] = useSearchParams();
 
   const form = useForm<SettingsFormValues>({
@@ -71,14 +73,14 @@ const Settings: React.FC = () => {
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("google_access_token")
+      .select("google_access_token, email") // Também buscar o email do perfil
       .eq("user_id", userId)
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
       console.error("Erro ao verificar status do Google Calendar:", profileError);
-    } else if (profileData && profileData.google_access_token) {
-      setIsGoogleConnected(true);
+    } else if (profileData) {
+      setIsGoogleConnected(!!profileData.google_access_token);
     } else {
       setIsGoogleConnected(false);
     }
@@ -261,6 +263,46 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleUpdateProfileEmail = async () => {
+    if (!userId || !userEmail) {
+      showError("Usuário não autenticado ou e-mail não disponível.");
+      return;
+    }
+    setIsUpdatingProfileEmail(true);
+    try {
+      const { data: existingProfile, error: fetchProfileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .single();
+
+      if (fetchProfileError && fetchProfileError.code !== 'PGRST116') {
+        throw fetchProfileError;
+      }
+
+      if (existingProfile) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ email: userEmail, updated_at: new Date().toISOString() })
+          .eq("id", userId);
+        if (updateError) throw updateError;
+      } else {
+        // Se nenhum perfil existir, crie um com o e-mail
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({ id: userId, email: userEmail });
+        if (insertError) throw insertError;
+      }
+      showSuccess("E-mail do perfil sincronizado com sucesso!");
+      fetchSettingsAndGoogleStatus(); // Re-fetch para atualizar o status
+    } catch (err: any) {
+      showError("Erro ao sincronizar e-mail do perfil: " + err.message);
+      console.error("Erro ao sincronizar e-mail do perfil:", err);
+    } finally {
+      setIsUpdatingProfileEmail(false);
+    }
+  };
+
   const notificationChannel = form.watch("notification_channel");
 
   return (
@@ -269,6 +311,33 @@ const Settings: React.FC = () => {
       <p className="text-lg text-muted-foreground">
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>
+
+      <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-foreground">Gerenciamento de Perfil</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Garanta que seu perfil esteja atualizado para integrações.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="border-b border-border pb-4">
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Sincronizar E-mail do Perfil</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Se você está tendo problemas para conectar o Google Calendar, clique aqui para garantir que seu e-mail esteja salvo corretamente no seu perfil.
+              </p>
+              <Button
+                type="button"
+                onClick={handleUpdateProfileEmail}
+                disabled={isUpdatingProfileEmail || !userEmail}
+                className="w-full bg-blue-500 text-white hover:bg-blue-600"
+              >
+                {isUpdatingProfileEmail ? "Sincronizando..." : "Sincronizar E-mail do Perfil"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
         <CardHeader>
