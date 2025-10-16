@@ -17,6 +17,7 @@ import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import { Task, OriginBoard, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importar Task, OriginBoard e DAYS_OF_WEEK_MAP
 import TaskListBoard from "@/components/dashboard/TaskListBoard"; // Importar o componente de quadro
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput"; // Importar o input rápido
+import { useQueryClient } from "@tanstack/react-query"; // Importar useQueryClient
 
 interface Profile {
   id: string;
@@ -156,6 +157,7 @@ const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null>
 const Dashboard: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const queryClient = useQueryClient(); // Inicializar useQueryClient
 
   const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({
     queryKey: ["userProfile", userId],
@@ -261,6 +263,7 @@ const Dashboard: React.FC = () => {
     refetchOverdue();
     refetchRecurrent();
     refetchCompleted();
+    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] }); // Invalida a query de todas as tarefas
   };
 
   return (
