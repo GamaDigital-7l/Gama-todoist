@@ -221,7 +221,7 @@ const Books: React.FC = () => {
                         max={book.total_pages}
                         value={currentPageInput[book.id] ?? 0} 
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
-                        className="w-full sm:w-24 bg-input border-border text-foreground focus-visible:ring-ring" {/* w-full para mobile */}
+                        className="w-full sm:w-24 bg-input border-border text-foreground focus-visible:ring-ring"
                       />
                       <Button
                         onClick={() => handleUpdatePage(book.id)}
