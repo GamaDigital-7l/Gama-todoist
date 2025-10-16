@@ -162,6 +162,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
 
+  // Efeito para limpar target_value quando o tipo de tarefa não o exige
+  useEffect(() => {
+    const isTargetValueRelevant = ["reading", "exercise", "study"].includes(taskType);
+    if (!isTargetValueRelevant) {
+      form.setValue("target_value", null, { shouldDirty: true });
+    }
+  }, [taskType, form]);
+
   // Efeito para definir a data de vencimento e tags com base no initialOriginBoard
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
@@ -242,6 +250,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       return;
     }
 
+    console.log("Valores do formulário antes de salvar (TaskForm):", values); // Log de depuração
+
     try {
       let taskId: string;
 
@@ -263,6 +273,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         origin_board: values.origin_board, // Salva o quadro de origem
         parent_task_id: values.parent_task_id || null, // Salva a tarefa pai
       };
+
+      console.log("Dados a serem salvos (TaskForm):", dataToSave); // Log de depuração
 
       if (initialData) {
         const { data, error } = await supabase

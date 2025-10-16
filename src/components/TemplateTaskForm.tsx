@@ -124,6 +124,14 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
 
+  // Efeito para limpar target_value quando o tipo de tarefa não o exige
+  useEffect(() => {
+    const isTargetValueRelevant = ["reading", "exercise", "study"].includes(taskType);
+    if (!isTargetValueRelevant) {
+      form.setValue("target_value", null, { shouldDirty: true });
+    }
+  }, [taskType, form]);
+
   const handleDayToggle = (dayValue: string) => {
     setSelectedDays(prev => {
       const newDays = prev.includes(dayValue)
@@ -144,6 +152,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       return;
     }
 
+    console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values); // Log de depuração
+
     try {
       let templateTaskId: string;
 
@@ -161,6 +171,8 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         target_value: finalTargetValue,
         updated_at: new Date().toISOString(),
       };
+
+      console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave); // Log de depuração
 
       if (initialData) {
         const { data, error } = await supabase
