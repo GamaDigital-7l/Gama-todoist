@@ -21,6 +21,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TagForm from "@/components/TagForm";
+import { Badge } from "@/components/ui/badge"; // Importação explícita do Badge
 
 // Definir o tipo para um item de checklist
 interface ChecklistItem {
