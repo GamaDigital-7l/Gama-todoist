@@ -167,7 +167,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
 
   return (
-    <div className={`space-y-2 ${level > 0 ? 'ml-6 border-l pl-3 border-border' : ''}`}>
+    <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
       <div className={cn(
         "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-md shadow-sm",
         level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
@@ -185,7 +185,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
               className={cn(
                 "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-sm" : "text-xs"
+                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}
             >
               {task.title}
@@ -193,7 +193,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             {task.description && (
               <p className={cn(
                 "text-muted-foreground break-words",
-                level === 0 ? "text-sm" : "text-xs"
+                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}>{task.description}</p>
             )}
             {task.due_date && task.recurrence_type === "none" && (
