@@ -294,7 +294,7 @@ const Notes: React.FC = () => {
         <TabsContent value="active" className="mt-4">
           {pinnedActiveNotes.length > 0 && (
             <>
-              <h2 className="text-xl font-bold text-foreground mb-3">Fixadas</h2>
+              <h2 className="text-xl font-bold text-muted-foreground mb-3">FIXADAS</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                 {pinnedActiveNotes.map((note) => (
                   <NoteItem key={note.id} note={note} refetchNotes={refetch} />
@@ -303,7 +303,7 @@ const Notes: React.FC = () => {
             </>
           )}
 
-          <h2 className="text-xl font-bold text-foreground mb-3">Outras Notas</h2>
+          <h2 className="text-xl font-bold text-muted-foreground mb-3">OUTRAS</h2>
           {unpinnedActiveNotes.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {unpinnedActiveNotes.map((note) => (
