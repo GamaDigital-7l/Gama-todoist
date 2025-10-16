@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useForm } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
@@ -16,10 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BellRing, Sun, CalendarCheck, Link as LinkIcon, Unlink } from "lucide-react"; // Importar Link e Unlink
+import { BellRing, Sun, CalendarCheck, Link as LinkIcon, Unlink } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import WebPushToggle from "@/components/WebPushToggle";
-import { useSearchParams } from "react-router-dom"; // Importar useSearchParams
+import { useSearchParams } from "react-router-dom";
 
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
@@ -39,7 +40,7 @@ const Settings: React.FC = () => {
   const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams(); // Hook para parâmetros da URL
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -68,7 +69,6 @@ const Settings: React.FC = () => {
       setSettingsId(data.id);
     }
 
-    // Verificar status da conexão Google
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("google_access_token")
@@ -87,15 +87,14 @@ const Settings: React.FC = () => {
   useEffect(() => {
     fetchSettingsAndGoogleStatus();
 
-    // Lidar com o callback do Google OAuth
     const googleAuthSuccess = searchParams.get("google_auth_success");
     if (googleAuthSuccess === "true") {
       showSuccess("Google Calendar conectado com sucesso!");
-      setSearchParams({}, { replace: true }); // Limpar o parâmetro da URL
-      fetchSettingsAndGoogleStatus(); // Recarregar o status
+      setSearchParams({}, { replace: true });
+      fetchSettingsAndGoogleStatus();
     } else if (searchParams.get("google_auth_error")) {
       showError("Erro ao conectar Google Calendar. Tente novamente.");
-      setSearchParams({}, { replace: true }); // Limpar o parâmetro da URL
+      setSearchParams({}, { replace: true });
     }
   }, [form, userId, searchParams, setSearchParams]);
 
@@ -228,8 +227,6 @@ const Settings: React.FC = () => {
       return;
     }
     setIsConnectingGoogle(true);
-    // Redirecionar o navegador diretamente para a Edge Function que inicia o fluxo OAuth
-    // Isso evita problemas de CORS com a API fetch e garante que o navegador lide com o redirecionamento 302.
     window.location.href = `${supabase.functions.getFunctionUrl('google-oauth/init')}`;
   };
 
