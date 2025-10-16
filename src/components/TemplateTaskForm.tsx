@@ -40,35 +40,30 @@ const templateTaskSchema = z.object({
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
-  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Atualizado
+  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"),
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().nullable().optional()
-  ).refine((val, ctx) => {
-    const currentTaskType = (ctx.parent as TemplateTaskFormValues).task_type;
-    const isRelevant = ["reading", "exercise", "study"].includes(currentTaskType);
-
-    if (isRelevant) {
-      if (val === null || val === undefined) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "O valor alvo é obrigatório para este tipo de tarefa.",
-          path: ["target_value"],
-        });
-        return false;
-      }
-      if (val < 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "O valor alvo deve ser um número positivo.",
-          path: ["target_value"],
-        });
-        return false;
-      }
-    }
-    return true;
-  }),
+  ),
   selected_tag_ids: z.array(z.string()).optional(),
+}).superRefine((data, ctx) => {
+  const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
+
+  if (isTargetValueRelevant) {
+    if (data.target_value === null || data.target_value === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O valor alvo é obrigatório para este tipo de tarefa.",
+        path: ["target_value"],
+      });
+    } else if (data.target_value < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O valor alvo deve ser um número positivo.",
+        path: ["target_value"],
+      });
+    }
+  }
 });
 
 export type TemplateTaskFormValues = z.infer<typeof templateTaskSchema>;
@@ -124,14 +119,6 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
 
-  // Efeito para limpar target_value quando o tipo de tarefa não o exige
-  useEffect(() => {
-    const isTargetValueRelevant = ["reading", "exercise", "study"].includes(taskType);
-    if (!isTargetValueRelevant) {
-      form.setValue("target_value", null, { shouldDirty: true });
-    }
-  }, [taskType, form]);
-
   const handleDayToggle = (dayValue: string) => {
     setSelectedDays(prev => {
       const newDays = prev.includes(dayValue)
@@ -152,12 +139,11 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       return;
     }
 
-    console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values); // Log de depuração
+    console.log("Valores do formulário antes de salvar (TemplateTaskForm):", values);
 
     try {
       let templateTaskId: string;
 
-      // Ajusta a lógica para que os novos tipos de tarefa não exijam target_value
       const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type);
       const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
 
@@ -172,7 +158,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         updated_at: new Date().toISOString(),
       };
 
-      console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave); // Log de depuração
+      console.log("Dados a serem salvos (TemplateTaskForm):", dataToSave);
 
       if (initialData) {
         const { data, error } = await supabase
@@ -197,7 +183,6 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         showSuccess("Tarefa padrão adicionada com sucesso!");
       }
 
-      // Atualizar tags associadas
       await supabase.from("template_task_tags").delete().eq("template_task_id", templateTaskId);
 
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {

@@ -46,37 +46,32 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
-  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Atualizado
+  task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"),
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().nullable().optional()
-  ).refine((val, ctx) => {
-    const currentTaskType = (ctx.parent as TaskFormValues).task_type;
-    const isRelevant = ["reading", "exercise", "study"].includes(currentTaskType);
-
-    if (isRelevant) {
-      if (val === null || val === undefined) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "O valor alvo é obrigatório para este tipo de tarefa.",
-          path: ["target_value"],
-        });
-        return false;
-      }
-      if (val < 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "O valor alvo deve ser um número positivo.",
-          path: ["target_value"],
-        });
-        return false;
-      }
-    }
-    return true;
-  }),
+  ),
   selected_tag_ids: z.array(z.string()).optional(),
-  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"), // Atualizado
-  parent_task_id: z.string().nullable().optional(), // Novo campo
+  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"),
+  parent_task_id: z.string().nullable().optional(),
+}).superRefine((data, ctx) => {
+  const isTargetValueRelevant = ["reading", "exercise", "study"].includes(data.task_type);
+
+  if (isTargetValueRelevant) {
+    if (data.target_value === null || data.target_value === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O valor alvo é obrigatório para este tipo de tarefa.",
+        path: ["target_value"],
+      });
+    } else if (data.target_value < 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O valor alvo deve ser um número positivo.",
+        path: ["target_value"],
+      });
+    }
+  }
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
@@ -90,8 +85,8 @@ interface TaskFormProps {
   };
   onTaskSaved: () => void;
   onClose: () => void;
-  initialOriginBoard?: OriginBoard; // Novo prop
-  initialParentTaskId?: string; // Novo prop para subtarefas
+  initialOriginBoard?: OriginBoard;
+  initialParentTaskId?: string;
 }
 
 const fetchUserTasks = async (userId: string): Promise<Task[]> => {
@@ -99,7 +94,7 @@ const fetchUserTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select("id, title")
     .eq("user_id", userId)
-    .is("parent_task_id", null) // Apenas tarefas principais
+    .is("parent_task_id", null)
     .order("title", { ascending: true });
   if (error) {
     throw error;
@@ -122,8 +117,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       task_type: initialData.task_type || "general",
       target_value: initialData.target_value || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
-      origin_board: initialData.origin_board || initialOriginBoard, // Usa initialData.origin_board ou initialOriginBoard
-      parent_task_id: initialData.parent_task_id || initialParentTaskId || null, // Define parent_task_id
+      origin_board: initialData.origin_board || initialOriginBoard,
+      parent_task_id: initialData.parent_task_id || initialParentTaskId || null,
     } : {
       title: "",
       description: "",
@@ -134,8 +129,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       task_type: "general",
       target_value: undefined,
       selected_tag_ids: [],
-      origin_board: initialOriginBoard, // Define o valor inicial do quadro
-      parent_task_id: initialParentTaskId || null, // Define parent_task_id inicial
+      origin_board: initialOriginBoard,
+      parent_task_id: initialParentTaskId || null,
     },
   });
 
@@ -151,7 +146,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   const { data: userTasks, isLoading: isLoadingUserTasks } = useQuery<Task[], Error>({
     queryKey: ["userTasksForParentSelection", userId],
     queryFn: () => fetchUserTasks(userId!),
-    enabled: !!userId && !initialParentTaskId, // Só busca se não for uma subtarefa sendo criada
+    enabled: !!userId && !initialParentTaskId,
   });
 
   useEffect(() => {
@@ -162,37 +157,28 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     }
   }, [recurrenceType, watchedRecurrenceDetails]);
 
-  // Efeito para limpar target_value quando o tipo de tarefa não o exige
-  useEffect(() => {
-    const isTargetValueRelevant = ["reading", "exercise", "study"].includes(taskType);
-    if (!isTargetValueRelevant) {
-      form.setValue("target_value", null, { shouldDirty: true });
-    }
-  }, [taskType, form]);
-
   // Efeito para definir a data de vencimento e tags com base no initialOriginBoard
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
       if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
-        form.setValue("due_date", new Date()); // Define a data de hoje
+        form.setValue("due_date", new Date());
         
         let tagName: string;
         let tagColor: string;
 
         if (initialOriginBoard === "today_priority") {
           tagName = 'hoje-prioridade';
-          tagColor = '#EF4444'; // Vermelho
+          tagColor = '#EF4444';
         } else if (initialOriginBoard === "today_no_priority") {
           tagName = 'hoje-sem-prioridade';
-          tagColor = '#3B82F6'; // Azul
-        } else { // jobs_woe_today
+          tagColor = '#3B82F6';
+        } else {
           tagName = 'jobs-woe-hoje';
-          tagColor = '#8B5CF6'; // Roxo
+          tagColor = '#8B5CF6';
         }
 
         let tagId: string | undefined;
 
-        // Tenta buscar a tag existente
         const { data: existingTag, error: fetchTagError } = await supabase
           .from('tags')
           .select('id')
@@ -200,13 +186,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           .eq('name', tagName)
           .single();
 
-        if (fetchTagError && fetchTagError.code !== 'PGRST116') { // PGRST116 = no rows found
+        if (fetchTagError && fetchTagError.code !== 'PGRST116') {
           console.error("Erro ao buscar tag:", fetchTagError);
           showError("Erro ao buscar tag padrão.");
         } else if (existingTag) {
           tagId = existingTag.id;
         } else {
-          // Se a tag não existe, cria
           const { data: newTag, error: createTagError } = await supabase
             .from('tags')
             .insert({ user_id: userId, name: tagName, color: tagColor })
@@ -250,12 +235,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       return;
     }
 
-    console.log("Valores do formulário antes de salvar (TaskForm):", values); // Log de depuração
+    console.log("Valores do formulário antes de salvar (TaskForm):", values);
 
     try {
       let taskId: string;
 
-      // Ajusta a lógica para que os novos tipos de tarefa não exijam target_value
       const isTargetValueRelevant = ["reading", "exercise", "study"].includes(values.task_type);
       const finalTargetValue = isTargetValueRelevant ? (values.target_value || null) : null;
 
@@ -270,11 +254,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         target_value: finalTargetValue,
         current_daily_target: finalTargetValue,
         updated_at: new Date().toISOString(),
-        origin_board: values.origin_board, // Salva o quadro de origem
-        parent_task_id: values.parent_task_id || null, // Salva a tarefa pai
+        origin_board: values.origin_board,
+        parent_task_id: values.parent_task_id || null,
       };
 
-      console.log("Dados a serem salvos (TaskForm):", dataToSave); // Log de depuração
+      console.log("Dados a serem salvos (TaskForm):", dataToSave);
 
       if (initialData) {
         const { data, error } = await supabase
@@ -578,7 +562,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <Select
           onValueChange={(value: OriginBoard) => form.setValue("origin_board", value)}
           value={watchedOriginBoard}
-          disabled={!!initialData} // Desabilita a mudança do quadro se estiver editando
+          disabled={!!initialData}
         >
           <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar quadro" />
@@ -595,7 +579,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         </Select>
       </div>
 
-      {!initialParentTaskId && ( // Só mostra o seletor de tarefa pai se não estiver criando uma subtarefa
+      {!initialParentTaskId && (
         <div>
           <Label htmlFor="parent_task_id" className="text-foreground">Tarefa Pai (Opcional)</Label>
           <Select
@@ -607,7 +591,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               <SelectValue placeholder="Selecionar tarefa pai" />
             </SelectTrigger>
             <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-              <SelectItem value="none-selected">Nenhuma</SelectItem> {/* Corrigido o valor */}
+              <SelectItem value="none-selected">Nenhuma</SelectItem>
               {userTasks?.map(task => (
                 <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
               ))}
