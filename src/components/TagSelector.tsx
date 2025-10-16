@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import { Check, PlusCircle } from "lucide-react";
+import { Check, PlusCircle, Pencil } from "lucide-react"; // Importar Pencil para o ícone de edição
 import {
   Command,
   CommandEmpty,
@@ -18,7 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TagForm from "./TagForm";
 import { Label } from "@/components/ui/label";
 
@@ -50,6 +50,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
   const userId = session?.user?.id;
   const [open, setOpen] = React.useState(false);
   const [isTagFormOpen, setIsTagFormOpen] = React.useState(false);
+  const [editingTag, setEditingTag] = React.useState<Tag | undefined>(undefined); // Estado para a tag sendo editada
 
   const { data: availableTags, isLoading, error, refetch } = useQuery<Tag[], Error>({
     queryKey: ["tags", userId],
@@ -62,6 +63,18 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
       ? selectedTagIds.filter((id) => id !== tagId)
       : [...selectedTagIds, tagId];
     onTagSelectionChange(newSelectedTagIds);
+  };
+
+  const handleEditTag = (tag: Tag) => {
+    setEditingTag(tag);
+    setIsTagFormOpen(true);
+    setOpen(false); // Fecha o popover do seletor de tags
+  };
+
+  const handleCloseTagForm = () => {
+    setIsTagFormOpen(false);
+    setEditingTag(undefined); // Limpa a tag em edição
+    refetch(); // Recarrega as tags após salvar/cancelar
   };
 
   const selectedTags = availableTags?.filter(tag => selectedTagIds.includes(tag.id)) || [];
@@ -115,30 +128,48 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                         {tag.name}
                       </Badge>
                     </div>
-                    <Check
-                      className={cn(
-                        "h-4 w-4",
-                        selectedTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que o CommandItem seja selecionado
+                          handleEditTag(tag);
+                        }}
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        <span className="sr-only">Editar Tag</span>
+                      </Button>
+                      <Check
+                        className={cn(
+                          "h-4 w-4",
+                          selectedTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
               <CommandGroup className="border-t border-border">
-                <Dialog open={isTagFormOpen} onOpenChange={setIsTagFormOpen}>
+                <Dialog open={isTagFormOpen} onOpenChange={handleCloseTagForm}>
                   <DialogTrigger asChild>
-                    <CommandItem onSelect={() => setIsTagFormOpen(true)} className="text-primary hover:bg-accent hover:text-accent-foreground">
+                    <CommandItem onSelect={() => {
+                      setEditingTag(undefined); // Garante que é uma nova tag
+                      setIsTagFormOpen(true);
+                      setOpen(false); // Fecha o popover do seletor de tags
+                    }} className="text-primary hover:bg-accent hover:text-accent-foreground">
                       <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Tag
                     </CommandItem>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                     <DialogHeader>
-                      <DialogTitle className="text-foreground">Criar Nova Tag</DialogTitle>
+                      <DialogTitle className="text-foreground">{editingTag ? "Editar Tag" : "Criar Nova Tag"}</DialogTitle>
                       <DialogDescription className="text-muted-foreground">
-                        Adicione uma nova tag para organizar suas tarefas.
+                        {editingTag ? "Atualize o nome e a cor da sua tag." : "Adicione uma nova tag para organizar suas tarefas."}
                       </DialogDescription>
                     </DialogHeader>
-                    <TagForm onTagSaved={refetch} onClose={() => setIsTagFormOpen(false)} />
+                    <TagForm initialData={editingTag} onTagSaved={refetch} onClose={handleCloseTagForm} />
                   </DialogContent>
                 </Dialog>
               </CommandGroup>
