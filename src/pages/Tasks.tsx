@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import TaskForm, { TaskFormValues } from "@/components/TaskForm";
+import TaskForm from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
@@ -17,12 +17,29 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
-import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS } from "@/types/task"; // Importar Task, Tag e constantes
+import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask } from "@/types/task"; // Importar Task, Tag, TemplateTask e constantes
 import TaskItem from "@/components/TaskItem"; // Importar o novo componente TaskItem
+import TemplateTaskForm from "@/components/TemplateTaskForm"; // Importar o novo formulário
+import TemplateTaskItem from "@/components/TemplateTaskItem"; // Importar o novo item de tarefa padrão
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
+    .select(`
+      *,
+      tags (id, name, color)
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
+const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
+  const { data, error } = await supabase
+    .from("template_tasks")
     .select(`
       *,
       tags (id, name, color)
@@ -45,10 +62,19 @@ const Tasks: React.FC = () => {
     enabled: !!userId,
   });
 
+  const { data: templateTasks, isLoading: isLoadingTemplateTasks, error: errorTemplateTasks, refetch: refetchTemplateTasks } = useQuery<TemplateTask[], Error>({
+    queryKey: ["templateTasks", userId],
+    queryFn: () => fetchTemplateTasks(userId!),
+    enabled: !!userId,
+  });
+
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
   const [isObstacleCoachOpen, setIsObstacleCoachOpen] = React.useState(false);
   const [selectedTaskForCoach, setSelectedTaskForCoach] = React.useState<Task | undefined>(undefined);
+
+  const [isTemplateFormOpen, setIsTemplateFormOpen] = React.useState(false);
+  const [editingTemplateTask, setEditingTemplateTask] = React.useState<TemplateTask | undefined>(undefined);
 
   const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
     if (!userId) {
@@ -138,40 +164,6 @@ const Tasks: React.FC = () => {
     setIsObstacleCoachOpen(true);
   };
 
-  const getRecurrenceText = (task: Task) => {
-    switch (task.recurrence_type) {
-      case "daily":
-        return "Recorre Diariamente";
-      case "weekly":
-        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
-        return `Recorre Semanalmente nos dias: ${days}`;
-      case "monthly":
-        return `Recorre Mensalmente no dia ${task.recurrence_details}`;
-      case "none":
-      default:
-        return null;
-    }
-  };
-
-  const getTaskTypeIcon = (taskType: Task['task_type']) => {
-    switch (taskType) {
-      case "reading": return <BookOpen className="h-3 w-3" />;
-      case "exercise": return <Dumbbell className="h-3 w-3" />;
-      case "study": return <GraduationCap className="h-3 w-3" />;
-      default: return null;
-    }
-  };
-
-  const getTaskTypeLabel = (taskType: Task['task_type'], targetValue: number | null | undefined) => {
-    if (targetValue === null || targetValue === undefined) return null;
-    switch (taskType) {
-      case "reading": return `Meta: ${targetValue} páginas`;
-      case "exercise": return `Meta: ${targetValue} minutos/reps`;
-      case "study": return `Meta: ${targetValue} minutos de estudo`;
-      default: return null;
-    }
-  };
-
   const filterTasks = (task: Task, filterType: "daily" | "weekly" | "monthly" | "all") => {
     const today = new Date();
     const currentDayOfWeek = getDay(today);
@@ -258,8 +250,22 @@ const Tasks: React.FC = () => {
     );
   };
 
-  if (isLoading) return <p className="text-muted-foreground">Carregando tarefas...</p>;
+  const renderTemplateTaskList = (templateTasks: TemplateTask[]) => {
+    if (templateTasks.length === 0) {
+      return <p className="text-muted-foreground">Nenhuma tarefa padrão encontrada. Adicione uma para automatizar seu dia!</p>;
+    }
+    return (
+      <div className="space-y-3">
+        {templateTasks.map((templateTask) => (
+          <TemplateTaskItem key={templateTask.id} templateTask={templateTask} refetchTemplateTasks={refetchTemplateTasks} />
+        ))}
+      </div>
+    );
+  };
+
+  if (isLoading || isLoadingTemplateTasks) return <p className="text-muted-foreground">Carregando tarefas...</p>;
   if (error) return <p className="text-red-500">Erro ao carregar tarefas: {error.message}</p>;
+  if (errorTemplateTasks) return <p className="text-red-500">Erro ao carregar tarefas padrão: {errorTemplateTasks.message}</p>;
 
   const dailyTasks = tasks?.filter((task) => filterTasks(task, "daily")) || [];
   const weeklyTasks = tasks?.filter((task) => filterTasks(task, "weekly")) || [];
@@ -304,21 +310,62 @@ const Tasks: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
         <Card className="bg-card border border-border rounded-lg shadow-sm">
           <CardHeader>
-            <CardTitle className="text-foreground">Minhas Tarefas</CardTitle>
+            <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="daily" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
-                <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
-                <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
-                <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
-                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
+            <Tabs defaultValue="current_tasks" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md">
+                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Minhas Tarefas</TabsTrigger>
+                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Tarefas Padrão</TabsTrigger>
               </TabsList>
               <div className="mt-4">
-                <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
-                <TabsContent value="weekly">{renderTaskList(weeklyTasks)}</TabsContent>
-                <TabsContent value="monthly">{renderTaskList(monthlyTasks)}</TabsContent>
-                <TabsContent value="all">{renderTaskList(allTasks)}</TabsContent>
+                <TabsContent value="current_tasks">
+                  <Tabs defaultValue="daily" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
+                      <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
+                      <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
+                      <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
+                      <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
+                    </TabsList>
+                    <div className="mt-4">
+                      <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
+                      <TabsContent value="weekly">{renderTaskList(weeklyTasks)}</TabsContent>
+                      <TabsContent value="monthly">{renderTaskList(monthlyTasks)}</TabsContent>
+                      <TabsContent value="all">{renderTaskList(allTasks)}</TabsContent>
+                    </div>
+                  </Tabs>
+                </TabsContent>
+                <TabsContent value="template_tasks">
+                  <div className="flex justify-end mb-4">
+                    <Dialog
+                      open={isTemplateFormOpen}
+                      onOpenChange={(open) => {
+                        setIsTemplateFormOpen(open);
+                        if (!open) setEditingTemplateTask(undefined);
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
+                          <DialogDescription className="text-muted-foreground">
+                            {editingTemplateTask ? "Atualize os detalhes da sua tarefa padrão." : "Crie uma nova tarefa padrão para automatizar seu dia."}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <TemplateTaskForm
+                          initialData={editingTemplateTask}
+                          onTemplateTaskSaved={refetchTemplateTasks}
+                          onClose={() => setIsTemplateFormOpen(false)}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  {renderTemplateTaskList(templateTasks || [])}
+                </TabsContent>
               </div>
             </Tabs>
           </CardContent>

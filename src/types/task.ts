@@ -31,6 +31,27 @@ export interface Task {
   subtasks?: Task[]; // Para carregar subtarefas aninhadas
 }
 
+export interface TemplateTask {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  recurrence_type: RecurrenceType;
+  recurrence_details?: string | null;
+  origin_board: OriginBoard;
+  task_type: TaskType;
+  target_value?: number | null;
+  created_at: string;
+  updated_at: string;
+  tags: Tag[]; // Para carregar tags associadas
+}
+
+export interface TemplateTaskTag {
+  template_task_id: string;
+  tag_id: string;
+  created_at: string;
+}
+
 export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
   "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
   "Thursday": 4, "Friday": 5, "Saturday": 6
