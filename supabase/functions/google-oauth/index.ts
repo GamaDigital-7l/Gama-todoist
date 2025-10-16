@@ -108,23 +108,25 @@ serve(async (req) => {
       }
 
       const userInfo = await userinfoResponse.json();
-      const googleUserId = userInfo.sub; // ID único do usuário Google
+      // const googleUserId = userInfo.sub; // ID único do usuário Google
 
       // Encontrar o user_id do Supabase associado ao email do Google
-      const { data: supabaseUser, error: userError } = await supabase
+      // Agora que a tabela 'profiles' tem a coluna 'email', podemos usá-la.
+      const { data: supabaseProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, user_id')
-        .eq('email', userInfo.email) // Assumindo que o email do perfil Supabase é o mesmo do Google
+        .select('id')
+        .eq('email', userInfo.email)
         .single();
 
       let userIdToUpdate = null;
-      if (supabaseUser) {
-        userIdToUpdate = supabaseUser.user_id;
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error("Erro ao buscar perfil do Supabase por email:", profileError);
+        throw profileError;
+      } else if (supabaseProfile) {
+        userIdToUpdate = supabaseProfile.id; // O 'id' da tabela profiles é o user_id do Supabase
       } else {
-        // Se não encontrar pelo email, pode ser necessário um fluxo de login/associação mais complexo
-        // Por simplicidade, vamos assumir que o usuário já está logado no Nexus Flow
-        // e que o `state` ou um cookie poderia ser usado para identificar o `user_id` do Supabase.
-        // Para este exemplo, vamos retornar um erro e pedir para o usuário logar primeiro.
+        // Se não encontrar um perfil existente, o usuário precisa estar logado no Nexus Flow
+        // com o mesmo email antes de tentar conectar o Google Calendar.
         return new Response(
           JSON.stringify({ error: "Could not link Google account. Please ensure you are logged in to Nexus Flow with the same email." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -143,7 +145,7 @@ serve(async (req) => {
           google_token_expiry: expiryDate.toISOString(),
           // google_calendar_id: userInfo.email, // Pode ser o email ou o ID do calendário principal
         })
-        .eq("user_id", userIdToUpdate);
+        .eq("id", userIdToUpdate); // Usar o ID do perfil encontrado
 
       if (updateError) {
         console.error("Erro ao salvar tokens no Supabase:", updateError);
