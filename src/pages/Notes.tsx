@@ -14,15 +14,14 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NoteForm from "@/components/NoteForm";
 import NoteItem from "@/components/NoteItem";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag } from "@/types/task";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TagForm from "@/components/TagForm";
-import { Badge } from "@/components/ui/badge"; // Importação explícita do Badge
-import QuickNoteCreator from "@/components/QuickNoteCreator"; // Importar o novo componente
+import { Badge } from "@/components/ui/badge";
+import QuickNoteCreator from "@/components/QuickNoteCreator";
 
 // Definir o tipo para um item de checklist
 interface ChecklistItem {
@@ -122,6 +121,9 @@ const Notes: React.FC = () => {
   };
 
   const filteredNotes = allNotes?.filter(note => {
+    // Excluir notas arquivadas e na lixeira da exibição principal
+    if (note.archived || note.trashed) return false;
+
     let contentText = "";
     if (note.type === "text") {
       // Remover tags HTML para busca de texto
@@ -146,12 +148,8 @@ const Notes: React.FC = () => {
     return matchesSearch && matchesTags;
   }) || [];
 
-  const activeNotes = filteredNotes.filter(note => !note.archived && !note.trashed);
-  const archivedNotes = filteredNotes.filter(note => note.archived && !note.trashed);
-  const trashedNotes = filteredNotes.filter(note => note.trashed);
-
-  const pinnedActiveNotes = activeNotes.filter(note => note.pinned);
-  const unpinnedActiveNotes = activeNotes.filter(note => !note.pinned);
+  const pinnedActiveNotes = filteredNotes.filter(note => note.pinned);
+  const unpinnedActiveNotes = filteredNotes.filter(note => !note.pinned);
 
   if (isLoading || isLoadingTags) {
     return (
@@ -188,13 +186,12 @@ const Notes: React.FC = () => {
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
           <NotebookText className="h-7 w-7 text-primary" /> Segundo Cérebro (Notas)
         </h1>
-        {/* O botão "Adicionar Nota" será substituído pelo QuickNoteCreator */}
       </div>
       <p className="text-lg text-muted-foreground">
         Seu caderno digital para todas as suas ideias, pensamentos e informações importantes.
       </p>
 
-      <QuickNoteCreator onNoteCreated={refetch} /> {/* Novo componente de criação rápida */}
+      <QuickNoteCreator onNoteCreated={refetch} />
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-grow">
@@ -284,63 +281,27 @@ const Notes: React.FC = () => {
         </Popover>
       </div>
 
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border rounded-md">
-          <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Notas Ativas</TabsTrigger>
-          <TabsTrigger value="archived" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Arquivo</TabsTrigger>
-          <TabsTrigger value="trash" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Lixeira</TabsTrigger>
-        </TabsList>
+      {pinnedActiveNotes.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold text-muted-foreground mb-3">FIXADAS</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+            {pinnedActiveNotes.map((note) => (
+              <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+            ))}
+          </div>
+        </>
+      )}
 
-        <TabsContent value="active" className="mt-4">
-          {pinnedActiveNotes.length > 0 && (
-            <>
-              <h2 className="text-xl font-bold text-muted-foreground mb-3">FIXADAS</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                {pinnedActiveNotes.map((note) => (
-                  <NoteItem key={note.id} note={note} refetchNotes={refetch} />
-                ))}
-              </div>
-            </>
-          )}
-
-          <h2 className="text-xl font-bold text-muted-foreground mb-3">OUTRAS</h2>
-          {unpinnedActiveNotes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {unpinnedActiveNotes.map((note) => (
-                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
-                ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Nenhuma nota ativa encontrada. Adicione uma nova nota!</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="archived" className="mt-4">
-          <h2 className="text-xl font-bold text-foreground mb-3">Notas Arquivadas</h2>
-          {archivedNotes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {archivedNotes.map((note) => (
-                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Nenhuma nota arquivada encontrada.</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="trash" className="mt-4">
-          <h2 className="text-xl font-bold text-foreground mb-3">Notas na Lixeira</h2>
-          {trashedNotes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {trashedNotes.map((note) => (
-                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">A lixeira está vazia.</p>
-          )}
-        </TabsContent>
-      </Tabs>
+      <h2 className="text-xl font-bold text-muted-foreground mb-3">OUTRAS</h2>
+      {unpinnedActiveNotes.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {unpinnedActiveNotes.map((note) => (
+            <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+            ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Nenhuma nota ativa encontrada. Adicione uma nova nota!</p>
+      )}
     </div>
   );
 };
