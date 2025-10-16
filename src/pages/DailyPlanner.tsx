@@ -19,6 +19,7 @@ import { Task, DAYS_OF_WEEK_MAP } from "@/types/task";
 import TaskItem from "@/components/TaskItem";
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
+import TaskForm from "@/components/TaskForm"; // Importar TaskForm
 
 const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[]> => {
   const formattedDate = format(date, "yyyy-MM-dd");
@@ -220,9 +221,9 @@ const DailyPlanner: React.FC = () => {
               </div>
             ) : (
               <p className="text-center text-muted-foreground">Nenhuma reunião agendada para esta data.</p>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="flex flex-col flex-grow bg-card border border-border rounded-lg shadow-sm">
           <CardHeader className="border-b border-border flex flex-row items-center justify-between">
