@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import TagSelector from "./TagSelector"; // Importar TagSelector
 
 const COLORS = [
   { name: "Amarelo", hex: "#FEEFC3" },
@@ -43,6 +44,7 @@ const noteSchema = z.object({
   content: z.union([z.string().min(1, "O conteúdo da nota é obrigatório."), z.array(checklistItemSchema).min(1, "A checklist deve ter pelo menos um item.")]),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FEEFC3"),
   type: z.enum(["text", "checklist"]).default("text"), // Simplificado para text e checklist
+  selected_tag_ids: z.array(z.string()).optional(), // Adicionado para tags
 });
 
 export type NoteFormValues = z.infer<typeof noteSchema>;
@@ -65,17 +67,20 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       content: initialData.type === "checklist" && typeof initialData.content === 'string'
         ? JSON.parse(initialData.content)
         : initialData.content,
+      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [], // Preencher tags iniciais
     } : {
       title: "",
       content: "",
       color: "#FEEFC3",
       type: "text",
+      selected_tag_ids: [],
     },
   });
 
   const selectedColor = form.watch("color");
   const noteType = form.watch("type");
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
+  const selectedTagIds = form.watch("selected_tag_ids") || [];
 
   useEffect(() => {
     if (noteType === "checklist" && Array.isArray(form.getValues("content"))) {
@@ -95,6 +100,10 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
   const removeChecklistItem = (index: number) => {
     setChecklistItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
+    form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
   };
 
   const onSubmit = async (values: NoteFormValues) => {
@@ -121,6 +130,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     }
 
     try {
+      let noteId: string;
+
       const dataToSave = {
         title: values.title?.trim() === "" ? null : values.title,
         content: finalContent,
@@ -130,20 +141,39 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       };
 
       if (initialData) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("notes")
           .update(dataToSave)
           .eq("id", initialData.id)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select("id")
+          .single();
         if (error) throw error;
+        noteId = data.id;
         showSuccess("Nota atualizada com sucesso!");
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("notes")
-          .insert({ ...dataToSave, user_id: userId });
+          .insert({ ...dataToSave, user_id: userId })
+          .select("id")
+          .single();
         if (error) throw error;
+        noteId = data.id;
         showSuccess("Nota adicionada com sucesso!");
       }
+
+      // Atualizar note_tags
+      await supabase.from("note_tags").delete().eq("note_id", noteId);
+
+      if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
+        const noteTagsToInsert = values.selected_tag_ids.map(tagId => ({
+          note_id: noteId,
+          tag_id: tagId,
+        }));
+        const { error: tagInsertError } = await supabase.from("note_tags").insert(noteTagsToInsert);
+        if (tagInsertError) throw tagInsertError;
+      }
+
       form.reset();
       onNoteSaved();
       onClose();
@@ -271,6 +301,10 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           </PopoverContent>
         </Popover>
       </div>
+      <TagSelector
+        selectedTagIds={selectedTagIds}
+        onTagSelectionChange={handleTagSelectionChange}
+      />
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {initialData ? "Atualizar Nota" : "Adicionar Nota"}
       </Button>

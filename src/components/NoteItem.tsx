@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge"; // Importar Badge
 
 interface NoteItemProps {
   note: Note;
@@ -217,6 +218,15 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
       </CardHeader>
       <CardContent className="flex-grow" onClick={() => handleEditNote(note)}>
         {renderNoteContent()}
+        {note.tags && note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {note.tags.map((tag) => (
+              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardContent>
 
       {isFormOpen && (
