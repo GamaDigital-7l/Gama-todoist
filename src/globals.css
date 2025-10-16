@@ -137,6 +137,7 @@
   background-color: transparent; /* Garante que o fundo seja transparente para a cor da nota */
   z-index: 10; /* Garante que o editor esteja acima de outros elementos */
   position: relative; /* Necessário para z-index funcionar corretamente */
+  overflow-y: auto; /* Permite rolagem se o conteúdo exceder a altura mínima */
 }
 
 .quill-no-toolbar .ql-editor.ql-blank::before {

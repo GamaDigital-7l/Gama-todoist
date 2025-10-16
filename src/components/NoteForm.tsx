@@ -31,15 +31,8 @@ import { format, parseISO } from "date-fns";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
 
-// As cores não serão mais usadas para seleção, mas mantidas para referência se necessário em outro lugar
-const COLORS = [
-  { name: "Amarelo", hex: "#FEEFC3" },
-  { name: "Azul", hex: "#D7E3FC" },
-  { name: "Verde", hex: "#D4EFD5" },
-  { name: "Rosa", hex: "#FADCE4" },
-  { name: "Roxo", hex: "#E8D7F7" },
-  { name: "Branco", hex: "#FFFFFF" },
-];
+// As cores não serão mais usadas para seleção, apenas para referência se necessário em outro lugar
+// Removido o array COLORS, pois não é mais necessário para a UI.
 
 // Definir o esquema para um item de checklist
 const checklistItemSchema = z.object({
@@ -356,7 +349,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar min-h-[80px] z-10" // Adicionado z-10 aqui
+            className="bg-transparent text-foreground quill-no-toolbar" // A classe min-h-[80px] e z-10 agora vêm do globals.css
           />
         ) : (
           <div className="space-y-2">

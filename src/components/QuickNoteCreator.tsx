@@ -4,21 +4,12 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Image as ImageIcon, ListTodo, Bell } from "lucide-react";
+import { PlusCircle, Image as ImageIcon, ListTodo } from "lucide-react"; // Removido Palette
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes"; // Importar a interface Note
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
-const COLORS = [
-  { name: "Amarelo", hex: "#FEEFC3" },
-  { name: "Azul", hex: "#D7E3FC" },
-  { name: "Verde", hex: "#D4EFD5" },
-  { name: "Rosa", hex: "#FADCE4" },
-  { name: "Roxo", hex: "#E8D7F7" },
-  { name: "Branco", hex: "#FFFFFF" },
-];
 
 interface QuickNoteCreatorProps {
   onNoteCreated: () => void;
@@ -28,7 +19,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  const handleOpenFormWithDefaults = (type: "text" | "checklist", color?: string, withImagePicker?: boolean) => {
+  const handleOpenFormWithDefaults = (type: "text" | "checklist", withImagePicker?: boolean) => { // Removido 'color' do parâmetro
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
@@ -63,7 +54,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", undefined, true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground"> {/* Removido 'undefined' para color */}
               <ImageIcon className="h-5 w-5" />
               <span className="sr-only">Adicionar Imagem</span>
             </Button>

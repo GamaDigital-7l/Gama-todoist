@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Removido Palette
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -23,14 +23,7 @@ interface NoteItemProps {
   refetchNotes: () => void;
 }
 
-const COLORS = [
-  { name: "Amarelo", hex: "#FEEFC3" },
-  { name: "Azul", hex: "#D7E3FC" },
-  { name: "Verde", hex: "#D4EFD5" },
-  { name: "Rosa", hex: "#FADCE4" },
-  { name: "Roxo", hex: "#E8D7F7" },
-  { name: "Branco", hex: "#FFFFFF" },
-];
+// Removido o array COLORS, pois não é mais necessário para a UI.
 
 const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   const { session } = useSession();
