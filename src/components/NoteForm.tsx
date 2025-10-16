@@ -185,13 +185,19 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   };
 
   const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, false] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-      ['link'], // Removido 'image' do toolbar do Quill para evitar confusão com a imagem principal
-      ['clean']
-    ],
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+        ['link'],
+        ['clean']
+      ],
+      handlers: {
+        // Desativa o manipulador de imagens padrão do Quill
+        'image': () => { /* no-op */ }
+      }
+    },
   };
 
   const formats = [
@@ -490,8 +496,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           </Button>
         </div>
 
-        <Button type="submit" onClick={onClose} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          Fechar
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+          Salvar e Fechar
         </Button>
       </div>
     </form>
