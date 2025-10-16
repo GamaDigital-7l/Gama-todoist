@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X } from "lucide-react";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays } from "lucide-react"; // Importar CalendarDays
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button"; // Importar Button
 
@@ -51,6 +51,19 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
           >
             <Home className="h-4 w-4" />
             Dashboard
+          </NavLink>
+          <NavLink
+            to="/daily-planner" // Nova rota
+            className={({ isActive }) =>
+              cn(
+                "nav-link-base",
+                isActive ? "nav-link-active" : "nav-link-inactive"
+              )
+            }
+            onClick={toggleSidebar}
+          >
+            <CalendarDays className="h-4 w-4" /> {/* Novo ícone */}
+            Planejador Diário
           </NavLink>
           <NavLink
             to="/tasks"

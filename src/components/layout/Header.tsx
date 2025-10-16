@@ -7,7 +7,7 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText } from "lucide-react";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, CalendarDays } from "lucide-react"; // Importar CalendarDays
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -38,6 +38,15 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
                 onClick={toggleSidebar}
               >
                 <Home className="h-5 w-5" /> Dashboard
+              </NavLink>
+              <NavLink
+                to="/daily-planner" // Nova rota
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
+                }
+                onClick={toggleSidebar}
+              >
+                <CalendarDays className="h-5 w-5" /> Planejador Diário
               </NavLink>
               <NavLink
                 to="/tasks"
