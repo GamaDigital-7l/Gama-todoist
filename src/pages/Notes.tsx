@@ -3,22 +3,28 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Search, NotebookText } from "lucide-react";
+import { PlusCircle, Search, NotebookText, Archive, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { showError, showSuccess } from "@/utils/toast";
+import { showError } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useSession } from "@/integrations/supabase/auth";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import NoteForm from "@/components/NoteForm";
+import NoteItem from "@/components/NoteItem";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface Note {
+export interface Note {
   id: string;
-  title: string;
+  title?: string | null;
   content: string;
+  type: "text" | "checklist" | "image" | "drawing" | "link" | "audio";
+  color: string;
+  pinned: boolean;
+  archived: boolean;
+  trashed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +34,7 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
     .from("notes")
     .select("*")
     .eq("user_id", userId)
+    .order("pinned", { ascending: false }) // Pinned notes first
     .order("updated_at", { ascending: false });
   if (error) {
     throw error;
@@ -35,99 +42,11 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
   return data || [];
 };
 
-interface NoteFormProps {
-  initialData?: Note;
-  onNoteSaved: () => void;
-  onClose: () => void;
-}
-
-const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }) => {
-  const { session } = useSession();
-  const userId = session?.user?.id;
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [content, setContent] = useState(initialData?.content || "");
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (title.trim() === "" && content.trim() === "") {
-      showError("A nota não pode estar vazia.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const dataToSave = {
-        title: title.trim() === "" ? "Nota sem título" : title,
-        content: content,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (initialData) {
-        const { error } = await supabase
-          .from("notes")
-          .update(dataToSave)
-          .eq("id", initialData.id)
-          .eq("user_id", userId);
-        if (error) throw error;
-        showSuccess("Nota atualizada com sucesso!");
-      } else {
-        const { error } = await supabase
-          .from("notes")
-          .insert({ ...dataToSave, user_id: userId });
-        if (error) throw error;
-        showSuccess("Nota adicionada com sucesso!");
-      }
-      onNoteSaved();
-      onClose();
-    } catch (err: any) {
-      showError("Erro ao salvar nota: " + err.message);
-      console.error("Erro ao salvar nota:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-card">
-      <div>
-        <Label htmlFor="note-title" className="text-foreground">Título (Opcional)</Label>
-        <Input
-          id="note-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título da sua nota"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-          disabled={isSaving}
-        />
-      </div>
-      <div>
-        <Label htmlFor="note-content" className="text-foreground">Conteúdo da Nota</Label>
-        <Textarea
-          id="note-content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Comece a escrever sua nota aqui..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring min-h-[150px]"
-          disabled={isSaving}
-        />
-      </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSaving}>
-        {isSaving ? "Salvando..." : (initialData ? "Atualizar Nota" : "Adicionar Nota")}
-      </Button>
-    </form>
-  );
-};
-
 const Notes: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
-  const { data: notes, isLoading, error, refetch } = useQuery<Note[], Error>({
+  const { data: allNotes, isLoading, error, refetch } = useQuery<Note[], Error>({
     queryKey: ["notes", userId],
     queryFn: () => fetchNotes(userId!),
     enabled: !!userId,
@@ -142,33 +61,17 @@ const Notes: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeleteNote = async (noteId: string) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (window.confirm("Tem certeza que deseja deletar esta nota?")) {
-      try {
-        const { error } = await supabase
-          .from("notes")
-          .delete()
-          .eq("id", noteId)
-          .eq("user_id", userId);
-
-        if (error) throw error;
-        showSuccess("Nota deletada com sucesso!");
-        refetch();
-      } catch (err: any) {
-        showError("Erro ao deletar nota: " + err.message);
-        console.error("Erro ao deletar nota:", err);
-      }
-    }
-  };
-
-  const filteredNotes = notes?.filter(note =>
-    note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotes = allNotes?.filter(note =>
+    (note.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    note.content.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
+
+  const activeNotes = filteredNotes.filter(note => !note.archived && !note.trashed);
+  const archivedNotes = filteredNotes.filter(note => note.archived && !note.trashed);
+  const trashedNotes = filteredNotes.filter(note => note.trashed);
+
+  const pinnedActiveNotes = activeNotes.filter(note => note.pinned);
+  const unpinnedActiveNotes = activeNotes.filter(note => !note.pinned);
 
   if (isLoading) {
     return (
@@ -237,39 +140,63 @@ const Notes: React.FC = () => {
         />
       </div>
 
-      {filteredNotes.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-          {filteredNotes.map((note) => (
-            <Card key={note.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold text-foreground break-words flex-grow pr-2">
-                  {note.title}
-                </CardTitle>
-                <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditNote(note)} className="text-blue-500 hover:bg-blue-500/10">
-                    <Edit className="h-4 w-4" />
-                    <span className="sr-only">Editar Nota</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteNote(note.id)} className="text-red-500 hover:bg-red-500/10">
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Deletar Nota</span>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <CardDescription className="mb-2 text-muted-foreground line-clamp-4 break-words">
-                  {note.content}
-                </CardDescription>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Última atualização: {format(parseISO(note.updated_at), "PPP 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">Nenhuma nota encontrada. Comece a adicionar suas ideias!</p>
-      )}
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border rounded-md">
+          <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Notas Ativas</TabsTrigger>
+          <TabsTrigger value="archived" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Arquivo</TabsTrigger>
+          <TabsTrigger value="trash" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Lixeira</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="mt-4">
+          {pinnedActiveNotes.length > 0 && (
+            <>
+              <h2 className="text-xl font-bold text-foreground mb-3">Fixadas</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                {pinnedActiveNotes.map((note) => (
+                  <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+                ))}
+              </div>
+            </>
+          )}
+
+          <h2 className="text-xl font-bold text-foreground mb-3">Outras Notas</h2>
+          {unpinnedActiveNotes.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {unpinnedActiveNotes.map((note) => (
+                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Nenhuma nota ativa encontrada. Adicione uma nova nota!</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="archived" className="mt-4">
+          <h2 className="text-xl font-bold text-foreground mb-3">Notas Arquivadas</h2>
+          {archivedNotes.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {archivedNotes.map((note) => (
+                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Nenhuma nota arquivada encontrada.</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="trash" className="mt-4">
+          <h2 className="text-xl font-bold text-foreground mb-3">Notas na Lixeira</h2>
+          {trashedNotes.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {trashedNotes.map((note) => (
+                <NoteItem key={note.id} note={note} refetchNotes={refetch} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">A lixeira está vazia.</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
