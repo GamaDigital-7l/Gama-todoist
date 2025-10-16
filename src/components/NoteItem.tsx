@@ -221,11 +221,13 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
             if (!open) setEditingNote(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"> {/* Adicionado max-h e overflow-y */}
+          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-foreground">{editingNote ? "Editar Nota" : "Criar Nova Nota"}</DialogTitle>
+              <DialogTitle className="text-foreground">
+                {editingNote?.title ? "Editar Nota" : "Criar Nova Nota"}
+              </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                {editingNote ? "Atualize o conteúdo da sua nota." : "Escreva uma nova nota para o seu segundo cérebro."}
+                {editingNote?.title ? "Atualize o conteúdo da sua nota." : "Escreva uma nova nota para o seu segundo cérebro."}
               </DialogDescription>
             </DialogHeader>
             <NoteForm

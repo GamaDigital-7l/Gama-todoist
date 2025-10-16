@@ -63,16 +63,17 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto"> {/* Adicionado max-h e overflow-y */}
+        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            {/* Título e descrição do Dialog podem ser mais genéricos ou removidos, pois o NoteForm terá seu próprio título */}
-            {/* <DialogTitle className="text-foreground">Criar Nova Nota</DialogTitle>
+            <DialogTitle className="text-foreground">
+              {initialNoteData?.title ? "Editar Nota" : "Criar Nova Nota"}
+            </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Escreva uma nova nota para o seu segundo cérebro.
-            </DialogDescription> */}
+              {initialNoteData?.title ? "Atualize o conteúdo da sua nota." : "Escreva uma nova nota para o seu segundo cérebro."}
+            </DialogDescription>
           </DialogHeader>
           <NoteForm
-            initialData={initialNoteData as Note} // Passa os dados iniciais
+            initialData={initialNoteData as Note}
             onNoteSaved={handleNoteSaved}
             onClose={() => setIsFormOpen(false)}
           />
