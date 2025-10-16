@@ -11,18 +11,19 @@ import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, Gr
 
 interface HeaderProps {
   toggleSidebar: () => void;
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>; // Adicionado para controle direto do Sheet
-  isSidebarOpen: boolean;
+  isSidebarOpen: boolean; // Ainda necessário para o botão de desktop
+  isMobileMenuOpen: boolean; // Novo estado para o Sheet mobile
+  setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>; // Setter para o Sheet mobile
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, setIsSidebarOpen, isSidebarOpen }) => {
+const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const isMobile = useIsMobile();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       {/* Gatilho do Sheet para mobile */}
       {isMobile ? (
-        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}> {/* Usar setIsSidebarOpen aqui */}
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}> {/* Usa o novo estado e setter */}
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="sm:hidden">
               <Menu className="h-5 w-5" />

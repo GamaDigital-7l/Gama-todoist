@@ -8,7 +8,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout: React.FC = () => {
   const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false); // Controla a visibilidade da sidebar desktop
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false); // Controla a abertura do Sheet mobile
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -28,12 +29,17 @@ const Layout: React.FC = () => {
 
   return (
     <div className={`grid min-h-screen w-full ${gridColsClass}`}>
-      {/* Sidebar para desktop e mobile (controlada internamente) */}
+      {/* Sidebar para desktop (controlada por isSidebarOpen) */}
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-col">
-        {/* Pass setIsSidebarOpen para o Header para que o Sheet possa controlar seu próprio estado */}
-        <Header toggleSidebar={toggleSidebar} setIsSidebarOpen={setIsSidebarOpen} isSidebarOpen={isSidebarOpen} />
+        {/* Header recebe os estados para controlar o menu mobile e o botão de toggle desktop */}
+        <Header 
+          toggleSidebar={toggleSidebar} 
+          isSidebarOpen={isSidebarOpen} 
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />
         </main>
