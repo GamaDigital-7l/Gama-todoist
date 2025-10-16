@@ -135,10 +135,17 @@
   padding: 8px 12px; /* Adiciona um padding para facilitar a interação */
   min-height: 80px; /* Garante uma altura mínima para o editor */
   background-color: transparent; /* Garante que o fundo seja transparente para a cor da nota */
+  z-index: 10; /* Garante que o editor esteja acima de outros elementos */
+  position: relative; /* Necessário para z-index funcionar corretamente */
 }
 
 .quill-no-toolbar .ql-editor.ql-blank::before {
   left: 12px; /* Ajusta a posição do placeholder com o novo padding */
   font-style: normal;
   color: hsl(var(--muted-foreground));
+}
+
+/* Esconder tooltips do Quill que podem aparecer ao clicar em links/imagens */
+.quill-no-toolbar .ql-tooltip {
+  display: none !important;
 }

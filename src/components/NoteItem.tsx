@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react"; // Removido Palette
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -110,8 +110,6 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     updateNoteMutation.mutate({ trashed: false, archived: false, pinned: false }); // Restaurar para notas ativas
   };
 
-  // A função handleChangeColor e o Popover de Palette foram removidos
-
   const handleChecklistItemToggle = async (index: number, checked: boolean) => {
     if (note.type !== "checklist") return;
 
@@ -184,7 +182,6 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
               {note.archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
               <span className="sr-only">{note.archived ? "Desarquivar" : "Arquivar"}</span>
             </Button>
-            {/* Popover de seleção de cor removido */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">

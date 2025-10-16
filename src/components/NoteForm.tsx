@@ -31,6 +31,7 @@ import { format, parseISO } from "date-fns";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
 
+// As cores não serão mais usadas para seleção, mas mantidas para referência se necessário em outro lugar
 const COLORS = [
   { name: "Amarelo", hex: "#FEEFC3" },
   { name: "Azul", hex: "#D7E3FC" },
@@ -112,7 +113,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     },
   });
 
-  const selectedColor = form.watch("color"); // Ainda observamos a cor, mas não a usamos para o fundo
   const noteType = form.watch("type");
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
   const selectedTagIds = form.watch("selected_tag_ids") || [];
@@ -266,7 +266,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       const dataToSave = {
         title: values.title?.trim() === "" ? null : values.title,
         content: finalContent,
-        color: values.color,
+        color: "#FFFFFF", // Cor sempre branca, adaptável ao tema
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
@@ -320,7 +320,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
-      <div className="relative p-4 bg-card"> {/* Usando bg-card para fundo adaptável */}
+      <div className="relative p-4 bg-card"> {/* Fundo adaptável ao tema */}
         {/* Imagem Principal */}
         {imagePreview && (
           <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
@@ -356,7 +356,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar min-h-[80px]" // Adicionado min-h aqui
+            className="bg-transparent text-foreground quill-no-toolbar min-h-[80px] z-10" // Adicionado z-10 aqui
           />
         ) : (
           <div className="space-y-2">

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Image as ImageIcon, ListTodo, Bell } from "lucide-react"; // Removido Palette
+import { PlusCircle, Image as ImageIcon, ListTodo, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes"; // Importar a interface Note
@@ -67,7 +67,6 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ImageIcon className="h-5 w-5" />
               <span className="sr-only">Adicionar Imagem</span>
             </Button>
-            {/* Popover de seleção de cor removido */}
           </div>
         </CardContent>
       </Card>
