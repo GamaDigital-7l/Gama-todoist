@@ -564,15 +564,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <div>
           <Label htmlFor="parent_task_id" className="text-foreground">Tarefa Pai (Opcional)</Label>
           <Select
-            onValueChange={(value: string) => form.setValue("parent_task_id", value === "" ? null : value)}
-            value={watchedParentTaskId || ""}
+            onValueChange={(value: string) => form.setValue("parent_task_id", value === "none-selected" ? null : value)}
+            value={watchedParentTaskId || "none-selected"}
             disabled={isLoadingUserTasks}
           >
             <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
               <SelectValue placeholder="Selecionar tarefa pai" />
             </SelectTrigger>
             <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-              <SelectItem value="">Nenhuma</SelectItem>
+              <SelectItem value="none-selected">Nenhuma</SelectItem> {/* Corrigido o valor */}
               {userTasks?.map(task => (
                 <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
               ))}
