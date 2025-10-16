@@ -162,7 +162,6 @@ const WebPushToggle: React.FC = () => {
         Notificações Push não são suportadas neste navegador.
       </p>
     );
-  );
   }
 
   return (
