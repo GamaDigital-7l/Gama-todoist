@@ -22,11 +22,17 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TagForm from "@/components/TagForm"; // Para criar novas tags
 
+// Definir o tipo para um item de checklist
+interface ChecklistItem {
+  text: string;
+  completed: boolean;
+}
+
 export interface Note {
   id: string;
   title?: string | null;
-  content: string;
-  type: "text" | "checklist" | "image" | "drawing" | "link" | "audio";
+  content: string | ChecklistItem[]; // Conteúdo pode ser string ou array de checklist items
+  type: "text" | "checklist"; // Simplificado para text e checklist
   color: string;
   pinned: boolean;
   archived: boolean;
@@ -53,6 +59,9 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
   }
   const mappedData = data?.map((note: any) => ({
     ...note,
+    // Se o tipo for checklist, o conteúdo já virá como objeto/array do JSONB
+    // Caso contrário, será uma string
+    content: note.type === "checklist" ? note.content : String(note.content),
     tags: note.note_tags.map((nt: any) => nt.tags),
   })) || [];
   return mappedData;
@@ -110,8 +119,15 @@ const Notes: React.FC = () => {
   };
 
   const filteredNotes = allNotes?.filter(note => {
+    let contentText = "";
+    if (note.type === "text" && typeof note.content === 'string') {
+      contentText = note.content;
+    } else if (note.type === "checklist" && Array.isArray(note.content)) {
+      contentText = note.content.map(item => item.text).join(" ");
+    }
+
     const matchesSearch = (note.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           note.content.toLowerCase().includes(searchTerm.toLowerCase()));
+                           contentText.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesTags = selectedFilterTagIds.length === 0 || 
                         (note.tags && note.tags.some(tag => selectedFilterTagIds.includes(tag.id)));

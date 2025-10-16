@@ -7,12 +7,13 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, Palette, MoreVertical } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
-import { Note } from "@/pages/Notes"; // Importar o tipo Note
+import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge"; // Importar Badge
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 interface NoteItemProps {
   note: Note;
@@ -110,8 +111,45 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     updateNoteMutation.mutate({ color });
   };
 
+  const handleChecklistItemToggle = async (index: number, checked: boolean) => {
+    if (note.type !== "checklist" || !Array.isArray(note.content)) return;
+
+    try {
+      const updatedChecklist = [...note.content];
+      if (updatedChecklist[index]) {
+        updatedChecklist[index].completed = checked;
+        await updateNoteMutation.mutateAsync({ content: JSON.stringify(updatedChecklist) });
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar item da checklist:", err);
+      showError("Erro ao atualizar item da checklist.");
+    }
+  };
+
+  const renderNoteContent = () => {
+    if (note.type === "checklist" && Array.isArray(note.content)) {
+      return (
+        <ul className="space-y-1 text-sm text-gray-800 dark:text-gray-100">
+          {note.content.map((item: { text: string; completed: boolean }, index: number) => (
+            <li key={index} className="flex items-center gap-2">
+              <Checkbox
+                checked={item.completed}
+                onCheckedChange={(checked) => handleChecklistItemToggle(index, checked as boolean)}
+                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              />
+              <span className={cn(item.completed ? "line-through text-muted-foreground" : "")}>
+                {item.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return <p className="text-sm text-gray-800 dark:text-gray-100 break-words">{note.content as string}</p>;
+  };
+
   return (
-    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200" style={{ backgroundColor: note.color }}>
+    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group" style={{ backgroundColor: note.color }}>
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
         {note.trashed ? (
           <>
@@ -178,16 +216,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         {note.title && <CardTitle className="text-lg font-semibold break-words">{note.title}</CardTitle>}
       </CardHeader>
       <CardContent className="flex-grow" onClick={() => handleEditNote(note)}>
-        <p className="text-sm text-gray-800 dark:text-gray-100 break-words">{note.content}</p>
-        {note.tags && note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {note.tags.map((tag) => (
-              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
-        )}
+        {renderNoteContent()}
       </CardContent>
 
       {isFormOpen && (
