@@ -27,6 +27,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OriginBoard, RecurrenceType, TaskType, Task } from "@/types/task"; // Importar tipos e Task
+import { useQuery } from "@tanstack/react-query"; // Adicionado: Importação de useQuery
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -294,7 +295,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
     setIsGeneratingAISuggestions(true);
     try {
-      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um tipo de tarefa (general, reading, exercise, study) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "task_type", "target_value".`;
+      const prompt = `Dada a seguinte tarefa (título: "${currentTitle}", descrição: "${currentDescription || ''}"), sugira uma descrição mais detalhada, uma data de vencimento adequada (formato YYYY-MM-DD, se aplicável, caso contrário null), um horário (formato HH:mm, se aplicável, caso contrário null), um tipo de recorrência (none, daily, weekly, monthly) com detalhes se aplicável (ex: 'Monday,Wednesday' para semanal, '15' para mensal, caso contrário null), um quadro de origem (general, today_priority, today_no_priority, jobs_woe_today), um tipo de tarefa (general, reading, exercise, study) e um valor alvo (numeric, se aplicável, caso contrário null, para 'study' o valor alvo é em minutos). Retorne a resposta em JSON com as chaves: "description", "due_date", "time", "recurrence_type", "recurrence_details", "origin_board", "task_type", "target_value".`;
 
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: [{ role: "user", content: prompt }] },
@@ -327,6 +328,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         form.setValue("recurrence_details", null);
         setSelectedDays([]);
       }
+      if (aiSuggestions.origin_board) form.setValue("origin_board", aiSuggestions.origin_board);
       if (aiSuggestions.task_type) form.setValue("task_type", aiSuggestions.task_type);
       if (aiSuggestions.target_value) form.setValue("target_value", aiSuggestions.target_value); else form.setValue("target_value", null);
 
