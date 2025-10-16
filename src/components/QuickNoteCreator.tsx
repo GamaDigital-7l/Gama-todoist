@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, Image as ImageIcon, ListTodo } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
-import { Note } from "@/pages/Notes"; // Importar a interface Note
+import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +23,10 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
-      content: type === "text" ? "" : "[]", // Conteúdo inicial como string JSON para checklist
+      content: type === "text" ? "" : "[]",
       pinned: false,
       archived: false,
       trashed: false,
-      // Se withImagePicker for true, o NoteForm pode abrir o seletor de arquivos automaticamente
-      // ou apenas mostrar o campo de upload de imagem.
     });
     setIsFormOpen(true);
   };
@@ -47,7 +45,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
             placeholder="Criar uma nota..."
             className="flex-grow bg-input border-none text-foreground focus-visible:ring-0"
             onClick={() => handleOpenFormWithDefaults("text")}
-            readOnly // Impede a digitação direta aqui, forçando a abertura do formulário
+            readOnly
           />
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("checklist")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">

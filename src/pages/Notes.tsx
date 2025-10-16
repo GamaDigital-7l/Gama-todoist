@@ -34,16 +34,16 @@ export interface Note {
   title?: string | null;
   content: string; // Agora sempre string (HTML para texto, JSON string para checklist)
   type: "text" | "checklist";
-  color: string;
+  color: string; // Mantido para consistência com o DB, mas fixado em #FFFFFF
   pinned: boolean;
   archived: boolean;
   trashed: boolean;
   created_at: string;
   updated_at: string;
   tags?: Tag[];
-  reminder_date?: string | null; // Novo campo para data do lembrete
-  reminder_time?: string | null; // Novo campo para hora do lembrete
-  image_url?: string | null; // Novo campo para URL da imagem
+  reminder_date?: string | null;
+  reminder_time?: string | null;
+  image_url?: string | null;
 }
 
 const fetchNotes = async (userId: string): Promise<Note[]> => {
@@ -63,7 +63,6 @@ const fetchNotes = async (userId: string): Promise<Note[]> => {
   }
   const mappedData = data?.map((note: any) => ({
     ...note,
-    // O conteúdo já virá como string do DB, seja HTML ou JSON string
     tags: note.note_tags.map((nt: any) => nt.tags),
   })) || [];
   return mappedData;
@@ -126,7 +125,6 @@ const Notes: React.FC = () => {
 
     let contentText = "";
     if (note.type === "text") {
-      // Remover tags HTML para busca de texto
       contentText = note.content.replace(/<[^>]*>?/gm, '');
     } else if (note.type === "checklist") {
       try {

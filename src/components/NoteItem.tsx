@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -90,15 +90,15 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   };
 
   const handleArchiveToggle = () => {
-    updateNoteMutation.mutate({ archived: !note.archived, pinned: false }); // Desafixar ao arquivar
+    updateNoteMutation.mutate({ archived: !note.archived, pinned: false });
   };
 
   const handleTrashToggle = () => {
-    updateNoteMutation.mutate({ trashed: !note.trashed, pinned: false, archived: false }); // Desafixar e desarquivar ao mover para lixeira
+    updateNoteMutation.mutate({ trashed: !note.trashed, pinned: false, archived: false });
   };
 
   const handleRestoreFromTrash = () => {
-    updateNoteMutation.mutate({ trashed: false, archived: false, pinned: false }); // Restaurar para notas ativas
+    updateNoteMutation.mutate({ trashed: false, archived: false, pinned: false });
   };
 
   const handleChecklistItemToggle = async (index: number, checked: boolean) => {
@@ -142,12 +142,11 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
       }
     }
-    // Para notas de texto, renderizar HTML
     return <div className="prose dark:prose-invert max-w-none text-sm text-gray-800 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: note.content }} />;
   };
 
   return (
-    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card"> {/* Usando bg-card para fundo adaptável */}
+    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card">
       {note.image_url && (
         <img src={note.image_url} alt={note.title || "Nota com imagem"} className="w-full h-auto object-cover rounded-t-lg" />
       )}

@@ -7,7 +7,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
@@ -33,7 +32,7 @@ const checklistItemSchema = z.object({
 const noteSchema = z.object({
   title: z.string().optional(),
   content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
-  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FFFFFF"), // Cor padrão branca
+  // A cor é fixada em #FFFFFF no backend, não há seleção de cor na UI
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
@@ -43,7 +42,7 @@ const noteSchema = z.object({
     .optional()
     .refine((file) => !file || (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024), "Apenas imagens (até 5MB) são permitidas."),
   existing_image_url: z.string().optional().nullable(),
-  pinned: z.boolean().default(false), // Adicionado pinned ao schema
+  pinned: z.boolean().default(false),
 });
 
 export type NoteFormValues = z.infer<typeof noteSchema>;
@@ -69,23 +68,22 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   const { session } = useSession();
   const userId = session?.user?.id;
   const quillRef = useRef<ReactQuill>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref para o input de arquivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
       ...initialData,
-      content: initialData.content, // Já é string
+      content: initialData.content,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
       existing_image_url: initialData.image_url || undefined,
       image_file: undefined,
-      pinned: initialData.pinned, // Carregar estado de pinned
+      pinned: initialData.pinned,
     } : {
       title: "",
       content: "",
-      color: "#FFFFFF", // Cor padrão branca
       type: "text",
       selected_tag_ids: [],
       reminder_date: undefined,
@@ -159,7 +157,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     const file = e.target.files?.[0];
     if (file) {
       form.setValue("image_file", file, { shouldDirty: true });
-      form.setValue("existing_image_url", null); // Limpa a URL existente se um novo arquivo for selecionado
+      form.setValue("existing_image_url", null);
     }
   };
 
@@ -177,7 +175,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         ['clean']
       ],
       handlers: {
-        // Desativa o manipulador de imagens padrão do Quill
         'image': () => { /* no-op */ }
       }
     },
@@ -206,7 +203,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       }
       finalContent = JSON.stringify(filteredItems);
     } else {
-      if (values.content.trim() === "" || values.content === "<p><br></p>") { // Verifica se o editor está vazio
+      if (values.content.trim() === "" || values.content === "<p><br></p>") {
         showError("O conteúdo da nota não pode estar vazio.");
         return;
       }
@@ -215,7 +212,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
     let imageUrlToSave: string | null = values.existing_image_url || null;
 
-    // Se um novo arquivo de imagem foi selecionado, faça o upload
     if (values.image_file) {
       const file = values.image_file;
       const sanitizedFilename = sanitizeFilename(file.name);
@@ -238,10 +234,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       
       imageUrlToSave = publicUrlData.publicUrl;
     } else if (values.existing_image_url === null) {
-      // Se a imagem existente foi removida
       imageUrlToSave = null;
     }
-
 
     try {
       let noteId: string;
@@ -249,12 +243,12 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       const dataToSave = {
         title: values.title?.trim() === "" ? null : values.title,
         content: finalContent,
-        color: "#FFFFFF", // Cor sempre branca, adaptável ao tema
+        color: "#FFFFFF", // Cor fixada em branco
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
         image_url: imageUrlToSave,
-        pinned: values.pinned, // Salvar estado de pinned
+        pinned: values.pinned,
         updated_at: new Date().toISOString(),
       };
 
@@ -280,7 +274,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         showSuccess("Nota adicionada com sucesso!");
       }
 
-      // Atualizar note_tags
       await supabase.from("note_tags").delete().eq("note_id", noteId);
 
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
@@ -303,8 +296,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
-      <div className="relative p-4 bg-card"> {/* Fundo adaptável ao tema */}
-        {/* Imagem Principal */}
+      <div className="relative p-4 bg-card">
         {imagePreview && (
           <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
             <img src={imagePreview} alt="Pré-visualização da imagem" className="w-full h-full object-cover" />
@@ -321,7 +313,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           </div>
         )}
 
-        {/* Título */}
         <Input
           id="note-title"
           {...form.register("title")}
@@ -329,18 +320,17 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           className="w-full bg-transparent border-none text-foreground text-lg font-semibold focus-visible:ring-0 px-0 mb-2"
         />
 
-        {/* Conteúdo da Nota / Checklist */}
         {noteType === "text" ? (
           <ReactQuill
-            key={noteType} // Adicionado key para forçar re-renderização
+            key={noteType}
             ref={quillRef}
-            theme="bubble" // Tema bubble para um visual mais limpo, sem toolbar visível por padrão
+            theme="bubble"
             value={form.watch("content")}
             onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar" // As classes min-h-[80px] e z-10 agora vêm do globals.css
+            className="bg-transparent text-foreground quill-no-toolbar"
           />
         ) : (
           <div className="space-y-2">
@@ -377,7 +367,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           </div>
         )}
 
-        {/* Botão de Pin */}
         <Button
           type="button"
           variant="ghost"
@@ -390,10 +379,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         </Button>
       </div>
 
-      {/* Barra de Ações Inferior */}
       <div className="flex items-center justify-between p-2 border-t border-border bg-card">
         <div className="flex items-center gap-1">
-          {/* Ícone de Lembrete */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
@@ -421,7 +408,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             </PopoverContent>
           </Popover>
 
-          {/* Ícone de Imagem Principal */}
           <Button variant="ghost" size="icon" onClick={handleImageUploadClick} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
             <ImageIcon className="h-5 w-5" />
             <span className="sr-only">Adicionar Imagem</span>
@@ -434,7 +420,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             className="hidden"
           />
 
-          {/* Ícone de Tags */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
@@ -450,7 +435,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             </PopoverContent>
           </Popover>
 
-          {/* Ícone para alternar tipo de nota (Texto/Checklist) */}
           <Button variant="ghost" size="icon" onClick={() => form.setValue("type", noteType === "text" ? "checklist" : "text")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
             {noteType === "text" ? <ListTodo className="h-5 w-5" /> : <TextCursorInput className="h-5 w-5" />}
             <span className="sr-only">{noteType === "text" ? "Mudar para Checklist" : "Mudar para Texto"}</span>
