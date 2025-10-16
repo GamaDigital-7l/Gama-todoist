@@ -8,11 +8,12 @@ import TaskAIHelper from "@/components/TaskAIHelper";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, subDays } from "date-fns";
+import { isToday, parseISO, differenceInDays, format, getDay, subDays, isThisWeek, isThisMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
 import TaskForm from "@/components/TaskForm";
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
 
 interface Profile {
   id: string;
@@ -26,6 +27,7 @@ interface Task {
   recurrence_type: "none" | "daily" | "weekly" | "monthly";
   recurrence_details?: string;
   task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
+  last_successful_completion_date?: string | null; // Adicionado
 }
 
 interface HealthMetric {
@@ -64,7 +66,7 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 const fetchUserTasks = async (): Promise<Task[]> => {
-  const { data, error } = await supabase.from("tasks", { schema: 'public' }).select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type"); // Especificando o esquema
+  const { data, error } = await supabase.from("tasks", { schema: 'public' }).select("id, is_completed, due_date, recurrence_type, recurrence_details, task_type, last_successful_completion_date"); // Especificando o esquema
   if (error) {
     console.error("Erro ao buscar tarefas do usuário:", error);
     throw error;
@@ -174,7 +176,8 @@ const Dashboard: React.FC = () => {
 
       if (isTaskDueToday) {
         totalToday++;
-        if (task.is_completed) {
+        // Usar o status ajustado para contagem
+        if (getAdjustedTaskCompletionStatus(task)) {
           completedToday++;
         }
       }

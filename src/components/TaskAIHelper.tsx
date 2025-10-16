@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, Loader2, ListTodo } from "lucide-react";
-import { format, isToday, parseISO, getDay } from "date-fns";
+import { format, isToday, parseISO, getDay, isThisWeek, isThisMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth
 import { useSession } from "@/integrations/supabase/auth";
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
 
 interface Task {
   id: string;
@@ -20,6 +21,7 @@ interface Task {
   recurrence_type: "none" | "daily" | "weekly" | "monthly";
   recurrence_details?: string;
   task_type: "general" | "reading" | "exercise" | "study"; // Adicionado 'study'
+  last_successful_completion_date?: string | null; // Adicionado
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
@@ -32,7 +34,6 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks", { schema: 'public' }) // Especificando o esquema
     .select("*")
     .eq("user_id", userId)
-    .eq("is_completed", false)
     .order("time", { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -50,27 +51,31 @@ const fetchIncompleteTodayTasks = async (userId: string): Promise<Task[]> => {
   };
 
   return (data || []).filter(task => {
+    let isTaskDueToday = false;
+
     if (task.recurrence_type !== "none") {
       if (task.recurrence_type === "daily") {
-        return true;
+        isTaskDueToday = true;
       }
       if (task.recurrence_type === "weekly" && task.recurrence_details) {
         if (isDayIncluded(task.recurrence_details, currentDayOfWeek)) {
-          return true;
+          isTaskDueToday = true;
         }
       }
       if (task.recurrence_type === "monthly" && task.recurrence_details) {
         if (parseInt(task.recurrence_details) === parseInt(currentDayOfMonth)) {
-          return true;
+          isTaskDueToday = true;
         }
       }
-    }
-
-    if (task.due_date) {
+    } else if (task.due_date) {
       const dueDate = parseISO(task.due_date);
-      return isToday(dueDate);
+      if (isToday(dueDate)) {
+        isTaskDueToday = true;
+      }
     }
-    return false;
+    
+    // A tarefa é devida hoje E não está concluída para o período atual
+    return isTaskDueToday && !getAdjustedTaskCompletionStatus(task);
   });
 };
 

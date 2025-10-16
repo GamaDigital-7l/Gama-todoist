@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import Groq from "https://esm.sh/groq-sdk@0.4.0";
 import OpenAI from "https://esm.sh/openai@4.52.2";
-import { format, isToday, getDay, parseISO } from "https://esm.sh/date-fns@2.30.0";
+import { format, isToday, getDay, parseISO, isThisWeek, isThisMonth } from "https://esm.sh/date-fns@2.30.0"; // Adicionado isThisWeek, isThisMonth
 import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
 import webpush from "https://esm.sh/web-push@3.6.2";
 
@@ -17,6 +17,31 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 };
 
 const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
+
+// Helper function to get adjusted completion status for recurring tasks
+const getAdjustedTaskCompletionStatus = (task: any): boolean => {
+  if (task.recurrence_type === "none") {
+    return task.is_completed;
+  }
+
+  if (!task.last_successful_completion_date) {
+    return false; // Never completed in this cycle
+  }
+
+  const lastCompletionDate = parseISO(task.last_successful_completion_date);
+  const today = new Date();
+
+  switch (task.recurrence_type) {
+    case "daily":
+      return isToday(lastCompletionDate);
+    case "weekly":
+      return isThisWeek(lastCompletionDate, { weekStartsOn: 0 });
+    case "monthly":
+      return isThisMonth(lastCompletionDate);
+    default:
+      return task.is_completed;
+  }
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -123,9 +148,8 @@ serve(async (req) => {
     } else {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type")
+        .select("title, description, due_date, time, recurrence_type, recurrence_details, task_type, is_completed, last_successful_completion_date") // Adicionado is_completed e last_successful_completion_date
         .eq("user_id", userId)
-        .eq("is_completed", false)
         .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
 
       if (tasksError) {
@@ -140,24 +164,26 @@ serve(async (req) => {
       };
 
       const todayTasks = (tasks || []).filter(task => {
+        let isTaskDueToday = false;
+
         if (task.recurrence_type !== "none") {
           if (task.recurrence_type === "daily") {
-            return true;
+            isTaskDueToday = true;
           }
           if (task.recurrence_type === "weekly" && task.recurrence_details) {
             if (isDayIncluded(task.recurrence_details, currentDayOfWeekSaoPaulo)) {
-              return true;
+              isTaskDueToday = true;
             }
           }
           if (task.recurrence_type === "monthly" && task.recurrence_details) {
             if (parseInt(task.recurrence_details) === nowSaoPaulo.getDate()) {
-              return true;
+              isTaskDueToday = true;
             }
           }
         } else if (task.due_date) {
           return format(parseISO(task.due_date), "yyyy-MM-dd") === todaySaoPaulo;
         }
-        return false;
+        return isTaskDueToday && !getAdjustedTaskCompletionStatus(task); // Filtrar apenas tarefas não concluídas para o período
       });
 
       const taskList = todayTasks.map(task => `- ${task.title}${task.time ? ` às ${task.time}` : ''}`).join("\n");

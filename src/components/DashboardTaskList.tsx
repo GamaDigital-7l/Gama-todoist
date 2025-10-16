@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, isToday, parseISO, getDay } from "date-fns";
+import { format, isToday, parseISO, getDay, isThisWeek, isThisMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ListTodo, Repeat, Clock, BookOpen, Dumbbell, Brain, GraduationCap } from "lucide-react";
@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
 
 interface Tag {
   id: string;
@@ -33,7 +34,7 @@ interface Task {
   task_type: "general" | "reading" | "exercise" | "study";
   target_value?: number | null;
   current_daily_target?: number | null;
-  last_successful_completion_date?: string;
+  last_successful_completion_date?: string | null; // Adicionado
   tags: Tag[];
 }
 
@@ -216,7 +217,10 @@ const DashboardTaskList: React.FC = () => {
       if (a.time) return -1;
       if (b.time) return 1;
       return 0;
-    });
+    }).map(task => ({
+      ...task,
+      is_completed: getAdjustedTaskCompletionStatus(task), // Aplicar o ajuste aqui
+    }));
   };
 
   const todayTasks = tasks ? getTodayTasks(tasks) : [];

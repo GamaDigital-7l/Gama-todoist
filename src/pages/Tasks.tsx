@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import TaskObstacleCoach from "@/components/TaskObstacleCoach";
+import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers"; // Importar o helper
 
 interface Tag {
   id: string;
@@ -33,7 +34,8 @@ interface Task extends Omit<TaskFormValues, 'due_date' | 'recurrence_details'> {
   recurrence_details?: string | null;
   task_type: "general" | "reading" | "exercise" | "study";
   target_value?: number | null;
-  tags: Tag[]; // Adicionado a propriedade tags
+  last_successful_completion_date?: string | null; // Adicionado
+  tags: Tag[];
 }
 
 const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
@@ -85,7 +87,11 @@ const Tasks: React.FC = () => {
     try {
       const { error } = await supabase
         .from("tasks", { schema: 'public' }) // Especificando o esquema
-        .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          is_completed: !currentStatus, 
+          updated_at: new Date().toISOString(),
+          last_successful_completion_date: !currentStatus ? new Date().toISOString().split('T')[0] : null,
+        })
         .eq("id", taskId)
         .eq("user_id", userId);
 
@@ -216,74 +222,77 @@ const Tasks: React.FC = () => {
     }
     return (
       <div className="space-y-3">
-        {filteredTasks.map((task) => (
-          <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
-            <div className="flex items-center gap-3 flex-grow min-w-0">
-              <Checkbox
-                id={`task-${task.id}`}
-                checked={task.is_completed}
-                onCheckedChange={() => handleToggleComplete(task.id, task.is_completed)}
-                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-              />
-              <div className="grid gap-1.5 flex-grow min-w-0">
-                <label
-                  htmlFor={`task-${task.id}`}
-                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                    task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
-                  }`}
-                >
-                  {task.title}
-                </label>
-                {task.description && (
-                  <p className="text-sm text-muted-foreground break-words">{task.description}</p>
-                )}
-                {task.due_date && task.recurrence_type === "none" && (
-                  <p className="text-xs text-muted-foreground">
-                    Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
-                  </p>
-                )}
-                {task.time && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {task.time}
-                  </p>
-                )}
-                {task.recurrence_type !== "none" && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
-                  </p>
-                )}
-                {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
-                  </p>
-                )}
-                {task.tags && task.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {task.tags.map((tag) => (
-                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+        {filteredTasks.map((task) => {
+          const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task); // Usar o status ajustado
+          return (
+            <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+              <div className="flex items-center gap-3 flex-grow min-w-0">
+                <Checkbox
+                  id={`task-${task.id}`}
+                  checked={isTaskCompletedForPeriod} // Usar o status ajustado
+                  onCheckedChange={() => handleToggleComplete(task.id, isTaskCompletedForPeriod)} // Passar o status ajustado
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                />
+                <div className="grid gap-1.5 flex-grow min-w-0">
+                  <label
+                    htmlFor={`task-${task.id}`}
+                    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+                      isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground" // Usar o status ajustado
+                    }`}
+                  >
+                    {task.title}
+                  </label>
+                  {task.description && (
+                    <p className="text-sm text-muted-foreground break-words">{task.description}</p>
+                  )}
+                  {task.due_date && task.recurrence_type === "none" && (
+                    <p className="text-xs text-muted-foreground">
+                      Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
+                    </p>
+                  )}
+                  {task.time && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {task.time}
+                    </p>
+                  )}
+                  {task.recurrence_type !== "none" && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
+                    </p>
+                  )}
+                  {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
+                    </p>
+                  )}
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {task.tags.map((tag) => (
+                        <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
+                  <Brain className="h-4 w-4" />
+                  <span className="sr-only">Obter Ajuda da IA</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
+                  <Edit className="h-4 w-4" />
+                  <span className="sr-only">Editar Tarefa</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Deletar Tarefa</span>
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => handleOpenObstacleCoach(task)} className="text-purple-500 hover:bg-purple-500/10">
-                <Brain className="h-4 w-4" />
-                <span className="sr-only">Obter Ajuda da IA</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Editar Tarefa</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Deletar Tarefa</span>
-              </Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
