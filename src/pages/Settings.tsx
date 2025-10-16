@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
@@ -231,7 +230,7 @@ const Settings: React.FC = () => {
     setIsConnectingGoogle(true);
     // Redirecionar o navegador diretamente para a Edge Function que inicia o fluxo OAuth
     // Isso evita problemas de CORS com a API fetch e garante que o navegador lide com o redirecionamento 302.
-    window.location.href = `${supabase.functions.getUrl('google-oauth/init')}`;
+    window.location.href = `${supabase.functions.getFunctionUrl('google-oauth/init')}`;
   };
 
   const handleDisconnectGoogleCalendar = async () => {
