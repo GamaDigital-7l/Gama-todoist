@@ -83,8 +83,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
               >
                 <HeartPulse className="h-5 w-5" /> Saúde
               </NavLink>
+              {/* Novo link para Notas */}
               <NavLink
-                to="/notes" {/* Novo link para Notas */}
+                to="/notes"
                 className={({ isActive }) =>
                   `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
                 }
