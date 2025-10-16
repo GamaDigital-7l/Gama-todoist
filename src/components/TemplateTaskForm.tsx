@@ -43,8 +43,31 @@ const templateTaskSchema = z.object({
   task_type: z.enum(["general", "reading", "exercise", "study", "cliente_fixo", "frella", "agencia", "copa_2001"]).default("general"), // Atualizado
   target_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
-    z.number().int().min(0, "O valor alvo deve ser um número positivo.").nullable().optional(),
-  ),
+    z.number().int().nullable().optional()
+  ).refine((val, ctx) => {
+    const currentTaskType = (ctx.parent as TemplateTaskFormValues).task_type;
+    const isRelevant = ["reading", "exercise", "study"].includes(currentTaskType);
+
+    if (isRelevant) {
+      if (val === null || val === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "O valor alvo é obrigatório para este tipo de tarefa.",
+          path: ["target_value"],
+        });
+        return false;
+      }
+      if (val < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "O valor alvo deve ser um número positivo.",
+          path: ["target_value"],
+        });
+        return false;
+      }
+    }
+    return true;
+  }),
   selected_tag_ids: z.array(z.string()).optional(),
 });
 
