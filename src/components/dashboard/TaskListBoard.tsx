@@ -5,13 +5,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Adicionado: Importar Button
+import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
 import TaskItem from "@/components/TaskItem";
+import { parseISO } from "date-fns"; // Adicionado: Importar parseISO
 
 interface TaskListBoardProps {
   title: string;

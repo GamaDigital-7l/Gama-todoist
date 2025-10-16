@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,13 +19,13 @@ import {
 } from "@/components/ui/select";
 import { BellRing, Sun } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
-import WebPushToggle from "@/components/WebPushToggle"; // Importar o novo componente
+import WebPushToggle from "@/components/WebPushToggle";
 
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
   ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
-  notification_channel: z.enum(["web_push", "none"]).default("web_push"), // Apenas web_push e none
+  notification_channel: z.enum(["web_push", "none"]).default("web_push"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -42,7 +42,7 @@ const Settings: React.FC = () => {
       groq_api_key: "",
       openai_api_key: "",
       ai_provider_preference: "groq",
-      notification_channel: "web_push", // Padrão para web_push
+      notification_channel: "web_push",
     },
   });
 
@@ -51,7 +51,7 @@ const Settings: React.FC = () => {
       if (!userId) return;
 
       const { data, error } = await supabase
-        .from("settings", { schema: 'public' }) // Especificando o esquema
+        .from("settings")
         .select("*")
         .eq("user_id", userId)
         .limit(1)
@@ -86,7 +86,7 @@ const Settings: React.FC = () => {
 
       if (settingsId) {
         const { error } = await supabase
-          .from("settings", { schema: 'public' }) // Especificando o esquema
+          .from("settings")
           .update(updateData)
           .eq("id", settingsId)
           .eq("user_id", userId);
@@ -95,7 +95,7 @@ const Settings: React.FC = () => {
         showSuccess("Configurações atualizadas com sucesso!");
       } else {
         const { data, error } = await supabase
-          .from("settings", { schema: 'public' }) // Especificando o esquema
+          .from("settings")
           .insert(updateData)
           .select()
           .single();
@@ -117,9 +117,8 @@ const Settings: React.FC = () => {
     }
     setIsSendingTest(true);
     try {
-      // Invoca a daily-brief com um payload de teste para web push
       const { data, error } = await supabase.functions.invoke('daily-brief', {
-        body: { timeOfDay: 'test_notification' }, // Usar um tipo específico para teste
+        body: { timeOfDay: 'test_notification' },
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
         },
@@ -188,7 +187,7 @@ const Settings: React.FC = () => {
               <div>
                 <Label htmlFor="notification_channel" className="text-foreground">Canal de Notificação Preferido</Label>
                 <Select
-                  onValueChange={(value: "web_push" | "none") => // Apenas web_push e none
+                  onValueChange={(value: "web_push" | "none") =>
                     form.setValue("notification_channel", value)
                   }
                   value={notificationChannel}
@@ -205,7 +204,7 @@ const Settings: React.FC = () => {
 
               {notificationChannel === "web_push" && (
                 <div className="mt-4">
-                  <WebPushToggle /> {/* Integrar o novo componente aqui */}
+                  <WebPushToggle />
                 </div>
               )}
               {notificationChannel !== "none" && (

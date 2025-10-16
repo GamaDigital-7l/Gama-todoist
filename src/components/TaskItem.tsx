@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, PlusCircle } from "lucide-react"; // BookOpen, Dumbbell, GraduationCap removidos
+import { Repeat, Clock, Edit, Trash2, PlusCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
@@ -165,8 +165,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     }
   };
 
-  // getTaskTypeIcon e getTaskTypeLabel removidos
-
   const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
 
   return (
@@ -206,12 +204,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 <Repeat className="h-3 w-3" /> {getRecurrenceText(task)}
               </p>
             )}
-            {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
-            {/* {(task.task_type === "reading" || task.task_type === "exercise" || task.task_type === "study") && task.target_value !== null && task.target_value !== undefined && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                {getTaskTypeIcon(task.task_type)} {getTaskTypeLabel(task.task_type, task.target_value)}
-              </p>
-            )} */}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (

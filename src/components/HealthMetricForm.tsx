@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -59,14 +59,14 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
     try {
       const dataToSave = {
         date: format(values.date, "yyyy-MM-dd"),
-        weight_kg: values.weight_kg || null, // Garante que seja null se vazio
-        notes: values.notes || null, // Garante que seja null se vazio
+        weight_kg: values.weight_kg || null,
+        notes: values.notes || null,
         updated_at: new Date().toISOString(),
       };
 
       if (initialData) {
         const { error } = await supabase
-          .from("health_metrics", { schema: 'public' }) // Especificando o esquema
+          .from("health_metrics")
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -74,7 +74,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
         if (error) throw error;
         showSuccess("Métrica de saúde atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("health_metrics", { schema: 'public' }).insert({ // Especificando o esquema
+        const { error } = await supabase.from("health_metrics").insert({
           ...dataToSave,
           user_id: userId,
         });

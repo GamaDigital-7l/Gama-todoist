@@ -35,7 +35,7 @@ interface TagSelectorProps {
 
 const fetchTags = async (userId: string): Promise<Tag[]> => {
   const { data, error } = await supabase
-    .from("tags", { schema: 'public' }) // Especificando o esquema
+    .from("tags")
     .select("id, name, color")
     .eq("user_id", userId)
     .order("name", { ascending: true });

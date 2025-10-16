@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import type { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api"; // Importação corrigida
+import type { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types"; // Importação corrigida
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,7 +23,7 @@ interface Book {
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
-    .from("books", { schema: 'public' }) // Especificando o esquema
+    .from("books")
     .select("id, title, pdf_url, current_page")
     .eq("id", bookId)
     .single();
@@ -131,7 +131,7 @@ const BookReaderFullScreen: React.FC = () => {
     if (!id) return;
     try {
       await supabase
-        .from("books", { schema: 'public' }) // Especificando o esquema
+        .from("books")
         .update({ current_page: newPage, last_read_date: new Date().toISOString().split('T')[0] })
         .eq("id", id);
     } catch (err) {
@@ -242,15 +242,15 @@ const BookReaderFullScreen: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
-      <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card border-b border-border shadow-sm gap-2"> {/* Adicionado flex-col para mobile */}
-        <div className="flex items-center gap-4 w-full sm:w-auto"> {/* w-full para mobile */}
+      <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card border-b border-border shadow-sm gap-2">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Detalhes</span>
           </Button>
           <h1 className="text-xl font-bold text-foreground truncate flex-1">{book.title}</h1>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto"> {/* w-full para mobile */}
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
           <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ZoomOut className="h-4 w-4" />
             <span className="sr-only">Diminuir Zoom</span>

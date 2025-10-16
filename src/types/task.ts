@@ -5,8 +5,8 @@ export interface Tag {
 }
 
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
-// export type TaskType = "general" | "reading" | "exercise" | "study" | "cliente_fixo" | "frella" | "agencia" | "copa_2001"; // Removido
 export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today";
+export type TemplateFormOriginBoard = "general" | "today_priority" | "today_no_priority" | "jobs_woe_today";
 
 export interface Task {
   id: string;
@@ -17,9 +17,6 @@ export interface Task {
   is_completed: boolean;
   recurrence_type: RecurrenceType;
   recurrence_details?: string | null;
-  // task_type: TaskType; // Removido
-  // target_value?: number | null; // Removido
-  // current_daily_target?: number | null; // Removido
   last_successful_completion_date?: string | null;
   origin_board: OriginBoard; // Novo campo para o quadro de origem
   created_at: string;
@@ -38,9 +35,7 @@ export interface TemplateTask {
   description?: string | null;
   recurrence_type: RecurrenceType;
   recurrence_details?: string | null;
-  origin_board: OriginBoard;
-  // task_type: TaskType; // Removido
-  // target_value?: number | null; // Removido
+  origin_board: TemplateFormOriginBoard; // Restringido para TemplateFormOriginBoard
   created_at: string;
   updated_at: string;
   tags: Tag[]; // Para carregar tags associadas

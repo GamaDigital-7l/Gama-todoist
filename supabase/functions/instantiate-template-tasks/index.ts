@@ -46,7 +46,7 @@ serve(async (req) => {
         recurrence_details,
         origin_board,
         template_task_tags (tag_id)
-      `); // task_type, target_value removidos
+      `);
 
     if (fetchTemplatesError) throw fetchTemplatesError;
 
@@ -94,9 +94,6 @@ serve(async (req) => {
           is_completed: false,
           recurrence_type: 'none', // A tarefa instanciada não é recorrente por si só
           recurrence_details: null,
-          // task_type: template.task_type, // Removido
-          // target_value: template.target_value, // Removido
-          // current_daily_target: template.target_value, // Removido
           origin_board: template.origin_board,
           created_at: nowUtc.toISOString(),
           updated_at: nowUtc.toISOString(),

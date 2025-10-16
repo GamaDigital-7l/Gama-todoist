@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
     try {
       if (initialData) {
         const { error } = await supabase
-          .from("tags", { schema: 'public' }) // Especificando o esquema
+          .from("tags")
           .update({
             name: values.name,
             color: values.color,
@@ -57,7 +57,7 @@ const TagForm: React.FC<TagFormProps> = ({ initialData, onTagSaved, onClose }) =
         if (error) throw error;
         showSuccess("Tag atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("tags", { schema: 'public' }).insert({ // Especificando o esquema
+        const { error } = await supabase.from("tags").insert({
           name: values.name,
           color: values.color,
           user_id: userId,

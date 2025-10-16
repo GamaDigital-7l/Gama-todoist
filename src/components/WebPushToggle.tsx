@@ -63,6 +63,7 @@ const WebPushToggle: React.FC = () => {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         showError('Permissão de notificação negada. As notificações push não funcionarão.');
+        setIsLoading(false);
         setIsSubscribed(false);
         return;
       }
@@ -85,7 +86,7 @@ const WebPushToggle: React.FC = () => {
 
       // Salva a inscrição no banco de dados do Supabase
       const { data: existingSubscription, error: fetchError } = await supabase
-        .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
+        .from('user_subscriptions')
         .select('id')
         .eq('user_id', userId)
         .limit(1)
@@ -97,13 +98,13 @@ const WebPushToggle: React.FC = () => {
 
       if (existingSubscription) {
         const { error: updateError } = await supabase
-          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
+          .from('user_subscriptions')
           .update({ subscription: subscription.toJSON(), updated_at: new Date().toISOString() })
           .eq('id', existingSubscription.id);
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
+          .from('user_subscriptions')
           .insert({ user_id: userId, subscription: subscription.toJSON() });
         if (insertError) throw insertError;
       }
@@ -132,7 +133,7 @@ const WebPushToggle: React.FC = () => {
         await subscription.unsubscribe();
         // Remove a inscrição do banco de dados
         const { error: deleteError } = await supabase
-          .from('user_subscriptions', { schema: 'public' }) // Especificando o esquema
+          .from('user_subscriptions')
           .delete()
           .eq('user_id', userId)
           .eq('subscription', subscription.toJSON()); // Garante que a inscrição correta seja removida

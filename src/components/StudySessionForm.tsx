@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -64,8 +64,8 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
     try {
       const dataToSave = {
         title: values.title,
-        duration_minutes: values.duration_minutes || null, // Garante que seja null se vazio
-        notes: values.notes || null, // Garante que seja null se vazio
+        duration_minutes: values.duration_minutes || null,
+        notes: values.notes || null,
         session_date: format(values.session_date, "yyyy-MM-dd"),
         is_completed: values.is_completed,
         updated_at: new Date().toISOString(),
@@ -73,7 +73,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
 
       if (initialData) {
         const { error } = await supabase
-          .from("study_sessions", { schema: 'public' }) // Especificando o esquema
+          .from("study_sessions")
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -81,7 +81,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
         if (error) throw error;
         showSuccess("Sessão de estudo atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("study_sessions", { schema: 'public' }).insert({ // Especificando o esquema
+        const { error } = await supabase.from("study_sessions").insert({
           ...dataToSave,
           user_id: userId,
         });

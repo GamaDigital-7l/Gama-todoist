@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, CalendarIcon, CheckCircle2, Hourglass, PlayCi
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import GoalForm, { GoalFormValues } from "@/components/GoalForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,7 +22,7 @@ interface Goal extends Omit<GoalFormValues, 'target_date'> {
 
 const fetchGoals = async (userId: string): Promise<Goal[]> => {
   const { data, error } = await supabase
-    .from("goals", { schema: 'public' }) // Especificando o esquema
+    .from("goals")
     .select("*")
     .eq("user_id", userId)
     .order("target_date", { ascending: true, nullsFirst: false });
@@ -58,7 +58,7 @@ const Goals: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta meta?")) {
       try {
         const { error } = await supabase
-          .from("goals", { schema: 'public' }) // Especificando o esquema
+          .from("goals")
           .delete()
           .eq("id", goalId)
           .eq("user_id", userId);
@@ -92,7 +92,7 @@ const Goals: React.FC = () => {
         return "Pendente";
       case "in_progress":
         return "Em Progresso";
-      case "completed":
+      case "Concluída":
         return "Concluída";
       default:
         return "";
@@ -120,9 +120,9 @@ const Goals: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
-        <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto"> {/* w-full para mobile */}
+        <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">
           <Dialog
             open={isFormOpen}
             onOpenChange={(open) => {
@@ -131,11 +131,11 @@ const Goals: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

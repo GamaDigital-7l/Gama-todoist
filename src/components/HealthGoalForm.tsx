@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
 
       if (initialData) {
         const { error } = await supabase
-          .from("health_goals", { schema: 'public' }) // Especificando o esquema
+          .from("health_goals")
           .update(dataToSave)
           .eq("id", initialData.id)
           .eq("user_id", userId);
@@ -87,7 +87,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
         if (error) throw error;
         showSuccess("Meta de saúde atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("health_goals", { schema: 'public' }).insert({ // Especificando o esquema
+        const { error } = await supabase.from("health_goals").insert({
           ...dataToSave,
           user_id: userId,
         });

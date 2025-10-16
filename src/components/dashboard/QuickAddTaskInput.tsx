@@ -94,14 +94,12 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       const { data: newTask, error: insertError } = await supabase.from("tasks").insert({
         user_id: userId,
-        title: input, // O input do usuário é o título
-        description: null, // Sem descrição por padrão
+        title: input,
+        description: null,
         due_date: finalDueDate,
         time: null,
-        recurrence_type: "none", // Não recorrente por padrão
+        recurrence_type: "none",
         recurrence_details: null,
-        // task_type: "general", // Tipo geral por padrão - Removido
-        // target_value: null, // Removido
         origin_board: originBoard,
         is_completed: false,
       }).select("id").single();
@@ -120,8 +118,8 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       showSuccess("Tarefa adicionada com sucesso!");
       setInput("");
-      onTaskAdded(); // Notifica o pai para recarregar as tarefas
-      queryClient.invalidateQueries({ queryKey: ["tags", userId] }); // Invalida tags para garantir que novas tags sejam carregadas
+      onTaskAdded();
+      queryClient.invalidateQueries({ queryKey: ["tags", userId] });
     } catch (err: any) {
       showError("Erro ao adicionar tarefa: " + err.message);
       console.error("Erro ao adicionar tarefa:", err);

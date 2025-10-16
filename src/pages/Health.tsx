@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, Scale, CalendarIcon, NotebookText, Target, Tr
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import HealthMetricForm, { HealthMetricFormValues } from "@/components/HealthMetricForm";
 import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -33,7 +33,7 @@ interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_d
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
   const { data, error } = await supabase
-    .from("health_metrics", { schema: 'public' }) // Especificando o esquema
+    .from("health_metrics")
     .select("*")
     .eq("user_id", userId)
     .order("date", { ascending: false })
@@ -46,7 +46,7 @@ const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
 
 const fetchHealthGoals = async (userId: string): Promise<HealthGoal[]> => {
   const { data, error } = await supabase
-    .from("health_goals", { schema: 'public' }) // Especificando o esquema
+    .from("health_goals")
     .select("*")
     .eq("user_id", userId)
     .order("target_date", { ascending: true });
@@ -91,7 +91,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta métrica de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_metrics", { schema: 'public' }) // Especificando o esquema
+          .from("health_metrics")
           .delete()
           .eq("id", metricId)
           .eq("user_id", userId);
@@ -119,7 +119,7 @@ const Health: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta meta de saúde?")) {
       try {
         const { error } = await supabase
-          .from("health_goals", { schema: 'public' }) // Especificando o esquema
+          .from("health_goals")
           .delete()
           .eq("id", goalId)
           .eq("user_id", userId);
@@ -167,9 +167,9 @@ const Health: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
-        <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto"> {/* w-full para mobile */}
+        <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">
           <Dialog
             open={isGoalFormOpen}
             onOpenChange={(open) => {
@@ -178,11 +178,11 @@ const Health: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                 <Target className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -209,11 +209,11 @@ const Health: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingMetric(undefined)} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10"> {/* w-full para mobile */}
+              <Button onClick={() => setEditingMetric(undefined)} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Métrica
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

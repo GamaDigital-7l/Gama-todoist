@@ -7,7 +7,7 @@ import { PlusCircle, Edit, Trash2, BookOpen, CheckCircle2, Hourglass, Clock } fr
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import StudySessionForm, { StudySessionFormValues } from "@/components/StudySessionForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,7 +23,7 @@ interface StudySession extends Omit<StudySessionFormValues, 'session_date'> {
 
 const fetchStudySessions = async (userId: string): Promise<StudySession[]> => {
   const { data, error } = await supabase
-    .from("study_sessions", { schema: 'public' }) // Especificando o esquema
+    .from("study_sessions")
     .select("*")
     .eq("user_id", userId)
     .order("session_date", { ascending: false })
@@ -60,7 +60,7 @@ const Study: React.FC = () => {
     if (window.confirm("Tem certeza que deseja deletar esta sessão de estudo?")) {
       try {
         const { error } = await supabase
-          .from("study_sessions", { schema: 'public' }) // Especificando o esquema
+          .from("study_sessions")
           .delete()
           .eq("id", sessionId)
           .eq("user_id", userId);
@@ -82,7 +82,7 @@ const Study: React.FC = () => {
     }
     try {
       const { error } = await supabase
-        .from("study_sessions", { schema: 'public' }) // Especificando o esquema
+        .from("study_sessions")
         .update({ is_completed: !currentStatus, updated_at: new Date().toISOString() })
         .eq("id", sessionId)
         .eq("user_id", userId);
@@ -117,7 +117,7 @@ const Study: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <Dialog
           open={isFormOpen}
@@ -127,11 +127,11 @@ const Study: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingSession(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+            <Button onClick={() => setEditingSession(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Sessão
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
-import DashboardTaskList from "@/components/DashboardTaskList"; // Agora é o quadro "Geral"
+import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
-import { Task, OriginBoard, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importar Task, OriginBoard e DAYS_OF_WEEK_MAP
-import TaskListBoard from "@/components/dashboard/TaskListBoard"; // Importar o componente de quadro
-import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput"; // Importar o input rápido
-import { useQueryClient } from "@tanstack/react-query"; // Importar useQueryClient
+import { Task, OriginBoard, DAYS_OF_WEEK_MAP } from "@/types/task";
+import TaskListBoard from "@/components/dashboard/TaskListBoard";
+import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Profile {
   id: string;
@@ -156,7 +156,7 @@ const fetchActiveHealthGoal = async (userId: string): Promise<HealthGoal | null>
 const Dashboard: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
-  const queryClient = useQueryClient(); // Inicializar useQueryClient
+  const queryClient = useQueryClient();
 
   const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({
     queryKey: ["userProfile", userId],
@@ -262,16 +262,16 @@ const Dashboard: React.FC = () => {
     refetchOverdue();
     refetchRecurrent();
     refetchCompleted();
-    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] }); // Invalida a query de todas as tarefas
+    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
   };
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
             </Button>
           </DialogTrigger>
@@ -346,7 +346,7 @@ const Dashboard: React.FC = () => {
           showAddButton={false}
           originBoard="completed"
         />
-        <DashboardTaskList /> {/* Este agora é o quadro "Geral" */}
+        <DashboardTaskList />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

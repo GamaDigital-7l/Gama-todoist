@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form"; // Corrigido: importado de react-hook-form
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -65,10 +65,10 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
     try {
       if (initialData) {
         const { error } = await supabase
-          .from("goals", { schema: 'public' }) // Especificando o esquema
+          .from("goals")
           .update({
             title: values.title,
-            description: values.description || null, // Garante que seja null se vazio
+            description: values.description || null,
             target_date: values.target_date ? format(values.target_date, "yyyy-MM-dd") : null,
             status: values.status,
             updated_at: new Date().toISOString(),
@@ -79,9 +79,9 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
         if (error) throw error;
         showSuccess("Meta atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("goals", { schema: 'public' }).insert({ // Especificando o esquema
+        const { error } = await supabase.from("goals").insert({
           title: values.title,
-          description: values.description || null, // Garante que seja null se vazio
+          description: values.description || null,
           target_date: values.target_date ? format(values.target_date, "yyyy-MM-dd") : null,
           status: values.status,
           user_id: userId,

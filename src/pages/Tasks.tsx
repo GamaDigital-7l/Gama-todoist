@@ -16,10 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
-import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask } from "@/types/task"; // Importar Task, Tag, TemplateTask e constantes
-import TaskItem from "@/components/TaskItem"; // Importar o novo componente TaskItem
-import TemplateTaskForm from "@/components/TemplateTaskForm"; // Importar o novo formulário
-import TemplateTaskItem from "@/components/TemplateTaskItem"; // Importar o novo item de tarefa padrão
+import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
+import TaskItem from "@/components/TaskItem";
+import TemplateTaskForm from "@/components/TemplateTaskForm";
+import TemplateTaskItem from "@/components/TemplateTaskItem";
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -35,7 +35,6 @@ const fetchTasks = async (userId: string): Promise<Task[]> => {
   if (error) {
     throw error;
   }
-  // Mapeia os dados para a estrutura esperada da interface Task
   const mappedData = data?.map((task: any) => ({
     ...task,
     tags: task.task_tags.map((tt: any) => tt.tags),
@@ -57,7 +56,6 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
   if (error) {
     throw error;
   }
-  // Mapeia os dados para a estrutura esperada da interface TemplateTask
   const mappedData = data?.map((templateTask: any) => ({
     ...templateTask,
     tags: templateTask.template_task_tags.map((ttt: any) => ttt.tags),
@@ -183,7 +181,7 @@ const Tasks: React.FC = () => {
 
     // Prioriza o origin_board para os quadros "Hoje"
     if (filterType === "daily") {
-      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today"; // Atualizado
+      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today";
     }
 
     // Para tarefas recorrentes, verifica a recorrência
@@ -280,7 +278,7 @@ const Tasks: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2"> {/* Adicionado flex-col para mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}
@@ -290,11 +288,11 @@ const Tasks: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"> {/* w-full para mobile */}
+            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg"> {/* Adicionado w-[90vw] para mobile */}
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

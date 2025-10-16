@@ -7,7 +7,7 @@ import { PlusCircle, BookOpen, Edit, Trash2, Target } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Importar DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import BookForm from "@/components/BookForm";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ interface Book {
 
 const fetchBooks = async (userId: string): Promise<Book[]> => {
   const { data, error } = await supabase
-    .from("books", { schema: 'public' }) // Especificando o esquema
+    .from("books")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
@@ -70,7 +70,7 @@ const Books: React.FC = () => {
     mutationFn: async ({ bookId, newPage }: { bookId: string; newPage: number }) => {
       if (!userId) throw new Error("Usuário não autenticado.");
       const { error: updateError } = await supabase
-        .from("books", { schema: 'public' }) // Especificando o esquema
+        .from("books")
         .update({ 
           current_page: newPage, 
           last_read_date: new Date().toISOString().split('T')[0],
@@ -94,7 +94,7 @@ const Books: React.FC = () => {
     mutationFn: async (bookId: string) => {
       if (!userId) throw new Error("Usuário não autenticado.");
       const { error: deleteError } = await supabase
-        .from("books", { schema: 'public' }) // Especificando o esquema
+        .from("books")
         .delete()
         .eq("id", bookId)
         .eq("user_id", userId);

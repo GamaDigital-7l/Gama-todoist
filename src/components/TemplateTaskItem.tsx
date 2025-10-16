@@ -7,10 +7,10 @@ import { showError, showSuccess } from "@/utils/toast";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Edit, Trash2 } from "lucide-react"; // BookOpen, Dumbbell, GraduationCap removidos
+import { Repeat, Edit, Trash2 } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
-import { TemplateTask, DAYS_OF_WEEK_LABELS } from "@/types/task";
+import { TemplateTask, DAYS_OF_WEEK_LABELS, TemplateFormOriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
 
@@ -71,7 +71,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
     }
   };
 
-  const getOriginBoardText = (board: TemplateTask['origin_board']) => {
+  const getOriginBoardText = (board: TemplateFormOriginBoard) => {
     switch (board) {
       case "general": return "Geral";
       case "today_priority": return "Hoje - Prioridade";
@@ -80,8 +80,6 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
       default: return board;
     }
   };
-
-  // getTaskTypeIcon e getTaskTypeLabel removidos
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
@@ -99,12 +97,6 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
           <p className="text-xs text-muted-foreground">
             Quadro de Origem: {getOriginBoardText(templateTask.origin_board)}
           </p>
-          {/* Campos de Tipo de Tarefa e Valor Alvo removidos */}
-          {/* {(templateTask.task_type !== "general") && templateTask.target_value !== null && templateTask.target_value !== undefined && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              {getTaskTypeIcon(templateTask.task_type)} {getTaskTypeLabel(templateTask.task_type, templateTask.target_value)}
-            </p>
-          )} */}
           {templateTask.tags && templateTask.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {templateTask.tags.map((tag) => (

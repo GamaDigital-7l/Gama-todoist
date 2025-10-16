@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, isToday, getDay, parseISO, isThisWeek, isThisMonth } from "https://esm.sh/date-fns@2.30.0"; // Adicionado isThisWeek, isThisMonth
-import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1"; // Importar date-fns-tz
+import { format, isToday, getDay, parseISO, isThisWeek, isThisMonth } from "https://esm.sh/date-fns@2.30.0";
+import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1";
 import webpush from "https://esm.sh/web-push@3.6.2";
 
 const corsHeaders = {
@@ -70,7 +70,7 @@ serve(async (req) => {
 
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("notification_channel") // Removido campos de IA
+      .select("notification_channel")
       .eq("user_id", userId)
       .limit(1)
       .single();
@@ -108,13 +108,13 @@ serve(async (req) => {
       VAPID_PRIVATE_KEY!
     );
 
-    const { timeOfDay } = await req.json(); // 'morning', 'evening' ou 'test_notification'
+    const { timeOfDay } = await req.json();
 
     // Obter a data e hora atual no fuso horário de São Paulo
     const nowUtc = new Date();
     const nowSaoPaulo = utcToZonedTime(nowUtc, SAO_PAULO_TIMEZONE);
     const todaySaoPaulo = format(nowSaoPaulo, "yyyy-MM-dd", { timeZone: SAO_PAULO_TIMEZONE });
-    const currentDayOfWeekSaoPaulo = getDay(nowSaoPaulo); // 0 para domingo, 1 para segunda, etc.
+    const currentDayOfWeekSaoPaulo = getDay(nowSaoPaulo);
 
     let briefMessage = "";
     let notificationTitle = "";
@@ -126,7 +126,7 @@ serve(async (req) => {
     } else {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date") // task_type removido
+        .select("title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date")
         .eq("user_id", userId)
         .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
 
@@ -170,7 +170,7 @@ serve(async (req) => {
 
       if (todayTasks.length > 0) {
         briefMessage += `Você tem ${todayTasks.length} tarefas pendentes para hoje:\n`;
-        todayTasks.slice(0, 3).forEach(task => { // Limita a 3 tarefas para o resumo
+        todayTasks.slice(0, 3).forEach(task => {
           briefMessage += `- ${task.title}${task.time ? ` às ${task.time}` : ''}\n`;
         });
         if (todayTasks.length > 3) {

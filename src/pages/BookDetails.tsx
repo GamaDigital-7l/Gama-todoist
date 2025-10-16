@@ -21,7 +21,7 @@ interface Book {
 
 const fetchBookById = async (bookId: string): Promise<Book | null> => {
   const { data, error } = await supabase
-    .from("books", { schema: 'public' }) // Especificando o esquema
+    .from("books")
     .select("id, title, author, description, content, cover_image_url, pdf_url")
     .eq("id", bookId)
     .single();
@@ -96,7 +96,7 @@ const BookDetails: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
-        <div className="flex-1 min-w-0"> {/* Adicionado flex-1 min-w-0 para o título e autor */}
+        <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold break-words">{book.title}</h1>
           {book.author && <p className="text-lg text-muted-foreground break-words">Por {book.author}</p>}
         </div>
