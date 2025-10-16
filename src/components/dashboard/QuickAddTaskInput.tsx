@@ -14,6 +14,7 @@ import { format } from "date-fns";
 interface QuickAddTaskInputProps {
   originBoard: OriginBoard;
   onTaskAdded: () => void;
+  dueDate?: Date; // Nova prop opcional para data de vencimento
 }
 
 // Função para sanitizar o nome da tag
@@ -26,7 +27,7 @@ const sanitizeTagName = (name: string) => {
     .toLowerCase();
 };
 
-const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTaskAdded }) => {
+const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTaskAdded, dueDate }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
@@ -49,7 +50,10 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
       let tagName: string | undefined;
       let tagColor: string | undefined;
 
-      if (originBoard === "today_priority") {
+      // Se uma dueDate for fornecida, use-a. Caso contrário, use a lógica existente.
+      if (dueDate) {
+        finalDueDate = format(dueDate, "yyyy-MM-dd");
+      } else if (originBoard === "today_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
         tagColor = '#EF4444';

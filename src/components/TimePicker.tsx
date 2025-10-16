@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface TimePickerProps {
   value?: string; // Formato "HH:mm"
-  onChange: (time: string | undefined) => void;
+  onChange: (time: string | null) => void; // Alterado para aceitar null
 }
 
 const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
@@ -19,7 +19,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
     if (hour && minute) {
       onChange(`${hour}:${minute}`);
     } else {
-      onChange(undefined);
+      onChange(null); // Retorna null se não houver hora ou minuto
     }
   }, [hour, minute, onChange]);
 
@@ -37,10 +37,8 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
     }
   };
 
-  const formatTimePart = (part: string) => {
-    if (part.length === 1) return `0${part}`;
-    return part;
-  };
+  // Não precisamos de formatTimePart aqui, pois o valor é formatado no useEffect
+  // e o input type="number" já lida com a entrada.
 
   return (
     <Popover>
