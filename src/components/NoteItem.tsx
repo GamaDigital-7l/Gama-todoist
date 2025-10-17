@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Adicionado Card, CardContent, CardHeader, CardTitle
 
 interface NoteItemProps {
   note: Note;
@@ -81,6 +82,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   });
 
   const handleEditNote = (noteToEdit: Note) => {
+    console.log("Notes.tsx - handleEditNote: Editing note with ID:", noteToEdit.id, "and object:", noteToEdit);
     setEditingNote(noteToEdit);
     setIsFormOpen(true);
   };
@@ -231,6 +233,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
               initialData={editingNote}
               onNoteSaved={refetchNotes}
               onClose={() => setIsFormOpen(false)}
+              userId={session?.user?.id} // Passando userId
             />
           </DialogContent>
         </Dialog>
