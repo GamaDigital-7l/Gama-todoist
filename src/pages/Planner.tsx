@@ -37,7 +37,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("*")
+    .select("id, title, description, date, start_time, end_time, location, created_at")
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -51,7 +51,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("*")
+    .select("id, title, description, date, start_time, end_time, location")
     .eq("user_id", userId)
     .gte("date", today) // Apenas reuniões a partir de hoje
     .order("date", { ascending: true })
@@ -70,7 +70,8 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at,
       task_tags(
         tags(id, name, color)
       )
@@ -129,7 +130,7 @@ const fetchGoogleCalendarEvents = async (userId: string, date: Date): Promise<Go
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("events")
-    .select("*")
+    .select("id, google_event_id, calendar_id, title, description, start_time, end_time, location, html_link")
     .eq("user_id", userId)
     .gte("start_time", `${formattedDate}T00:00:00Z`)
     .lte("start_time", `${formattedDate}T23:59:59Z`)

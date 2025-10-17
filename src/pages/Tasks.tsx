@@ -25,7 +25,8 @@ const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -46,7 +47,7 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
   const { data, error } = await supabase
     .from("template_tasks")
     .select(`
-      *,
+      id, user_id, title, description, recurrence_type, recurrence_details, origin_board, created_at, updated_at,
       template_task_tags(
         tags(id, name, color)
       )

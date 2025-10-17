@@ -57,7 +57,8 @@ const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Prom
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -79,7 +80,8 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -101,7 +103,8 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -123,7 +126,8 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      *,
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
