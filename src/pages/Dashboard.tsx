@@ -295,8 +295,66 @@ const Dashboard: React.FC = () => {
         </Dialog>
       </div>
 
-      {/* Novos Cartões de Estatísticas de Tarefas */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <TaskListBoard
+          title="Hoje Prioridade"
+          tasks={todayPriorityTasks || []}
+          isLoading={isLoadingTodayPriority}
+          error={errorTodayPriority}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_priority"
+        />
+        <TaskListBoard
+          title="Hoje sem Prioridade"
+          tasks={todayNoPriorityTasks || []}
+          isLoading={isLoadingTodayNoPriority}
+          error={errorTodayNoPriority}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_no_priority"
+        />
+        <TaskListBoard
+          title="Jobs Woe hoje"
+          tasks={jobsWoeTodayTasks || []}
+          isLoading={isLoadingJobsWoeToday}
+          error={errorJobsWoeToday}
+          refetchTasks={handleTaskAdded}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
+          originBoard="jobs_woe_today"
+        />
+        <TaskListBoard
+          title="Atrasadas"
+          tasks={overdueTasks || []}
+          isLoading={isLoadingOverdue}
+          error={errorOverdue}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="overdue"
+        />
+        <TaskListBoard
+          title="Recorrentes"
+          tasks={recurrentTasks || []}
+          isLoading={isLoadingRecurrent}
+          error={errorRecurrent}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="recurrent"
+        />
+        <TaskListBoard
+          title="Finalizadas"
+          tasks={completedTasks || []}
+          isLoading={isLoadingCompleted}
+          error={errorCompleted}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false}
+          originBoard="completed"
+        />
+        <DashboardTaskList />
+      </div>
+
+      {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
         <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
@@ -381,64 +439,6 @@ const Dashboard: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <TaskListBoard
-          title="Hoje Prioridade"
-          tasks={todayPriorityTasks || []}
-          isLoading={isLoadingTodayPriority}
-          error={errorTodayPriority}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
-          originBoard="today_priority"
-        />
-        <TaskListBoard
-          title="Hoje sem Prioridade"
-          tasks={todayNoPriorityTasks || []}
-          isLoading={isLoadingTodayNoPriority}
-          error={errorTodayNoPriority}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
-          originBoard="today_no_priority"
-        />
-        <TaskListBoard
-          title="Jobs Woe hoje"
-          tasks={jobsWoeTodayTasks || []}
-          isLoading={isLoadingJobsWoeToday}
-          error={errorJobsWoeToday}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
-          originBoard="jobs_woe_today"
-        />
-        <TaskListBoard
-          title="Atrasadas"
-          tasks={overdueTasks || []}
-          isLoading={isLoadingOverdue}
-          error={errorOverdue}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="overdue"
-        />
-        <TaskListBoard
-          title="Recorrentes"
-          tasks={recurrentTasks || []}
-          isLoading={isLoadingRecurrent}
-          error={errorRecurrent}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="recurrent"
-        />
-        <TaskListBoard
-          title="Finalizadas"
-          tasks={completedTasks || []}
-          isLoading={isLoadingCompleted}
-          error={errorCompleted}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="completed"
-        />
-        <DashboardTaskList />
       </div>
     </div>
   );
