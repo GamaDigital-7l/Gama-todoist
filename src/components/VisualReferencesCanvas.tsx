@@ -20,14 +20,14 @@ import { v4 as uuidv4 } from 'uuid'; // Para gerar IDs únicos
 import PanZoom from 'react-easy-panzoom';
 
 interface VisualReferencesCanvasProps {
-  clientId: string;
+  moodboardId: string; // Alterado de clientId
 }
 
-const fetchVisualReferences = async (clientId: string, userId: string): Promise<VisualReferenceElement[]> => {
+const fetchVisualReferences = async (moodboardId: string, userId: string): Promise<VisualReferenceElement[]> => {
   const { data, error } = await supabase
     .from("client_visual_references")
     .select("*")
-    .eq("client_id", clientId)
+    .eq("moodboard_id", moodboardId) // Alterado de client_id
     .eq("user_id", userId)
     .order("z_index", { ascending: true });
   if (error) {
@@ -46,15 +46,15 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientId }) => {
+const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboardId }) => { // Alterado de clientId
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
   const { data: elements, isLoading, error, refetch } = useQuery<VisualReferenceElement[], Error>({
-    queryKey: ["clientVisualReferences", clientId, userId],
-    queryFn: () => fetchVisualReferences(clientId, userId!),
-    enabled: !!clientId && !!userId,
+    queryKey: ["clientVisualReferences", moodboardId, userId], // Alterado queryKey
+    queryFn: () => fetchVisualReferences(moodboardId, userId!), // Alterado queryFn
+    enabled: !!moodboardId && !!userId, // Alterado enabled condition
   });
 
   const [isToolbarVisible, setIsToolbarVisible] = useState(true);
@@ -72,12 +72,12 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         .from("client_visual_references")
         .update({ ...updatedElement, updated_at: new Date().toISOString() })
         .eq("id", updatedElement.id)
-        .eq("client_id", clientId)
+        .eq("moodboard_id", moodboardId) // Alterado de client_id
         .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clientVisualReferences", clientId, userId] });
+      queryClient.invalidateQueries({ queryKey: ["clientVisualReferences", moodboardId, userId] }); // Alterado queryKey
     },
     onError: (err: any) => {
       showError("Erro ao atualizar elemento: " + err.message);
@@ -90,7 +90,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
       if (!userId) throw new Error("Usuário não autenticado.");
       const { data, error } = await supabase
         .from("client_visual_references")
-        .insert({ ...newElement, user_id: userId, client_id: clientId })
+        .insert({ ...newElement, user_id: userId, moodboard_id: moodboardId }) // Alterado client_id para moodboard_id
         .select()
         .single();
       if (error) throw error;
@@ -113,7 +113,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         .from("client_visual_references")
         .delete()
         .eq("id", elementId)
-        .eq("client_id", clientId)
+        .eq("moodboard_id", moodboardId) // Alterado de client_id
         .eq("user_id", userId);
       if (error) throw error;
     },
@@ -139,7 +139,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
 
   const handleAddText = () => {
     const newTextElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
-      client_id: clientId,
+      moodboard_id: moodboardId, // Alterado de client_id
       user_id: userId!,
       element_type: "text",
       content: "Nova Nota",
@@ -175,7 +175,8 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
       const blob = await response.blob();
       const filename = imageUrlInput.substring(imageUrlInput.lastIndexOf('/') + 1).split('?')[0];
       const sanitizedFilename = sanitizeFilename(filename || `image-${Date.now()}.png`);
-      const filePath = `client_visual_references/${clientId}/${userId}/${Date.now()}-${sanitizedFilename}`;
+      // Caminho de armazenamento atualizado para incluir moodboardId
+      const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("client-visual-references")
@@ -192,7 +193,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         .getPublicUrl(filePath);
 
       const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
-        client_id: clientId,
+        moodboard_id: moodboardId, // Alterado de client_id
         user_id: userId,
         element_type: "image",
         content: publicUrlData.publicUrl,
@@ -222,7 +223,8 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
     setIsUploading(true);
     try {
       const sanitizedFilename = sanitizeFilename(file.name);
-      const filePath = `client_visual_references/${clientId}/${userId}/${Date.now()}-${sanitizedFilename}`;
+      // Caminho de armazenamento atualizado para incluir moodboardId
+      const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("client-visual-references")
@@ -239,7 +241,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         .getPublicUrl(filePath);
 
       const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
-        client_id: clientId,
+        moodboard_id: moodboardId, // Alterado de client_id
         user_id: userId,
         element_type: "image",
         content: publicUrlData.publicUrl,
@@ -269,7 +271,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
           const blob = item.getAsFile();
           if (blob) {
             await handleFileUpload(blob);
-            event.preventDefault(); // Prevent default paste behavior
+            event.preventDefault(); // Prevenir comportamento padrão de colar
             return;
           }
         } else if (item.type === 'text/plain') {
@@ -283,7 +285,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         }
       }
     }
-  }, [userId, clientId, addElementMutation, handleFileUpload]);
+  }, [userId, moodboardId, addElementMutation, handleFileUpload]); // Alterado clientId para moodboardId
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -313,7 +315,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         setIsAddImageUrlModalOpen(true);
       }
     }
-  }, [userId, clientId, addElementMutation, handleFileUpload]);
+  }, [userId, moodboardId, addElementMutation, handleFileUpload]); // Alterado clientId para moodboardId
 
   useEffect(() => {
     document.addEventListener('paste', handlePaste);
@@ -327,7 +329,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
   };
 
   const handleDeselectAll = (event: React.MouseEvent) => {
-    // Deselect if click is on the canvas itself, not on an element
+    // Desselecionar se o clique for no próprio canvas, não em um elemento
     if ((event.target as HTMLElement).id === "visual-references-canvas-container") {
       setSelectedElementId(null);
     }
@@ -431,8 +433,8 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ clientI
         disableDoubleClickZoom={true}
         realPinch={true}
         keyMapping={{
-          '8': false, // Disable backspace
-          '32': true, // Enable spacebar for pan
+          '8': false, // Desabilitar backspace
+          '32': true, // Habilitar barra de espaço para pan
         }}
         className="w-full h-full"
       >

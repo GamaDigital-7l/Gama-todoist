@@ -6,13 +6,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Edit, Trash2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Edit, Trash2, PlusCircle, LayoutDashboard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Client } from "@/types/client";
+import { Client, Moodboard } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientForm from "@/components/ClientForm";
-import VisualReferencesCanvas from "@/components/VisualReferencesCanvas";
+import MoodboardForm from "@/components/MoodboardForm";
+import MoodboardCard from "@/components/MoodboardCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
   const { data, error } = await supabase
@@ -28,6 +30,19 @@ const fetchClientById = async (clientId: string, userId: string): Promise<Client
   return data || null;
 };
 
+const fetchMoodboardsByClient = async (clientId: string, userId: string): Promise<Moodboard[]> => {
+  const { data, error } = await supabase
+    .from("moodboards")
+    .select("*")
+    .eq("client_id", clientId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -40,11 +55,54 @@ const ClientDetails: React.FC = () => {
     enabled: !!id && !!userId,
   });
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { data: moodboards, isLoading: isLoadingMoodboards, error: moodboardsError, refetch: refetchMoodboards } = useQuery<Moodboard[], Error>({
+    queryKey: ["moodboards", id, userId],
+    queryFn: () => fetchMoodboardsByClient(id!, userId!),
+    enabled: !!id && !!userId,
+  });
+
+  const [isClientFormOpen, setIsClientFormOpen] = useState(false);
+  const [isMoodboardFormOpen, setIsMoodboardFormOpen] = useState(false);
+  const [editingMoodboard, setEditingMoodboard] = useState<Moodboard | undefined>(undefined);
 
   const handleClientSaved = () => {
     refetch();
-    setIsFormOpen(false);
+    setIsClientFormOpen(false);
+  };
+
+  const handleMoodboardSaved = () => {
+    refetchMoodboards();
+    setIsMoodboardFormOpen(false);
+    setEditingMoodboard(undefined);
+  };
+
+  const handleEditMoodboard = (moodboard: Moodboard) => {
+    setEditingMoodboard(moodboard);
+    setIsMoodboardFormOpen(true);
+  };
+
+  const handleDeleteMoodboard = async (moodboardId: string) => {
+    if (!userId || !id) {
+      showError("Usuário não autenticado ou cliente não encontrado.");
+      return;
+    }
+    if (window.confirm("Tem certeza que deseja deletar este moodboard e todas as suas referências visuais?")) {
+      try {
+        const { error } = await supabase
+          .from("moodboards")
+          .delete()
+          .eq("id", moodboardId)
+          .eq("client_id", id)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Moodboard deletado com sucesso!");
+        refetchMoodboards();
+      } catch (err: any) {
+        showError("Erro ao deletar moodboard: " + err.message);
+        console.error("Erro ao deletar moodboard:", err);
+      }
+    }
   };
 
   const handleDeleteClient = async () => {
@@ -52,7 +110,7 @@ const ClientDetails: React.FC = () => {
       showError("Usuário não autenticado ou cliente não encontrado.");
       return;
     }
-    if (window.confirm(`Tem certeza que deseja deletar o cliente "${client.name}" e todas as suas referências visuais?`)) {
+    if (window.confirm(`Tem certeza que deseja deletar o cliente "${client.name}" e todos os seus moodboards e referências visuais?`)) {
       try {
         const { error } = await supabase
           .from("clients")
@@ -136,10 +194,10 @@ const ClientDetails: React.FC = () => {
           <h1 className="text-3xl font-bold break-words">{client.name}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <Dialog open={isClientFormOpen} onOpenChange={setIsClientFormOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setIsFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
-                <Edit className="mr-2 h-4 w-4" /> Editar
+              <Button onClick={() => setIsClientFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
+                <Edit className="mr-2 h-4 w-4" /> Editar Cliente
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
@@ -152,30 +210,91 @@ const ClientDetails: React.FC = () => {
               <ClientForm
                 initialData={client}
                 onClientSaved={handleClientSaved}
-                onClose={() => setIsFormOpen(false)}
+                onClose={() => setIsClientFormOpen(false)}
               />
             </DialogContent>
           </Dialog>
           <Button onClick={handleDeleteClient} variant="destructive">
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir Cliente
           </Button>
         </div>
       </div>
 
-      {/* Área Principal: Canvas de Referências Visuais */}
-      <Card className="flex-1 flex flex-col bg-card border border-border rounded-lg shadow-sm">
-        <CardHeader className="border-b border-border">
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-primary" /> Referências Visuais
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Um canvas interativo para suas referências visuais. Arraste e solte imagens, cole URLs ou adicione notas de texto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 p-0">
-          {id && <VisualReferencesCanvas clientId={id} />}
-        </CardContent>
-      </Card>
+      {/* Tabs para Dashboard e Moodboards */}
+      <Tabs defaultValue="moodboards" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
+            <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="moodboards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
+            <PlusCircle className="mr-2 h-4 w-4" /> Moodboards
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="flex-1">
+          <Card className="flex-1 flex flex-col bg-card border border-border rounded-lg shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-foreground">Visão Geral do Cliente</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Informações detalhadas e um resumo das atividades do cliente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 p-4">
+              {client.description ? (
+                <p className="text-muted-foreground">{client.description}</p>
+              ) : (
+                <p className="text-muted-foreground">Nenhuma descrição fornecida para este cliente.</p>
+              )}
+              {/* Adicionar mais informações do dashboard aqui, se necessário */}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="moodboards" className="flex-1 flex flex-col">
+          <div className="flex justify-end mb-4">
+            <Dialog open={isMoodboardFormOpen} onOpenChange={setIsMoodboardFormOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditingMoodboard(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Novo Moodboard
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">{editingMoodboard ? "Editar Moodboard" : "Criar Novo Moodboard"}</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    {editingMoodboard ? "Atualize os detalhes do seu moodboard." : "Crie um novo moodboard para organizar suas referências visuais."}
+                  </DialogDescription>
+                </DialogHeader>
+                <MoodboardForm
+                  clientId={id!}
+                  initialData={editingMoodboard}
+                  onMoodboardSaved={handleMoodboardSaved}
+                  onClose={() => setIsMoodboardFormOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {isLoadingMoodboards ? (
+            <p className="text-center text-muted-foreground">Carregando moodboards...</p>
+          ) : moodboardsError ? (
+            <p className="text-red-500">Erro ao carregar moodboards: {moodboardsError.message}</p>
+          ) : moodboards && moodboards.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {moodboards.map((moodboard) => (
+                <MoodboardCard
+                  key={moodboard.id}
+                  moodboard={moodboard}
+                  onEdit={handleEditMoodboard}
+                  onDelete={handleDeleteMoodboard}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Nenhum moodboard encontrado para este cliente. Crie um novo para começar!</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

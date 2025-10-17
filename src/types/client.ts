@@ -9,12 +9,23 @@ export interface Client {
   updated_at: string;
 }
 
+export interface Moodboard {
+  id: string;
+  user_id: string;
+  client_id: string;
+  title: string;
+  description?: string | null;
+  thumbnail_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface VisualReferenceElement {
   id: string;
-  client_id: string;
+  moodboard_id: string; // Alterado de client_id
   user_id: string;
   element_type: 'image' | 'text';
-  content: string; // URL for image, actual text for text note
+  content: string; // URL para imagem, texto real para nota de texto
   x: number;
   y: number;
   width?: number | null;

@@ -18,8 +18,9 @@ import Study from "./pages/Study";
 import Health from "./pages/Health";
 import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
-import Clients from "./pages/Clients"; // Importar a nova página de Clientes
-import ClientDetails from "./pages/ClientDetails"; // Importar a nova página de Detalhes do Cliente
+import Clients from "./pages/Clients";
+import ClientDetails from "./pages/ClientDetails";
+import ClientMoodboardPage from "./pages/ClientMoodboardPage"; // Importar a nova página de Moodboard
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -95,8 +96,9 @@ const App = () => (
                 <Route path="/health" element={<Health />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/planner" element={<Planner />} />
-                <Route path="/clients" element={<Clients />} /> {/* Nova rota para Clientes */}
-                <Route path="/clients/:id" element={<ClientDetails />} /> {/* Nova rota para Detalhes do Cliente */}
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/:id" element={<ClientDetails />} />
+                <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} /> {/* Nova rota para Moodboard */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
