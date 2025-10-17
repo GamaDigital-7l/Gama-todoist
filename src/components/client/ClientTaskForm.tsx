@@ -124,7 +124,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           client_task_id: clientTaskId,
           tag_id: tagId,
         }));
-        const { error: tagInsertError } = await supabase.from("client_task_tags").insert(clientTaskTagsToInsert);
+        const { error: tagInsertError } = await supabase.from("client_task_tags").insert(taskTagsToInsert);
         if (tagInsertError) throw tagInsertError;
       }
 

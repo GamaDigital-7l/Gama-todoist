@@ -14,8 +14,6 @@ export interface Client {
   updated_at: string;
 }
 
-// Moodboard e VisualReferenceElement foram removidos
-
 export interface ClientTask {
   id: string;
   client_id: string;
@@ -23,11 +21,11 @@ export interface ClientTask {
   title: string;
   description?: string | null;
   month_year_reference: string; // Ex: "2025-10"
-  status: ClientTaskStatus;
+  status: ClientTaskStatus; // Novo campo
   due_date?: string | null; // ISO string
   is_completed: boolean;
   completed_at?: string | null;
-  order_index: number;
+  order_index: number; // Novo campo
   created_at: string;
   updated_at: string;
   tags?: { id: string; name: string; color: string }[]; // Para carregar tags associadas
@@ -35,7 +33,7 @@ export interface ClientTask {
 
 export interface ClientTaskGenerationPattern {
   week: number; // 1, 2, 3, 4
-  day_of_week: string; // "Monday", "Tuesday", etc.
+  day_of_week: "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday"; // Dia da semana
   count: number; // Quantidade de tarefas a gerar
 }
 
@@ -44,8 +42,8 @@ export interface ClientTaskGenerationTemplate {
   client_id: string;
   user_id: string;
   template_name: string;
-  delivery_count: number;
-  generation_pattern: ClientTaskGenerationPattern[]; // JSONB
+  delivery_count: number; // Novo campo
+  generation_pattern: ClientTaskGenerationPattern[]; // Novo campo (JSONB)
   created_at: string;
   updated_at: string;
 }

@@ -182,7 +182,7 @@ const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs para Dashboard e Kanban (Moodboards removido) */}
+      {/* Tabs para Dashboard e Kanban */}
       <Tabs defaultValue="dashboard" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">

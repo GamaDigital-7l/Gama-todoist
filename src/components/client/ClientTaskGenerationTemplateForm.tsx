@@ -174,7 +174,7 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
               <div>
                 <Label htmlFor={`generation_pattern.${index}.day_of_week`} className="text-foreground">Dia da Semana</Label>
                 <Select
-                  onValueChange={(value: string) => form.setValue(`generation_pattern.${index}.day_of_week`, value as ClientTaskGenerationPattern['day_of_week'])}
+                  onValueChange={(value: ClientTaskGenerationPattern['day_of_week']) => form.setValue(`generation_pattern.${index}.day_of_week`, value)}
                   value={form.watch(`generation_pattern.${index}.day_of_week`)}
                 >
                   <SelectTrigger id={`generation_pattern.${index}.day_of_week`} className="w-full bg-input border-border text-foreground focus-visible:ring-ring">

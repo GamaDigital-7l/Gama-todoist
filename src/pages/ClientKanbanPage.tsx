@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Adicionado useMutation e useQueryClient
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Client, ClientTask, ClientTaskStatus } from "@/types/client";
+import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays } from "date-fns";
+import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays, getWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -67,7 +67,7 @@ const fetchClientTasks = async (clientId: string, userId: string, monthYearRef: 
   return mappedData;
 };
 
-const fetchClientTaskTemplates = async (clientId: string, userId: string): Promise<any[]> => {
+const fetchClientTaskTemplates = async (clientId: string, userId: string): Promise<ClientTaskGenerationTemplate[]> => {
   const { data, error } = await supabase
     .from("client_task_generation_templates")
     .select("*")
@@ -81,11 +81,11 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
 };
 
 const ClientKanbanPage: React.FC = () => {
-  const { clientId } = useParams<{ clientId: string }>();
+  const { id: clientId } = useParams<{ id: string }>(); // Renomeado para clientId
   const navigate = useNavigate();
   const { session } = useSession();
   const userId = session?.user?.id;
-  const queryClient = useQueryClient(); // Inicializa o queryClient
+  const queryClient = useQueryClient();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthYearRef = format(currentMonth, "yyyy-MM");
@@ -102,7 +102,7 @@ const ClientKanbanPage: React.FC = () => {
     enabled: !!clientId && !!userId,
   });
 
-  const { data: clientTaskTemplates, isLoading: isLoadingTemplates, error: templatesError, refetch: refetchClientTaskTemplates } = useQuery<any[], Error>({
+  const { data: clientTaskTemplates, isLoading: isLoadingTemplates, error: templatesError, refetch: refetchClientTaskTemplates } = useQuery<ClientTaskGenerationTemplate[], Error>({
     queryKey: ["clientTaskTemplates", clientId, userId],
     queryFn: () => fetchClientTaskTemplates(clientId!, userId!),
     enabled: !!clientId && !!userId,
@@ -111,7 +111,7 @@ const ClientKanbanPage: React.FC = () => {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ClientTask | undefined>(undefined);
   const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any | undefined>(undefined);
+  const [editingTemplate, setEditingTemplate] = useState<ClientTaskGenerationTemplate | undefined>(undefined);
 
   // Estados para Drag and Drop
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -210,7 +210,7 @@ const ClientKanbanPage: React.FC = () => {
     setEditingTemplate(undefined);
   };
 
-  const handleEditTemplate = (template: any) => {
+  const handleEditTemplate = (template: ClientTaskGenerationTemplate) => {
     setEditingTemplate(template);
     setIsTemplateFormOpen(true);
   };
@@ -281,6 +281,34 @@ const ClientKanbanPage: React.FC = () => {
   const remainingTasks = (client?.monthly_delivery_goal || 0) - completedTasksCount;
   const daysUntilEndOfMonth = differenceInDays(endOfMonth(currentMonth), today);
   const showAlert = isCurrentMonth && remainingTasks > 0 && daysUntilEndOfMonth <= 7; // Alerta se faltam 7 dias ou menos
+
+  // Disparar notificação de 100% de conclusão
+  useEffect(() => {
+    if (userId && clientId && client && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && progressPercentage >= 100) {
+      const sendCompletionNotification = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-client-completion-notification', {
+            body: {
+              clientId,
+              monthYearRef,
+              completedCount,
+              totalCount: client.monthly_delivery_goal,
+              clientName: client.name,
+            },
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+          });
+          if (error) throw error;
+          console.log("Notificação de conclusão de cliente enviada:", data);
+        } catch (err) {
+          console.error("Erro ao enviar notificação de conclusão de cliente:", err);
+        }
+      };
+      sendCompletionNotification();
+    }
+  }, [completedTasksCount, client?.monthly_delivery_goal, progressPercentage, userId, clientId, monthYearRef, client?.name, session?.access_token]);
+
 
   if (!clientId) {
     return (
@@ -365,7 +393,7 @@ const ClientKanbanPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 p-4">
-                <Button onClick={() => setEditingTemplate({ client_id: clientId, user_id: userId, template_name: "", delivery_count: 0, generation_pattern: [] })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   <PlusCircle className="mr-2 h-4 w-4" /> Novo Template
                 </Button>
                 {clientTaskTemplates && clientTaskTemplates.length > 0 ? (
@@ -431,12 +459,12 @@ const ClientKanbanPage: React.FC = () => {
               <span className="text-sm font-medium text-foreground">
                 Meta do Mês: {client.monthly_delivery_goal} | Concluídas: {completedTasksCount}/{totalTasksForMonth} ({progressPercentage.toFixed(0)}%)
               </span>
-              {isCurrentMonth && completedTasksCount < (client?.monthly_delivery_goal || 0) && showAlert && (
+              {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount < client.monthly_delivery_goal && showAlert && (
                 <span className="flex items-center gap-1 text-sm text-orange-500">
                   <AlertCircle className="h-4 w-4" /> Faltam {remainingTasks}/{client.monthly_delivery_goal} até {format(endOfMonth(currentMonth), "dd/MM", { locale: ptBR })}
                 </span>
               )}
-              {isCurrentMonth && completedTasksCount >= (client?.monthly_delivery_goal || 0) && (
+              {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && (
                 <span className="flex items-center gap-1 text-sm text-green-500">
                   <CheckCircle2 className="h-4 w-4" /> Meta Batida!
                 </span>
@@ -462,6 +490,9 @@ const ClientKanbanPage: React.FC = () => {
             >
               <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-lg`}>
                 <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
+                <CardDescription className="text-sm text-white/80">
+                  {clientTasks?.filter(task => task.status === column.status).length} tarefas
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
                 {isLoadingTasks ? (
@@ -475,7 +506,7 @@ const ClientKanbanPage: React.FC = () => {
                       task={task}
                       refetchTasks={refetchClientTasks}
                       onEdit={handleEditTask}
-                      onDragStart={handleDragStart} // Passa o manipulador de drag
+                      onDragStart={handleDragStart}
                     />
                   ))
                 )}

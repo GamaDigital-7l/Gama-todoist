@@ -5,11 +5,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarDays, CheckCircle2 } from "lucide-react";
+import { Edit, Trash2, CalendarDays, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
-import { ClientTask } from "@/types/client";
+import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ interface ClientTaskItemProps {
   task: ClientTask;
   refetchTasks: () => void;
   onEdit: (task: ClientTask) => void;
-  onDragStart: (e: React.DragEvent, taskId: string, currentStatus: ClientTask['status']) => void; // Adicionado onDragStart
+  onDragStart: (e: React.DragEvent, taskId: string, currentStatus: ClientTask['status']) => void;
 }
 
 const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onEdit, onDragStart }) => {
@@ -38,6 +38,8 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
           is_completed: isCompleted,
           completed_at: isCompleted ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
+          // Se for concluída, move para 'published' se não for já
+          status: isCompleted && task.status !== 'published' ? 'published' : task.status,
         })
         .eq("id", taskId)
         .eq("client_id", task.client_id)
@@ -90,11 +92,20 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
     },
   });
 
+  const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !task.is_completed;
+  const isAwaitingApproval = task.status === 'in_approval';
+  const isScheduled = task.status === 'scheduled';
+  const isApproved = task.status === 'approved';
+
   return (
     <div
-      className="flex flex-col p-3 bg-background border border-border rounded-md shadow-sm cursor-grab active:cursor-grabbing"
+      className={cn(
+        "flex flex-col p-3 bg-background border rounded-md shadow-sm cursor-grab active:cursor-grabbing",
+        isOverdue ? "border-red-500 bg-red-500/10" : "border-border",
+        task.is_completed && "opacity-70"
+      )}
       draggable="true"
-      onDragStart={(e) => onDragStart(e, task.id, task.status)} // Passa o ID da tarefa e o status atual
+      onDragStart={(e) => onDragStart(e, task.id, task.status)}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -103,6 +114,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             checked={task.is_completed}
             onCheckedChange={(checked) => updateTaskCompletionMutation.mutate({ taskId: task.id, isCompleted: checked as boolean })}
             className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+            disabled={task.status === 'published'} // Não pode desmarcar se já publicado
           />
           <label
             htmlFor={`client-task-${task.id}`}
@@ -111,6 +123,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
               task.is_completed && "line-through text-muted-foreground"
             )}
           >
+            {isOverdue && <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />}
             {task.title}
           </label>
         </div>
@@ -132,6 +145,21 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
         <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
           <CalendarDays className="h-3 w-3" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
         </p>
+      )}
+      {isAwaitingApproval && (
+        <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 mb-2 w-fit">
+          Aguardando Aprovação
+        </Badge>
+      )}
+      {isApproved && task.due_date && !isToday(parseISO(task.due_date)) && (
+        <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/50 mb-2 w-fit">
+          Prazo Agendamento: {format(parseISO(task.due_date), "dd/MM")}
+        </Badge>
+      )}
+      {isScheduled && task.due_date && (
+        <Badge variant="secondary" className="bg-purple-500/20 text-purple-500 border-purple-500/50 mb-2 w-fit">
+          Agendado para: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
+        </Badge>
       )}
       {task.tags && task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-auto">

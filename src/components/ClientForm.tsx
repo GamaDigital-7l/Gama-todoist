@@ -209,7 +209,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.logo_file && (
-          <p className="text-red-500 text-sm mt-1">
+          <p className className="text-red-500 text-sm mt-1">
             {form.formState.errors.logo_file.message}
           </p>
         )}
