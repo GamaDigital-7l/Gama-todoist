@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button"; // Importar Button
 
 // Lista de fusos horários comuns (pode ser expandida)
 const TIMEZONES = [
@@ -37,15 +38,15 @@ const TIMEZONES = [
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
-  ai_provider_preference: z.enum(["groq", "openai"]).default("groq"),
-  notification_channel: z.enum(["web_push", "none"]).default("web_push"),
-  telegram_bot_token: z.string().nullable().optional(), // Novo
-  telegram_chat_id: z.string().nullable().optional(), // Novo
-  telegram_enabled: z.boolean().default(false), // Novo
-  daily_brief_morning_time: z.string().default("08:00"), // Novo
-  daily_brief_evening_time: z.string().default("18:00"), // Novo
-  weekly_brief_day: z.string().default("Sunday"), // Novo
-  weekly_brief_time: z.string().default("08:00"), // Novo
+  ai_provider_preference: z.enum(["groq", "openai"]).optional().default("groq"),
+  notification_channel: z.enum(["web_push", "none"]).optional().default("web_push"),
+  telegram_bot_token: z.string().nullable().optional(),
+  telegram_chat_id: z.string().nullable().optional(),
+  telegram_enabled: z.boolean().optional().default(false),
+  daily_brief_morning_time: z.string().optional().default("08:00"),
+  daily_brief_evening_time: z.string().optional().default("18:00"),
+  weekly_brief_day: z.string().optional().default("Sunday"),
+  weekly_brief_time: z.string().optional().default("08:00"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;

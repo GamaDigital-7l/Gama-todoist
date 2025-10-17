@@ -142,7 +142,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
 
         const range = quill.getSelection(true);
         quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
-        quill.setSelection(range.index + 1);
+        quill.setSelection(range.index + 1, 0); // Corrigido: setSelection espera dois números ou um RangeStatic
 
         try {
           const sanitizedFilename = sanitizeFilename(file.name);

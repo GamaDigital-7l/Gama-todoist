@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
