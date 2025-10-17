@@ -211,7 +211,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
         ) : (
           tasks.map((task) => (
             <Card key={task.id} className={cn(
-              "flex flex-col h-full bg-card border rounded-lg shadow-lg overflow-hidden",
+              "flex flex-col h-full bg-card border rounded-xl shadow-lg overflow-hidden frosted-glass card-hover-effect",
               isLinkExpired && "opacity-50 cursor-not-allowed",
               task.status === 'approved' && "border-green-500",
               task.status === 'edit_requested' && "border-orange-500"

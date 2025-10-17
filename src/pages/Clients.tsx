@@ -255,7 +255,7 @@ const Clients: React.FC = () => {
 
       {/* Indicadores do Topo */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Clientes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -267,7 +267,7 @@ const Clients: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Progresso Médio do Mês</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -280,7 +280,7 @@ const Clients: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Mais Adiantado</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -292,7 +292,7 @@ const Clients: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Mais Atrasado</CardTitle>
             <AlertCircle className="h-4 w-4 text-red-500" />

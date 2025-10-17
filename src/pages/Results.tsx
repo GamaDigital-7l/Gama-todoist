@@ -125,7 +125,7 @@ const Results: React.FC = () => {
 
         <TabsContent value="habits" className="flex-1">
           <div className="space-y-6">
-            <Card className="bg-card border border-border rounded-xl shadow-lg p-6">
+            <Card className="bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect p-6">
               <CardHeader className="pb-4">
                 <CardTitle className="text-2xl font-bold text-foreground">Sua Constância Pessoal</CardTitle>
                 <CardDescription className="text-muted-foreground">
@@ -142,7 +142,7 @@ const Results: React.FC = () => {
 
         <TabsContent value="productivity" className="flex-1">
           <div className="space-y-6">
-            <Card className="bg-card border border-border rounded-xl shadow-lg p-6">
+            <Card className="bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect p-6">
               <CardHeader className="pb-4">
                 <CardTitle className="text-2xl font-bold text-foreground">Sua Produtividade Geral</CardTitle>
                 <CardDescription className="text-muted-foreground">

@@ -355,7 +355,7 @@ const Dashboard: React.FC = () => {
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
             <ListTodo className="h-5 w-5 text-primary" />
@@ -372,7 +372,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
             <XCircle className="h-5 w-5 text-red-500" />
@@ -389,7 +389,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
             <Repeat className="h-5 w-5 text-orange-500" />
@@ -406,7 +406,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
             <CalendarCheck className="h-5 w-5 text-green-500" />
@@ -423,7 +423,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
             <CalendarCheck className="h-5 w-5 text-green-500" />

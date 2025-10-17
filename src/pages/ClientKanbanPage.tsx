@@ -516,7 +516,7 @@ const ClientKanbanPage: React.FC = () => {
       </div>
 
       {/* Seletor de Mês e Progresso */}
-      <Card className="bg-card border border-border rounded-lg shadow-sm p-4 mb-4">
+      <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect p-4 mb-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
@@ -605,11 +605,11 @@ const ClientKanbanPage: React.FC = () => {
           {KANBAN_COLUMNS.map((column) => (
             <Card
               key={column.status}
-              className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-lg shadow-md"
+              className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.status)}
             >
-              <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-lg`}>
+              <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
                 <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
                 <CardDescription className="text-sm text-white/80">
                   {clientTasks?.filter(task => task.status === column.status).length} tarefas
@@ -644,7 +644,7 @@ const ClientKanbanPage: React.FC = () => {
 
       {/* Formulário de Tarefa do Cliente */}
       <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTask?.id ? "Editar Tarefa do Cliente" : "Adicionar Nova Tarefa do Cliente"}</DialogTitle>
             <DialogDescription className="text-muted-foreground">

@@ -194,7 +194,7 @@ const ClientDetails: React.FC = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="flex-1">
-          <Card className="flex-1 flex flex-col bg-card border border-border rounded-lg shadow-sm">
+          <Card className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
             <CardHeader>
               <CardTitle className="text-foreground">Visão Geral do Cliente</CardTitle>
               <CardDescription className="text-muted-foreground">
