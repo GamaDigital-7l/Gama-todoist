@@ -12,7 +12,7 @@ import VisualReferenceText from "./VisualReferenceText";
 import { PlusCircle, Type, Link, Upload, Save, ZoomIn, ZoomOut, RefreshCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { v4 as uuidv4 } from 'uuid'; // Para gerar IDs únicos
 
