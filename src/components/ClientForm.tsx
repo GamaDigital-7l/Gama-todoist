@@ -42,6 +42,8 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
+const BUCKET_NAME = "client-visual-references"; // Define o nome do bucket como uma constante
+
 const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -76,7 +78,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         const filePath = `client_logos/${userId}/${Date.now()}-${sanitizedFilename}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("client-visual-references") // Usando o bucket de referências visuais para logos também
+          .from(BUCKET_NAME) // Usando a constante do bucket
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false,
@@ -87,7 +89,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         }
 
         const { data: publicUrlData } = supabase.storage
-          .from("client-visual-references")
+          .from(BUCKET_NAME)
           .getPublicUrl(filePath);
         
         finalLogoUrl = publicUrlData.publicUrl;

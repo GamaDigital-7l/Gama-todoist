@@ -23,6 +23,8 @@ interface VisualReferencesCanvasProps {
   moodboardId: string; // Alterado de clientId
 }
 
+const BUCKET_NAME = "client-visual-references"; // Define o nome do bucket como uma constante
+
 const fetchVisualReferences = async (moodboardId: string, userId: string): Promise<VisualReferenceElement[]> => {
   const { data, error } = await supabase
     .from("client_visual_references")
@@ -178,8 +180,9 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       // Caminho de armazenamento atualizado para incluir moodboardId
       const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
+      console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("client-visual-references")
+        .from(BUCKET_NAME)
         .upload(filePath, blob, {
           cacheControl: "3600",
           upsert: false,
@@ -189,7 +192,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       if (uploadError) throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
 
       const { data: publicUrlData } = supabase.storage
-        .from("client-visual-references")
+        .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
       const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
@@ -226,8 +229,9 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       // Caminho de armazenamento atualizado para incluir moodboardId
       const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
+      console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("client-visual-references")
+        .from(BUCKET_NAME)
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
@@ -237,7 +241,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       if (uploadError) throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
 
       const { data: publicUrlData } = supabase.storage
-        .from("client-visual-references")
+        .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
       const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
@@ -380,7 +384,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
               <DialogDescription className="text-muted-foreground">
                 Cole a URL da imagem que deseja adicionar ao canvas.
               </DialogDescription>
-            </DialogHeader>
+            </DialogDescription>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="imageUrl" className="text-foreground">URL da Imagem</Label>
@@ -432,6 +436,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         autoCenterZoomLevel={0.5}
         disableDoubleClickZoom={true}
         realPinch={true}
+        inertia={true} // Adicionar inércia para movimento suave
         keyMapping={{
           '8': false, // Desabilitar backspace
           '32': true, // Habilitar barra de espaço para pan
