@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, AlertCircle } from "lucide-react"; // Adicionado AlertCircle
 import { useSession } from "@/integrations/supabase/auth";
 import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ interface TaskListBoardProps {
   refetchTasks: () => void;
   showAddButton?: boolean;
   quickAddTaskInput?: React.ReactNode;
-  originBoard?: OriginBoard;
+  originBoard?: OriginBoard; // Mantido para o QuickAddTaskInput
 }
 
 const TaskListBoard: React.FC<TaskListBoardProps> = ({
@@ -67,6 +67,8 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   const taskTree = React.useMemo(() => buildTaskTree(tasks), [tasks, buildTaskTree]);
 
+  const overdueCount = tasks.filter(task => task.overdue).length;
+
   if (isLoading) {
     return (
       <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
@@ -96,7 +98,14 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   return (
     <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
+          {overdueCount > 0 && (
+            <span className="flex items-center gap-1 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4" /> {overdueCount}
+            </span>
+          )}
+        </div>
         {showAddButton && (
           <Dialog
             open={isTaskFormOpen}

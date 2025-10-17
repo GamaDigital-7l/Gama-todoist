@@ -23,6 +23,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { OriginBoard, RecurrenceType, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
 import { parseISO } from "date-fns";
+import TimePicker from "./TimePicker"; // Importar TimePicker
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -39,6 +40,7 @@ const templateTaskSchema = z.object({
   description: z.string().optional(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
+  recurrence_time: z.string().optional().nullable(), // Novo campo
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
   selected_tag_ids: z.array(z.string()).optional(),
 });
@@ -46,9 +48,10 @@ const templateTaskSchema = z.object({
 export type TemplateTaskFormValues = z.infer<typeof templateTaskSchema>;
 
 interface TemplateTaskFormProps {
-  initialData?: Omit<TemplateTaskFormValues, 'recurrence_details' | 'origin_board'> & {
+  initialData?: Omit<TemplateTaskFormValues, 'recurrence_details' | 'origin_board' | 'recurrence_time'> & {
     id: string;
     recurrence_details?: string | null;
+    recurrence_time?: string | null; // Novo campo
     tags?: { id: string; name: string; color: string }[];
     origin_board: TemplateFormOriginBoard;
   };
@@ -65,6 +68,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     defaultValues: initialData ? {
       ...initialData,
       recurrence_details: initialData.recurrence_details || undefined,
+      recurrence_time: initialData.recurrence_time || undefined, // Novo campo
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || "general",
     } : {
@@ -72,6 +76,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
       description: "",
       recurrence_type: "none",
       recurrence_details: undefined,
+      recurrence_time: undefined, // Novo campo
       origin_board: "general",
       selected_tag_ids: [],
     },
@@ -119,6 +124,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         description: values.description || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
+        recurrence_time: values.recurrence_time || null, // Novo campo
         origin_board: values.origin_board,
         updated_at: new Date().toISOString(),
       };
@@ -198,6 +204,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
             form.setValue("recurrence_details", null);
+            form.setValue("recurrence_time", null); // Resetar recurrence_time
             setSelectedDays([]);
           }}
           value={recurrenceType}
@@ -213,6 +220,19 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           </SelectContent>
         </Select>
       </div>
+
+      {recurrenceType !== "none" && (
+        <div>
+          <Label htmlFor="recurrence_time" className="text-foreground">Horário de Recorrência (Opcional)</Label>
+          <TimePicker
+            value={form.watch("recurrence_time") || undefined}
+            onChange={(time) => form.setValue("recurrence_time", time || null)}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Se definido, a tarefa será criada com este horário e você receberá uma notificação.
+          </p>
+        </div>
+      )}
 
       {recurrenceType === "weekly" && (
         <div>

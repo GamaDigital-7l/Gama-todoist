@@ -35,6 +35,38 @@ const WebPushToggle: React.FC = () => {
     }
   }, [isSessionLoading, userId]);
 
+  const updateWebPushSetting = async (enabled: boolean) => {
+    if (!userId) return;
+    try {
+      const { data: existingSetting, error: fetchError } = await supabase
+        .from('settings')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      if (existingSetting) {
+        const { error: updateError } = await supabase
+          .from('settings')
+          .update({ webpush_enabled: enabled, updated_at: new Date().toISOString() })
+          .eq('id', existingSetting.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('settings')
+          .insert({ user_id: userId, webpush_enabled: enabled });
+        if (insertError) throw insertError;
+      }
+    } catch (err: any) {
+      console.error("Erro ao atualizar configuração webpush_enabled:", err);
+      showError("Erro ao salvar preferência de notificação.");
+    }
+  };
+
   const checkSubscriptionStatus = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setIsSubscribed(false); // Not supported
@@ -65,6 +97,7 @@ const WebPushToggle: React.FC = () => {
         showError('Permissão de notificação negada. As notificações push não funcionarão.');
         setIsLoading(false);
         setIsSubscribed(false);
+        await updateWebPushSetting(false); // Desabilitar no DB
         return;
       }
 
@@ -110,10 +143,12 @@ const WebPushToggle: React.FC = () => {
       }
       showSuccess('Inscrito para notificações push!');
       setIsSubscribed(true);
+      await updateWebPushSetting(true); // Habilitar no DB
     } catch (err: any) {
       // console.error('Erro ao inscrever o usuário para notificações push:', err); // Removido console.error
       showError('Erro ao configurar notificações push: ' + err.message);
       setIsSubscribed(false);
+      await updateWebPushSetting(false); // Desabilitar no DB em caso de erro
     } finally {
       setIsLoading(false);
     }
@@ -141,6 +176,7 @@ const WebPushToggle: React.FC = () => {
       }
       showSuccess('Desinscrito das notificações push.');
       setIsSubscribed(false);
+      await updateWebPushSetting(false); // Desabilitar no DB
     } catch (err: any) {
       // console.error('Erro ao desinscrever o usuário:', err); // Removido console.error
       showError('Erro ao desativar notificações push: ' + err.message);

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat } from "lucide-react"; // Adicionado Clock, CalendarCheck, XCircle, Repeat
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star } from "lucide-react"; // Adicionado Clock, CalendarCheck, XCircle, Repeat, Star
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,18 +53,18 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   return data as Profile | null;
 };
 
-const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Promise<Task[]> => {
+const fetchTasksByCurrentBoard = async (userId: string, board: OriginBoard): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
     `)
     .eq("user_id", userId)
-    .eq("origin_board", board)
+    .eq("current_board", board) // Usar current_board
     .order("created_at", { ascending: false });
   if (error) {
     throw error;
@@ -81,7 +81,7 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -104,13 +104,13 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
     `)
     .eq("user_id", userId)
-    .eq("origin_board", "completed")
+    .eq("current_board", "completed") // Usar current_board
     .order("completed_at", { ascending: false });
   if (error) {
     throw error;
@@ -127,7 +127,7 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -195,25 +195,25 @@ const Dashboard: React.FC = () => {
 
   const { data: todayPriorityTasks, isLoading: isLoadingTodayPriority, error: errorTodayPriority, refetch: refetchTodayPriority } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks", "today_priority", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "today_priority"),
+    queryFn: () => fetchTasksByCurrentBoard(userId!, "today_priority"), // Usar current_board
     enabled: !!userId,
   });
 
   const { data: todayNoPriorityTasks, isLoading: isLoadingTodayNoPriority, error: errorTodayNoPriority, refetch: refetchTodayNoPriority } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks", "today_no_priority", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "today_no_priority"),
+    queryFn: () => fetchTasksByCurrentBoard(userId!, "today_no_priority"), // Usar current_board
     enabled: !!userId,
   });
 
   const { data: jobsWoeTodayTasks, isLoading: isLoadingJobsWoeToday, error: errorJobsWoeToday, refetch: refetchJobsWoeToday } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks", "jobs_woe_today", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "jobs_woe_today"),
+    queryFn: () => fetchTasksByCurrentBoard(userId!, "jobs_woe_today"), // Usar current_board
     enabled: !!userId,
   });
 
   const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks", "overdue", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "overdue"),
+    queryFn: () => fetchTasksByCurrentBoard(userId!, "overdue"), // Usar current_board
     enabled: !!userId,
   });
 
@@ -225,7 +225,7 @@ const Dashboard: React.FC = () => {
 
   const { data: completedTasks, isLoading: isLoadingCompleted, error: errorCompleted, refetch: refetchCompleted } = useQuery<Task[], Error>({
     queryKey: ["dashboardTasks", "completed", userId],
-    queryFn: () => fetchCompletedTasks(userId!),
+    queryFn: () => fetchCompletedTasks(userId!), // Usar current_board
     enabled: !!userId,
   });
 

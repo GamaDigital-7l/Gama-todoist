@@ -49,6 +49,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
       let finalTags: string[] = [];
       let tagName: string | undefined;
       let tagColor: string | undefined;
+      let isPriority = false; // Novo campo
 
       // Se uma dueDate for fornecida, use-a. Caso contrário, use a lógica existente.
       if (dueDate) {
@@ -57,6 +58,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
         tagColor = '#EF4444';
+        isPriority = true; // Definir como prioritária
       } else if (originBoard === "today_no_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-sem-prioridade';
@@ -103,7 +105,10 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         recurrence_type: "none",
         recurrence_details: null,
         origin_board: originBoard,
+        current_board: originBoard, // current_board é o mesmo que origin_board na criação
         is_completed: false,
+        is_priority: isPriority, // Definir is_priority
+        overdue: false, // Nova tarefa não começa como atrasada
       }).select("id").single();
 
       if (insertError) throw insertError;

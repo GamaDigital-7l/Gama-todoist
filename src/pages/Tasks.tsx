@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react"; // Adicionado useEffect
 import TaskForm from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Adicionado useQueryClient
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"; // Adicionado useMutation
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,13 +20,14 @@ import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask, Templat
 import TaskItem from "@/components/TaskItem";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
 import TemplateTaskItem from "@/components/TemplateTaskItem";
+import { useSearchParams, useNavigate } from "react-router-dom"; // Adicionado useSearchParams, useNavigate
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -47,7 +48,7 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
   const { data, error } = await supabase
     .from("template_tasks")
     .select(`
-      id, user_id, title, description, recurrence_type, recurrence_details, origin_board, created_at, updated_at,
+      id, user_id, title, description, recurrence_type, recurrence_details, recurrence_time, origin_board, created_at, updated_at,
       template_task_tags(
         tags(id, name, color)
       )
@@ -67,7 +68,9 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
 const Tasks: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
-  const queryClient = useQueryClient(); // Inicializado useQueryClient
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const { data: tasks, isLoading, error, refetch } = useQuery<Task[], Error>({
     queryKey: ["tasks", userId],
@@ -86,6 +89,84 @@ const Tasks: React.FC = () => {
 
   const [isTemplateFormOpen, setIsTemplateFormOpen] = React.useState(false);
   const [editingTemplateTask, setEditingTemplateTask] = React.useState<TemplateTask | undefined>(undefined);
+
+  const completeTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      if (!userId) {
+        throw new Error("Usuário não autenticado.");
+      }
+      const { data: taskToUpdate, error: fetchTaskError } = await supabase
+        .from("tasks")
+        .select("recurrence_type, origin_board, current_board, is_priority, overdue")
+        .eq("id", taskId)
+        .single();
+
+      if (fetchTaskError) throw fetchTaskError;
+
+      let newCurrentBoard = taskToUpdate.current_board;
+      let newOverdueStatus = taskToUpdate.overdue;
+      let completedAt = new Date().toISOString();
+      let lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
+      
+      if (taskToUpdate.recurrence_type === "none") {
+        newCurrentBoard = "completed";
+        newOverdueStatus = false;
+      }
+
+      const { error: updateError } = await supabase
+        .from("tasks")
+        .update({
+          is_completed: true,
+          updated_at: new Date().toISOString(),
+          last_successful_completion_date: lastSuccessfulCompletionDate,
+          completed_at: completedAt,
+          current_board: newCurrentBoard,
+          overdue: newOverdueStatus,
+        })
+        .eq("id", taskId)
+        .eq("user_id", userId);
+
+      if (updateError) throw updateError;
+
+      // Adicionar pontos
+      const { data: profileData, error: fetchProfileError } = await supabase
+        .from("profiles")
+        .select("points")
+        .eq("id", userId)
+        .single();
+
+      let currentPoints = 0;
+      if (profileData) {
+        currentPoints = profileData.points || 0;
+      }
+
+      const newPoints = currentPoints + 10; // Pontos por tarefa
+      const { error: pointsError } = await supabase
+        .from("profiles")
+        .update({ points: newPoints, updated_at: new Date().toISOString() })
+        .eq("id", userId);
+
+      if (pointsError) throw pointsError;
+    },
+    onSuccess: () => {
+      showSuccess("Tarefa concluída com sucesso!");
+      handleTaskUpdated();
+    },
+    onError: (err: any) => {
+      showError("Erro ao concluir tarefa: " + err.message);
+      console.error("Erro ao concluir tarefa:", err);
+    },
+  });
+
+  useEffect(() => {
+    const taskIdToComplete = searchParams.get('complete_task_id');
+    if (taskIdToComplete && userId) {
+      completeTaskMutation.mutate(taskIdToComplete);
+      // Remover o parâmetro da URL para evitar que a ação seja repetida
+      searchParams.delete('complete_task_id');
+      navigate({ search: searchParams.toString() }, { replace: true });
+    }
+  }, [searchParams, userId, navigate, completeTaskMutation]);
 
   const handleTaskUpdated = () => {
     refetch(); // Refetch all tasks for this page
@@ -135,8 +216,11 @@ const Tasks: React.FC = () => {
       return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
     };
 
+    // Filtra tarefas que não estão concluídas e não estão na lixeira
+    if (task.is_completed || task.current_board === "completed" || task.current_board === "overdue") return false;
+
     if (filterType === "daily") {
-      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today";
+      return task.current_board === "today_priority" || task.current_board === "today_no_priority" || task.current_board === "jobs_woe_today";
     }
 
     if (task.recurrence_type !== "none") {

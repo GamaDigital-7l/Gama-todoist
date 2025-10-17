@@ -46,19 +46,23 @@ const taskSchema = z.object({
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
+  recurrence_time: z.string().optional().nullable(), // Novo campo
   selected_tag_ids: z.array(z.string()).optional(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"),
+  current_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"), // Novo campo
+  is_priority: z.boolean().default(false), // Novo campo
   parent_task_id: z.string().nullable().optional(),
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_details'> & {
+  initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_details' | 'current_board'> & {
     id: string;
     due_date?: string | Date | null;
     recurrence_details?: string | null;
     tags?: { id: string; name: string; color: string }[];
+    current_board?: OriginBoard; // Pode ser opcional para initialData
   };
   onTaskSaved: () => void;
   onClose: () => void;
@@ -96,8 +100,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
       recurrence_details: initialData.recurrence_details || undefined,
+      recurrence_time: initialData.recurrence_time || undefined, // Novo campo
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || initialOriginBoard,
+      current_board: initialData.current_board || initialOriginBoard, // Novo campo
+      is_priority: initialData.is_priority || false, // Novo campo
       parent_task_id: initialData.parent_task_id || initialParentTaskId || null,
     } : {
       title: "",
@@ -106,8 +113,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       time: undefined,
       recurrence_type: "none",
       recurrence_details: undefined,
+      recurrence_time: undefined, // Novo campo
       selected_tag_ids: [],
       origin_board: initialOriginBoard,
+      current_board: initialOriginBoard, // Novo campo
+      is_priority: false, // Novo campo
       parent_task_id: initialParentTaskId || null,
     },
   });
@@ -117,6 +127,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   const watchedRecurrenceDetails = form.watch("recurrence_details");
   const watchedOriginBoard = form.watch("origin_board");
   const watchedParentTaskId = form.watch("parent_task_id");
+  const watchedIsPriority = form.watch("is_priority"); // Observar is_priority
 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
@@ -138,13 +149,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     const setupInitialBoardDefaults = async () => {
       if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
         form.setValue("due_date", new Date());
+        form.setValue("current_board", initialOriginBoard); // Definir current_board
         
         let tagName: string;
         let tagColor: string;
+        let isPriority = false;
 
         if (initialOriginBoard === "today_priority") {
           tagName = 'hoje-prioridade';
           tagColor = '#EF4444';
+          isPriority = true;
         } else if (initialOriginBoard === "today_no_priority") {
           tagName = 'hoje-sem-prioridade';
           tagColor = '#3B82F6';
@@ -152,6 +166,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           tagName = 'jobs-woe-hoje';
           tagColor = '#8B5CF6';
         }
+
+        form.setValue("is_priority", isPriority); // Definir is_priority
 
         let tagId: string | undefined;
 
@@ -221,8 +237,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         time: values.time || null,
         recurrence_type: values.recurrence_type,
         recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
+        recurrence_time: values.recurrence_time || null, // Novo campo
         updated_at: new Date().toISOString(),
         origin_board: values.origin_board,
+        current_board: values.current_board, // Novo campo
+        is_priority: values.is_priority, // Novo campo
         parent_task_id: values.parent_task_id || null,
       };
 
@@ -242,6 +261,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         const { data, error } = await supabase.from("tasks").insert({
           ...dataToSave,
           is_completed: false,
+          overdue: false, // Nova tarefa não começa como atrasada
           user_id: userId,
         }).select("id").single();
 
@@ -345,6 +365,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
             form.setValue("recurrence_details", null);
+            form.setValue("recurrence_time", null); // Resetar recurrence_time
             setSelectedDays([]);
           }}
           value={recurrenceType}
@@ -360,6 +381,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           </SelectContent>
         </Select>
       </div>
+
+      {recurrenceType !== "none" && (
+        <div>
+          <Label htmlFor="recurrence_time" className="text-foreground">Horário de Recorrência (Opcional)</Label>
+          <TimePicker
+            value={form.watch("recurrence_time") || undefined}
+            onChange={(time) => form.setValue("recurrence_time", time || null)}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Se definido, você receberá uma notificação neste horário para a tarefa recorrente.
+          </p>
+        </div>
+      )}
 
       {recurrenceType === "weekly" && (
         <div>
@@ -410,7 +444,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       <div>
         <Label htmlFor="origin_board" className="text-foreground">Quadro de Origem</Label>
         <Select
-          onValueChange={(value: OriginBoard) => form.setValue("origin_board", value)}
+          onValueChange={(value: OriginBoard) => {
+            form.setValue("origin_board", value);
+            form.setValue("current_board", value); // current_board é o mesmo que origin_board na criação
+            form.setValue("is_priority", value === "today_priority"); // Define is_priority com base no board
+          }}
           value={watchedOriginBoard}
           disabled={!!initialData}
         >
@@ -427,6 +465,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             <SelectItem value="recurrent">Recorrentes</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_priority"
+          checked={watchedIsPriority}
+          onCheckedChange={(checked) => form.setValue("is_priority", checked as boolean)}
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+        />
+        <Label htmlFor="is_priority" className="text-foreground">Marcar como Prioritária</Label>
       </div>
 
       {!initialParentTaskId && (

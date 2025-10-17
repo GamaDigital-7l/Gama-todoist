@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle } from "lucide-react"; // Adicionado AlertCircle
+import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle, Star } from "lucide-react"; // Adicionado AlertCircle e Star
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
@@ -43,13 +43,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
 
       const { data: taskToUpdate, error: fetchTaskError } = await supabase
         .from("tasks")
-        .select("recurrence_type, origin_board")
+        .select("recurrence_type, origin_board, current_board, is_priority, overdue") // Incluir novos campos
         .eq("id", taskId)
         .single();
 
       if (fetchTaskError) throw fetchTaskError;
 
-      let newOriginBoard = taskToUpdate.origin_board;
+      let newCurrentBoard = taskToUpdate.current_board;
+      let newOverdueStatus = taskToUpdate.overdue;
       let completedAt = null;
       let lastSuccessfulCompletionDate = null;
 
@@ -57,13 +58,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
         completedAt = new Date().toISOString();
         lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
         if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
+          newCurrentBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
+          newOverdueStatus = false; // Não está mais atrasada se foi concluída
         }
       } else { // Se a tarefa está sendo desmarcada
         completedAt = null;
         lastSuccessfulCompletionDate = null;
         if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "general"; // Mover de volta para geral se não for recorrente
+          newCurrentBoard = taskToUpdate.origin_board; // Voltar para o quadro de origem se não for recorrente
+          // Atrasada pode ser reavaliada pelo daily-reset
         }
       }
 
@@ -74,7 +77,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
           updated_at: new Date().toISOString(),
           last_successful_completion_date: lastSuccessfulCompletionDate,
           completed_at: completedAt,
-          origin_board: newOriginBoard,
+          current_board: newCurrentBoard, // Atualizar current_board
+          overdue: newOverdueStatus, // Atualizar status de atraso
         })
         .eq("id", taskId)
         .eq("user_id", userId); // Adicionado user_id para segurança
@@ -107,8 +111,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       // Invalidação de cache mais granular
       queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
       queryClient.invalidateQueries({ queryKey: ["userProfile", userId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.origin_board, userId] }); // Invalida o board de origem
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "completed", userId] }); // Invalida o board de destino
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.current_board, userId] }); // Invalida o board de origem
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.current_board : "completed", userId] }); // Invalida o board de destino
       queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
       refetchTasks(); // Refetch local para atualizar a lista
     },
@@ -137,7 +141,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
         showSuccess("Tarefa deletada com sucesso!");
         // Invalidação de cache mais granular
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", task.origin_board, userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", task.current_board, userId] }); // Usar current_board
         queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] });
         refetchTasks();
       } catch (err: any) {
@@ -191,8 +195,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}
             >
-              {task.origin_board === 'overdue' && (
+              {task.overdue && ( // Exibir alerta de atraso
                 <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />
+              )}
+              {task.is_priority && ( // Exibir indicador de prioridade
+                <Star className="h-4 w-4 text-yellow-500 inline-block mr-1" fill="currentColor" />
               )}
               {task.title}
             </label>
@@ -224,6 +231,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 level > 0 && "text-[0.65rem]"
               )}>
                 <Repeat className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
+                {task.recurrence_time && ` às ${task.recurrence_time}`}
               </p>
             )}
             {task.tags && task.tags.length > 0 && (

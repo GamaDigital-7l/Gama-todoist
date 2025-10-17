@@ -1,14 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, subDays, isToday, parseISO, getDay } from "https://esm.sh/date-fns@2.30.0";
-import { utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1";
+import { format, subDays, isToday, parseISO, getDay, isBefore, startOfDay } from "https://esm.sh/date-fns@2.30.0";
+import { utcToZonedTime, zonedTimeToUtc } from "https://esm.sh/date-fns-tz@2.0.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
+const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
+  "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
+  "Thursday": 4, "Friday": 5, "Saturday": 6
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,178 +24,186 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Obter a data de ontem no fuso horário de São Paulo
-    const nowUtc = new Date();
-    const nowSaoPaulo = utcToZonedTime(nowUtc, SAO_PAULO_TIMEZONE);
-    const yesterdaySaoPaulo = format(subDays(nowSaoPaulo, 1), "yyyy-MM-dd", { timeZone: SAO_PAULO_TIMEZONE });
-    const todaySaoPaulo = format(nowSaoPaulo, "yyyy-MM-dd", { timeZone: SAO_PAULO_TIMEZONE });
+    // Obter todos os usuários para processar por fuso horário
+    const { data: users, error: fetchUsersError } = await supabase
+      .from('profiles')
+      .select('id, timezone');
 
-    console.log(`Executando daily-reset para o dia: ${todaySaoPaulo}. Verificando tarefas de: ${yesterdaySaoPaulo}`);
+    if (fetchUsersError) throw fetchUsersError;
 
-    // 1. Mover tarefas não concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'overdue'
-    // Inclui subtarefas na busca, mas a lógica de movimentação se aplica a todas as tarefas que se encaixam
-    const { data: uncompletedTodayTasks, error: fetchUncompletedError } = await supabase
-      .from('tasks')
-      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
-      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
-      .eq('is_completed', false);
+    for (const user of users || []) {
+      const userId = user.id;
+      const userTimezone = user.timezone || 'America/Sao_Paulo'; // Fallback para São Paulo
 
-    if (fetchUncompletedError) throw fetchUncompletedError;
+      const nowUtc = new Date();
+      const nowInUserTimezone = utcToZonedTime(nowUtc, userTimezone);
+      const todayInUserTimezone = format(nowInUserTimezone, "yyyy-MM-dd", { timeZone: userTimezone });
+      const yesterdayInUserTimezone = format(subDays(nowInUserTimezone, 1), "yyyy-MM-dd", { timeZone: userTimezone });
+      const currentDayOfWeekInUserTimezone = getDay(nowInUserTimezone); // 0 para domingo, 1 para segunda, etc.
+      const currentDayOfMonthInUserTimezone = nowInUserTimezone.getDate().toString();
 
-    const tasksToMoveToOverdue = uncompletedTodayTasks.filter(task => {
-      // Verifica se a tarefa era para ser concluída ontem
-      if (task.due_date && format(parseISO(task.due_date), "yyyy-MM-dd") === yesterdaySaoPaulo) {
-        return true;
-      }
-      // Para tarefas recorrentes, verifica se a última conclusão foi antes de hoje
-      if (task.recurrence_type !== 'none' && task.last_successful_completion_date) {
-        const lastCompletionDate = parseISO(task.last_successful_completion_date);
-        return !isToday(lastCompletionDate); // Se a última conclusão não foi hoje, ela está atrasada para o ciclo atual
-      }
-      return false;
-    });
+      console.log(`[User ${userId}] Executando daily-reset para o dia: ${todayInUserTimezone} no fuso horário ${userTimezone}. Verificando tarefas de: ${yesterdayInUserTimezone}`);
 
-    if (tasksToMoveToOverdue.length > 0) {
-      const { error: updateOverdueError } = await supabase
+      // 1. Mover tarefas não concluídas dos quadros de hoje para 'overdue'
+      const { data: uncompletedTodayTasks, error: fetchUncompletedError } = await supabase
         .from('tasks')
-        .update({ 
-          origin_board: 'overdue', 
-          last_moved_to_overdue_at: nowUtc.toISOString(),
-          is_completed: false // Garante que continue como não concluída
-        })
-        .in('id', tasksToMoveToOverdue.map(task => task.id));
-      if (updateOverdueError) throw updateOverdueError;
-      console.log(`Movidas ${tasksToMoveToOverdue.length} tarefas para 'overdue'.`);
-    }
+        .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, current_board, parent_task_id')
+        .eq('user_id', userId)
+        .in('current_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
+        .eq('is_completed', false);
 
-    // 2. Mover tarefas concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'completed'
-    // Inclui subtarefas na busca
-    const { data: completedTodayTasks, error: fetchCompletedError } = await supabase
-      .from('tasks')
-      .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
-      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
-      .eq('is_completed', true);
+      if (fetchUncompletedError) throw fetchUncompletedError;
 
-    if (fetchCompletedError) throw fetchCompletedError;
-
-    const tasksToMoveToCompleted = completedTodayTasks.filter(task => {
-      // Verifica se a tarefa foi concluída ontem
-      if (task.last_successful_completion_date && format(parseISO(task.last_successful_completion_date), "yyyy-MM-dd") === yesterdaySaoPaulo) {
-        return true;
-      }
-      return false;
-    });
-
-    if (tasksToMoveToCompleted.length > 0) {
-      const { error: updateCompletedError } = await supabase
-        .from('tasks')
-        .update({ 
-          origin_board: 'completed', 
-          completed_at: nowUtc.toISOString() 
-        })
-        .in('id', tasksToMoveToCompleted.map(task => task.id));
-      if (updateCompletedError) throw updateCompletedError;
-      console.log(`Movidas ${tasksToMoveToCompleted.length} tarefas para 'completed'.`);
-    }
-
-    // 3. Resetar o status 'is_completed' para tarefas recorrentes que são devidas hoje
-    // Inclui subtarefas na busca
-    const { data: recurrentTasks, error: fetchRecurrentError } = await supabase
-      .from('tasks')
-      .select('id, recurrence_type, recurrence_details, is_completed, last_successful_completion_date, parent_task_id')
-      .neq('recurrence_type', 'none');
-
-    if (fetchRecurrentError) throw fetchRecurrentError;
-
-    const tasksToResetCompletion = recurrentTasks.filter(task => {
-      const currentDayOfWeek = nowSaoPaulo.getDay(); // 0 (Domingo) a 6 (Sábado)
-      const currentDayOfMonth = nowSaoPaulo.getDate().toString();
-
-      let shouldReset = false;
-
-      if (task.recurrence_type === 'daily') {
-        shouldReset = true;
-      } else if (task.recurrence_type === 'weekly' && task.recurrence_details) {
-        const days = task.recurrence_details.split(',');
-        const dayMap: { [key: string]: number } = {
-          "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-          "Thursday": 4, "Friday": 5, "Saturday": 6
-        };
-        shouldReset = days.some(day => dayMap[day] === currentDayOfWeek);
-      } else if (task.recurrence_type === 'monthly' && task.recurrence_details) {
-        shouldReset = task.recurrence_details === currentDayOfMonth;
-      }
-
-      // Se deve resetar E a tarefa está atualmente marcada como concluída para o período anterior
-      // ou se a última conclusão foi antes de hoje
-      if (shouldReset && task.last_successful_completion_date) {
-        const lastCompletionDate = parseISO(task.last_successful_completion_date);
-        return !isToday(lastCompletionDate);
-      } else if (shouldReset && !task.last_successful_completion_date) {
-        return true; // Se deve resetar e nunca foi concluída, garantir que esteja como false
-      }
-      return false;
-    });
-
-    if (tasksToResetCompletion.length > 0) {
-      const { error: resetError } = await supabase
-        .from('tasks')
-        .update({ is_completed: false, origin_board: 'general' }) // Resetar para 'general' ou o board padrão para recorrentes
-        .in('id', tasksToResetCompletion.map(task => task.id));
-      if (resetError) throw resetError;
-      console.log(`Resetadas ${tasksToResetCompletion.length} tarefas recorrentes para 'is_completed: false' e 'general' board.`);
-    }
-
-    // 4. Mover tarefas de 'overdue' para 'general' se a data de vencimento for no futuro ou se for recorrente e não estiver atrasada
-    // Inclui subtarefas na busca
-    const { data: overdueTasks, error: fetchOverdueError } = await supabase
-      .from('tasks')
-      .select('id, due_date, recurrence_type, recurrence_details, origin_board, parent_task_id')
-      .eq('origin_board', 'overdue');
-
-    if (fetchOverdueError) throw fetchOverdueError;
-
-    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-      if (!details) return false;
-      const days = details.split(',');
-      const dayMap: { [key: string]: number } = {
-        "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
-        "Thursday": 4, "Friday": 5, "Saturday": 6
-      };
-      return days.some(day => dayMap[day] === dayIndex);
-    };
-
-    const tasksToMoveFromOverdueToGeneral = overdueTasks.filter(task => {
-      const currentDayOfWeek = nowSaoPaulo.getDay();
-      const currentDayOfMonth = nowSaoPaulo.getDate().toString();
-
-      // Se a tarefa tem uma data de vencimento e essa data é hoje ou no futuro
-      if (task.due_date) {
-        const dueDate = parseISO(task.due_date);
-        if (dueDate >= nowSaoPaulo) { // Comparar com a data atual (sem hora)
+      const tasksToMoveToOverdue = uncompletedTodayTasks.filter(task => {
+        // Verifica se a tarefa era para ser concluída ontem
+        if (task.due_date && format(parseISO(task.due_date), "yyyy-MM-dd") === yesterdayInUserTimezone) {
           return true;
         }
-      }
-      // Se a tarefa é recorrente e é devida hoje (ou no futuro, se aplicável)
-      if (task.recurrence_type !== 'none') {
-        if (task.recurrence_type === 'daily') return true;
-        if (task.recurrence_type === 'weekly' && task.recurrence_details && isDayIncluded(task.recurrence_details, currentDayOfWeek)) return true;
-        if (task.recurrence_type === 'monthly' && task.recurrence_details === currentDayOfMonth) return true;
-      }
-      return false;
-    });
+        // Para tarefas recorrentes, verifica se a última conclusão foi antes de hoje
+        if (task.recurrence_type !== 'none' && task.last_successful_completion_date) {
+          const lastCompletionDate = parseISO(task.last_successful_completion_date);
+          return isBefore(lastCompletionDate, startOfDay(nowInUserTimezone)); // Se a última conclusão foi antes do início de hoje
+        }
+        return false;
+      });
 
-    if (tasksToMoveFromOverdueToGeneral.length > 0) {
-      const { error: updateGeneralError } = await supabase
+      if (tasksToMoveToOverdue.length > 0) {
+        const { error: updateOverdueError } = await supabase
+          .from('tasks')
+          .update({ 
+            current_board: 'overdue', 
+            overdue: true, // Marcar como atrasada
+            last_moved_to_overdue_at: nowUtc.toISOString(),
+            is_completed: false // Garante que continue como não concluída
+          })
+          .in('id', tasksToMoveToOverdue.map(task => task.id));
+        if (updateOverdueError) throw updateOverdueError;
+        console.log(`[User ${userId}] Movidas ${tasksToMoveToOverdue.length} tarefas para 'overdue'.`);
+      }
+
+      // 2. Mover tarefas concluídas dos quadros de hoje para 'completed'
+      const { data: completedTodayTasks, error: fetchCompletedError } = await supabase
         .from('tasks')
-        .update({ origin_board: 'general' })
-        .in('id', tasksToMoveFromOverdueToGeneral.map(task => task.id));
-      if (updateGeneralError) throw updateGeneralError;
-      console.log(`Movidas ${tasksToMoveFromOverdueToGeneral.length} tarefas de 'overdue' para 'general'.`);
+        .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, current_board, parent_task_id')
+        .eq('user_id', userId)
+        .in('current_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
+        .eq('is_completed', true);
+
+      if (fetchCompletedError) throw fetchCompletedError;
+
+      const tasksToMoveToCompleted = completedTodayTasks.filter(task => {
+        // Verifica se a tarefa foi concluída ontem
+        if (task.last_successful_completion_date && format(parseISO(task.last_successful_completion_date), "yyyy-MM-dd") === yesterdayInUserTimezone) {
+          return true;
+        }
+        return false;
+      });
+
+      if (tasksToMoveToCompleted.length > 0) {
+        const { error: updateCompletedError } = await supabase
+          .from('tasks')
+          .update({ 
+            current_board: 'completed', 
+            completed_at: nowUtc.toISOString() 
+          })
+          .in('id', tasksToMoveToCompleted.map(task => task.id));
+        if (updateCompletedError) throw updateCompletedError;
+        console.log(`[User ${userId}] Movidas ${tasksToMoveToCompleted.length} tarefas para 'completed'.`);
+      }
+
+      // 3. Resetar o status 'is_completed' e 'overdue' para tarefas recorrentes que são devidas hoje
+      const { data: recurrentTasks, error: fetchRecurrentError } = await supabase
+        .from('tasks')
+        .select('id, recurrence_type, recurrence_details, is_completed, last_successful_completion_date, parent_task_id')
+        .eq('user_id', userId)
+        .neq('recurrence_type', 'none');
+
+      if (fetchRecurrentError) throw fetchRecurrentError;
+
+      const tasksToResetCompletion = recurrentTasks.filter(task => {
+        const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+          if (!details) return false;
+          const days = details.split(',');
+          return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+        };
+
+        let shouldReset = false;
+
+        if (task.recurrence_type === 'daily') {
+          shouldReset = true;
+        } else if (task.recurrence_type === 'weekly' && task.recurrence_details) {
+          shouldReset = isDayIncluded(task.recurrence_details, currentDayOfWeekInUserTimezone);
+        } else if (task.recurrence_type === 'monthly' && task.recurrence_details) {
+          shouldReset = task.recurrence_details === currentDayOfMonthInUserTimezone;
+        }
+
+        // Se deve resetar E a tarefa está atualmente marcada como concluída para o período anterior
+        // ou se a última conclusão foi antes de hoje
+        if (shouldReset && task.last_successful_completion_date) {
+          const lastCompletionDate = parseISO(task.last_successful_completion_date);
+          return isBefore(lastCompletionDate, startOfDay(nowInUserTimezone));
+        } else if (shouldReset && !task.last_successful_completion_date) {
+          return true; // Se deve resetar e nunca foi concluída, garantir que esteja como false
+        }
+        return false;
+      });
+
+      if (tasksToResetCompletion.length > 0) {
+        const { error: resetError } = await supabase
+          .from('tasks')
+          .update({ 
+            is_completed: false, 
+            overdue: false, // Resetar status de atraso
+            current_board: 'general' // Resetar para 'general' ou o board padrão para recorrentes
+          })
+          .in('id', tasksToResetCompletion.map(task => task.id));
+        if (resetError) throw resetError;
+        console.log(`[User ${userId}] Resetadas ${tasksToResetCompletion.length} tarefas recorrentes para 'is_completed: false' e 'general' board.`);
+      }
+
+      // 4. Mover tarefas de 'overdue' para 'general' se a data de vencimento for no futuro ou se for recorrente e for devida hoje
+      const { data: overdueTasks, error: fetchOverdueErrorAgain } = await supabase
+        .from('tasks')
+        .select('id, due_date, recurrence_type, recurrence_details, current_board, parent_task_id')
+        .eq('user_id', userId)
+        .eq('current_board', 'overdue');
+
+      if (fetchOverdueErrorAgain) throw fetchOverdueErrorAgain;
+
+      const tasksToMoveFromOverdueToGeneral = overdueTasks.filter(task => {
+        const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+          if (!details) return false;
+          const days = details.split(',');
+          return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+        };
+
+        // Se a tarefa tem uma data de vencimento e essa data é hoje ou no futuro
+        if (task.due_date) {
+          const dueDate = parseISO(task.due_date);
+          if (isToday(dueDate) || isBefore(startOfDay(nowInUserTimezone), startOfDay(dueDate))) {
+            return true;
+          }
+        }
+        // Se a tarefa é recorrente e é devida hoje (ou no futuro, se aplicável)
+        if (task.recurrence_type !== 'none') {
+          if (task.recurrence_type === 'daily') return true;
+          if (task.recurrence_type === 'weekly' && task.recurrence_details && isDayIncluded(task.recurrence_details, currentDayOfWeekInUserTimezone)) return true;
+          if (task.recurrence_type === 'monthly' && task.recurrence_details === currentDayOfMonthInUserTimezone) return true;
+        }
+        return false;
+      });
+
+      if (tasksToMoveFromOverdueToGeneral.length > 0) {
+        const { error: updateGeneralError } = await supabase
+          .from('tasks')
+          .update({ current_board: 'general', overdue: false }) // Mover para 'general' e remover status de atraso
+          .in('id', tasksToMoveFromOverdueToGeneral.map(task => task.id));
+        if (updateGeneralError) throw updateGeneralError;
+        console.log(`[User ${userId}] Movidas ${tasksToMoveFromOverdueToGeneral.length} tarefas de 'overdue' para 'general'.`);
+      }
     }
 
-
-    return new Response(JSON.stringify({ message: "Daily reset process completed." }), {
+    return new Response(JSON.stringify({ message: "Daily reset process completed for all users." }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2 } from "lucide-react"; // Adicionado Edit, Trash2
+import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2, AlertCircle, Star } from "lucide-react"; // Adicionado Edit, Trash2, AlertCircle, Star
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
@@ -20,6 +20,7 @@ import TaskItem from "@/components/TaskItem";
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import TaskForm from "@/components/TaskForm";
+import { cn } from "@/lib/utils"; // Importar cn
 
 interface GoogleCalendarEvent {
   id: string;
@@ -71,7 +72,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, parent_task_id, created_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at,
       task_tags(
         tags(id, name, color)
       )
@@ -367,7 +368,12 @@ const Planner: React.FC = () => {
               ) : futureMeetings && futureMeetings.length > 0 ? (
                 futureMeetings.map((meeting) => (
                   <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
-                    <p className="text-sm font-medium text-foreground">{meeting.title}</p>
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                      {meeting.title}
+                    </p>
+                    {meeting.description && (
+                      <p className="text-xs text-muted-foreground break-words">{meeting.description}</p>
+                    )}
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <CalendarDays className="h-3 w-3" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
                     </p>
@@ -489,7 +495,7 @@ const Planner: React.FC = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <TaskForm
-                    initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : (selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", selected_tag_ids: [] } as any : undefined)}
+                    initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : (selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", current_board: "general", is_priority: false, selected_tag_ids: [] } as any : undefined)}
                     onTaskSaved={handleTaskAdded}
                     onClose={() => setIsTaskFormOpen(false)}
                     initialOriginBoard="general"

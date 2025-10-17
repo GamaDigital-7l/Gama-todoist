@@ -1,6 +1,7 @@
 export interface Tag {
   id: string;
-  name: string;
+  name:
+ string;
   color: string;
 }
 
@@ -19,6 +20,11 @@ export interface Task {
   recurrence_details?: string | null;
   last_successful_completion_date?: string | null;
   origin_board: OriginBoard; // Novo campo para o quadro de origem
+  current_board: OriginBoard; // Novo campo para o quadro atual da tarefa
+  is_priority: boolean; // Novo campo para indicar se a tarefa é prioritária
+  overdue: boolean; // Novo campo para indicar se a tarefa está atrasada
+  last_notified_at?: string | null; // Novo campo para a última notificação
+  recurrence_time?: string | null; // Novo campo para o horário de recorrência
   created_at: string;
   updated_at: string;
   completed_at?: string | null; // Adicionado para tarefas finalizadas
@@ -35,6 +41,7 @@ export interface TemplateTask {
   description?: string | null;
   recurrence_type: RecurrenceType;
   recurrence_details?: string | null;
+  recurrence_time?: string | null; // Novo campo para o horário de recorrência
   origin_board: TemplateFormOriginBoard; // Restringido para TemplateFormOriginBoard
   created_at: string;
   updated_at: string;
