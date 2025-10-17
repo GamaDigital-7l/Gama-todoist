@@ -196,10 +196,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
               >
                 <Settings className="h-5 w-5" /> Configurações
               </NavLink>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:bg-red-500/10">
-                <LogOut className="mr-2 h-5 w-5" /> Sair
-              </DropdownMenuItem>
+              {/* Removido DropdownMenuSeparator e DropdownMenuItem para 'Sair' aqui */}
+              <div className="mt-auto pt-4 border-t border-sidebar-border">
+                <Button 
+                  onClick={handleLogout} 
+                  className="w-full justify-start text-red-500 hover:bg-red-500/10" 
+                  variant="ghost"
+                >
+                  <LogOut className="mr-2 h-5 w-5" /> Sair
+                </Button>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
