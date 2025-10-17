@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Adicionado useMutation e useQueryClient
 import { supabase } from "@/integrations/supabase/client";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +85,7 @@ const ClientKanbanPage: React.FC = () => {
   const navigate = useNavigate();
   const { session } = useSession();
   const userId = session?.user?.id;
+  const queryClient = useQueryClient(); // Inicializa o queryClient
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthYearRef = format(currentMonth, "yyyy-MM");
@@ -111,6 +112,66 @@ const ClientKanbanPage: React.FC = () => {
   const [editingTask, setEditingTask] = useState<ClientTask | undefined>(undefined);
   const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any | undefined>(undefined);
+
+  // Estados para Drag and Drop
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [draggedFromStatus, setDraggedFromStatus] = useState<ClientTaskStatus | null>(null);
+
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: async ({ taskId, newStatus, newOrderIndex }: { taskId: string; newStatus: ClientTaskStatus; newOrderIndex: number }) => {
+      if (!userId || !clientId) throw new Error("Usuário não autenticado ou cliente não encontrado.");
+      const { error } = await supabase
+        .from("client_tasks")
+        .update({ status: newStatus, order_index: newOrderIndex, updated_at: new Date().toISOString() })
+        .eq("id", taskId)
+        .eq("client_id", clientId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchClientTasks(); // Refetch para atualizar a lista após o drop
+      queryClient.invalidateQueries({ queryKey: ["clientTasks", clientId, userId, monthYearRef] });
+      showSuccess("Status da tarefa atualizado com sucesso!");
+    },
+    onError: (err: any) => {
+      showError("Erro ao atualizar status da tarefa: " + err.message);
+      console.error("Erro ao atualizar status da tarefa:", err);
+    },
+  });
+
+  const handleDragStart = (e: React.DragEvent, taskId: string, currentStatus: ClientTaskStatus) => {
+    setDraggedTaskId(taskId);
+    setDraggedFromStatus(currentStatus);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", taskId); // Necessário para Firefox
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Permite o drop
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStatus: ClientTaskStatus) => {
+    e.preventDefault();
+    if (!draggedTaskId || !draggedFromStatus || draggedFromStatus === targetStatus) {
+      setDraggedTaskId(null);
+      setDraggedFromStatus(null);
+      return;
+    }
+
+    const droppedTaskId = draggedTaskId;
+    const tasksInTargetColumn = clientTasks?.filter(task => task.status === targetStatus) || [];
+    const newOrderIndex = tasksInTargetColumn.length; // Adiciona ao final da coluna
+
+    await updateTaskStatusMutation.mutateAsync({
+      taskId: droppedTaskId,
+      newStatus: targetStatus,
+      newOrderIndex: newOrderIndex,
+    });
+
+    setDraggedTaskId(null);
+    setDraggedFromStatus(null);
+  };
 
   const handleAddTask = (status: ClientTaskStatus) => {
     setEditingTask({
@@ -365,7 +426,12 @@ const ClientKanbanPage: React.FC = () => {
       <div className="flex-1 overflow-x-auto">
         <div className="inline-flex h-full space-x-4 p-1">
           {KANBAN_COLUMNS.map((column) => (
-            <Card key={column.status} className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-lg shadow-md">
+            <Card
+              key={column.status}
+              className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-lg shadow-md"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, column.status)}
+            >
               <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-lg`}>
                 <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
               </CardHeader>
@@ -381,6 +447,7 @@ const ClientKanbanPage: React.FC = () => {
                       task={task}
                       refetchTasks={refetchClientTasks}
                       onEdit={handleEditTask}
+                      onDragStart={handleDragStart} // Passa o manipulador de drag
                     />
                   ))
                 )}

@@ -18,9 +18,10 @@ interface ClientTaskItemProps {
   task: ClientTask;
   refetchTasks: () => void;
   onEdit: (task: ClientTask) => void;
+  onDragStart: (e: React.DragEvent, taskId: string, currentStatus: ClientTask['status']) => void; // Adicionado onDragStart
 }
 
-const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onEdit }) => {
+const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onEdit, onDragStart }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
@@ -90,7 +91,11 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
   });
 
   return (
-    <div className="flex flex-col p-3 bg-background border border-border rounded-md shadow-sm">
+    <div
+      className="flex flex-col p-3 bg-background border border-border rounded-md shadow-sm cursor-grab active:cursor-grabbing"
+      draggable="true"
+      onDragStart={(e) => onDragStart(e, task.id, task.status)} // Passa o ID da tarefa e o status atual
+    >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Checkbox
