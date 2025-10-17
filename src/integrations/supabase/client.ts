@@ -10,9 +10,9 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 // Adicione estes logs para verificar se as variáveis estão sendo carregadas
-console.log("Supabase URL (hardcoded):", supabaseUrl);
-console.log("Supabase Anon Key (hardcoded):", supabaseAnonKey ? "Loaded" : "Not Loaded");
-console.log("VAPID Public Key (from env):", VAPID_PUBLIC_KEY ? "Loaded" : "Not Loaded");
+// console.log("Supabase URL (hardcoded):", supabaseUrl); // Removido console.log
+// console.log("Supabase Anon Key (hardcoded):", supabaseAnonKey ? "Loaded" : "Not Loaded"); // Removido console.log
+// console.log("VAPID Public Key (from env):", VAPID_PUBLIC_KEY ? "Loaded" : "Not Loaded"); // Removido console.log
 
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -60,10 +60,10 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
         throw error;
       }
       showSuccess("Notificação de teste enviada com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta da notificação de teste:", data);
+      // console.log("Resposta da notificação de teste:", data); // Removido console.log
     } catch (err: any) {
       showError("Erro ao enviar notificação de teste: " + err.message);
-      console.error("Erro ao enviar notificação de teste:", err);
+      // console.error("Erro ao enviar notificação de teste:", err); // Removido console.error
     } finally {
       setIsSendingTest(false);
     }
@@ -87,10 +87,10 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
         throw error;
       }
       showSuccess("Brief da manhã enviado com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta do brief da manhã:", data);
+      // console.log("Resposta do brief da manhã:", data); // Removido console.log
     } catch (err: any) {
       showError("Erro ao enviar brief da manhã: " + err.message);
-      console.error("Erro ao enviar brief da manhã:", err);
+      // console.error("Erro ao enviar brief da manhã:", err); // Removido console.error
     } finally {
       setIsSendingDailyBriefTest(false);
     }
@@ -114,10 +114,10 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
         throw error;
       }
       showSuccess("Resumo semanal enviado com sucesso! Verifique seu navegador/celular.");
-      console.log("Resposta do resumo semanal:", data);
+      // console.log("Resposta do resumo semanal:", data); // Removido console.log
     } catch (err: any) {
       showError("Erro ao enviar resumo semanal: " + err.message);
-      console.error("Erro ao enviar resumo semanal:", err);
+      // console.error("Erro ao enviar resumo semanal:", err); // Removido console.error
     } finally {
       setIsSendingWeeklyBriefTest(false);
     }

@@ -52,7 +52,7 @@ const AIChat: React.FC = () => {
       setMessages((prevMessages) => [...prevMessages, aiResponse]);
     } catch (err: any) {
       showError("Erro ao se comunicar com a IA: " + err.message);
-      console.error("Erro na chamada da Edge Function ai-chat:", err);
+      // console.error("Erro na chamada da Edge Function ai-chat:", err); // Removido console.error
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "assistant", content: "Desculpe, não consegui processar sua solicitação no momento." },

@@ -8,6 +8,7 @@ import { PlusCircle, ListTodo } from "lucide-react"; // Removido ImageIcon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes";
+import { showError } from "@/utils/toast"; // Importar showError
 
 interface QuickNoteCreatorProps {
   onNoteCreated: () => void;
@@ -18,7 +19,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  console.log("QuickNoteCreator.tsx userId:", userId); // Log de depuração
+  // console.log("QuickNoteCreator.tsx userId:", userId); // Log de depuração removido
 
   const handleOpenFormWithDefaults = (type: "text" | "checklist") => {
     if (!userId) {

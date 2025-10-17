@@ -55,7 +55,7 @@ const ProfileManagementCard: React.FC<ProfileManagementCardProps> = ({
       onProfileEmailSynced();
     } catch (err: any) {
       showError("Erro ao sincronizar e-mail do perfil: " + err.message);
-      console.error("Erro ao sincronizar e-mail do perfil:", err);
+      // console.error("Erro ao sincronizar e-mail do perfil:", err); // Removido console.error
     } finally {
       setIsUpdatingProfileEmail(false);
     }

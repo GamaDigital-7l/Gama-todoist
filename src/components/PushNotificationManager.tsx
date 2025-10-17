@@ -26,7 +26,7 @@ const PushNotificationManager: React.FC = () => {
   // A lógica de inscrição/desinscrição para notificações push será movida para WebPushToggle.tsx
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
-      console.warn('Service Workers não são suportados neste navegador.');
+      // console.warn('Service Workers não são suportados neste navegador.'); // Removido console.warn
       return;
     }
 
@@ -34,7 +34,7 @@ const PushNotificationManager: React.FC = () => {
     // mas podemos adicionar uma verificação aqui se necessário.
     // Por enquanto, este componente pode ser simplificado ou removido se não tiver outras responsabilidades.
     // Para manter a estrutura, ele apenas loga que está ativo.
-    console.log('PushNotificationManager ativo: Service Worker registrado.');
+    // console.log('PushNotificationManager ativo: Service Worker registrado.'); // Removido console.log
   }, []);
 
   return null; // Este componente não renderiza nada visível

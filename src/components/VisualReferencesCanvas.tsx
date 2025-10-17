@@ -83,7 +83,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
     },
     onError: (err: any) => {
       showError("Erro ao atualizar elemento: " + err.message);
-      console.error("Erro ao atualizar elemento:", err);
+      // console.error("Erro ao atualizar elemento:", err); // Removido console.error
     },
   });
 
@@ -104,7 +104,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
     },
     onError: (err: any) => {
       showError("Erro ao adicionar elemento: " + err.message);
-      console.error("Erro ao adicionar elemento:", err);
+      // console.error("Erro ao adicionar elemento:", err); // Removido console.error
     },
   });
 
@@ -125,7 +125,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
     },
     onError: (err: any) => {
       showError("Erro ao deletar elemento: " + err.message);
-      console.error("Erro ao deletar elemento:", err);
+      // console.error("Erro ao deletar elemento:", err); // Removido console.error
     },
   });
 
@@ -180,7 +180,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       // Caminho de armazenamento atualizado para incluir moodboardId
       const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
-      console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração
+      // console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração removido
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(filePath, blob, {
@@ -212,7 +212,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       showSuccess("Imagem adicionada com sucesso!");
     } catch (err: any) {
       showError("Erro ao adicionar imagem da URL: " + err.message);
-      console.error("Erro ao adicionar imagem da URL:", err);
+      // console.error("Erro ao adicionar imagem da URL:", err); // Removido console.error
     } finally {
       setIsUploading(false);
     }
@@ -229,7 +229,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       // Caminho de armazenamento atualizado para incluir moodboardId
       const filePath = `client_visual_references/${moodboardId}/${userId}/${Date.now()}-${sanitizedFilename}`;
 
-      console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração
+      // console.log("Uploading to bucket:", BUCKET_NAME, "with path:", filePath); // Log de depuração removido
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(filePath, file, {
@@ -259,7 +259,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
       showSuccess("Imagem adicionada com sucesso!");
     } catch (err: any) {
       showError("Erro ao fazer upload da imagem: " + err.message);
-      console.error("Erro ao fazer upload da imagem:", err);
+      // console.error("Erro ao fazer upload da imagem:", err); // Removido console.error
     } finally {
       setIsUploading(false);
     }

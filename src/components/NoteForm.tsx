@@ -62,7 +62,7 @@ const sanitizeFilename = (filename: string) => {
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
   const quillRef = useRef<ReactQuill>(null);
 
-  console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Log de depuração
+  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Log de depuração removido
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -94,7 +94,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       try {
         setChecklistItems(JSON.parse(initialData.content || "[]") as { text: string; completed: boolean }[]);
       } catch (e) {
-        console.error("Erro ao parsear conteúdo da checklist inicial:", e);
+        // console.error("Erro ao parsear conteúdo da checklist inicial:", e); // Removido console.error
         setChecklistItems([]);
       }
     } else if (noteType === "text") {
@@ -173,7 +173,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           showSuccess("Imagem adicionada com sucesso!");
 
         } catch (err: any) {
-          console.error("Erro ao fazer upload da imagem:", err);
+          // console.error("Erro ao fazer upload da imagem:", err); // Removido console.error
           showError("Erro ao adicionar imagem: " + err.message);
           // Remove placeholder if upload fails
           quill.deleteText(range.index, 1);
@@ -205,8 +205,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
-    console.log("NoteForm.tsx - onSubmit: userId:", userId); // Log de depuração
-    console.log("NoteForm.tsx - onSubmit: initialData:", initialData); // Log de depuração
+    // console.log("NoteForm.tsx - onSubmit: userId:", userId); // Log de depuração removido
+    // console.log("NoteForm.tsx - onSubmit: initialData:", initialData); // Log de depuração removido
 
     if (!userId) {
       showError("Usuário não autenticado.");
@@ -284,7 +284,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       onClose();
     } catch (err: any) {
       showError("Erro ao salvar nota: " + err.message);
-      console.error("Erro ao salvar nota:", err);
+      // console.error("Erro ao salvar nota:", err); // Removido console.error
     }
   };
 

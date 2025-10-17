@@ -52,7 +52,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     },
     onError: (err: any) => {
       showError("Erro ao atualizar nota: " + err.message);
-      console.error("Erro ao atualizar nota:", err);
+      // console.error("Erro ao atualizar nota:", err); // Removido console.error
     },
   });
 
@@ -77,12 +77,12 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     },
     onError: (err: any) => {
       showError("Erro ao excluir nota permanentemente: " + err.message);
-      console.error("Erro ao excluir nota permanentemente:", err);
+      // console.error("Erro ao excluir nota permanentemente:", err); // Removido console.error
     },
   });
 
   const handleEditNote = (noteToEdit: Note) => {
-    console.log("Notes.tsx - handleEditNote: Editing note with ID:", noteToEdit.id, "and object:", noteToEdit);
+    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", noteToEdit.id, "and object:", noteToEdit); // Removido console.log
     setEditingNote(noteToEdit);
     setIsFormOpen(true);
   };
@@ -113,7 +113,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         await updateNoteMutation.mutateAsync({ content: JSON.stringify(currentContent) });
       }
     } catch (err) {
-      console.error("Erro ao atualizar item da checklist:", err);
+      // console.error("Erro ao atualizar item da checklist:", err); // Removido console.error
       showError("Erro ao atualizar item da checklist.");
     }
   };
@@ -140,7 +140,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
           </ul>
         );
       } catch (e) {
-        console.error("Erro ao parsear conteúdo da checklist:", e);
+        // console.error("Erro ao parsear conteúdo da checklist:", e); // Removido console.error
         return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
       }
     }

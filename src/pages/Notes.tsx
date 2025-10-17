@@ -104,7 +104,7 @@ const Notes: React.FC = () => {
   const [isTagFormOpen, setIsTagFormOpen] = useState(false);
 
   const handleEditNote = (note: Note) => {
-    console.log("Notes.tsx - handleEditNote: Editing note with ID:", note.id, "and object:", note);
+    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", note.id, "and object:", note); // Removido console.log
     setEditingNote(note);
     setIsFormOpen(true);
   };
@@ -134,7 +134,7 @@ const Notes: React.FC = () => {
           contentText = checklistItems.map(item => item.text).join(" ");
         }
       } catch (e) {
-        console.error("Erro ao parsear conteúdo da checklist:", e);
+        // console.error("Erro ao parsear conteúdo da checklist:", e); // Removido console.error
       }
     }
 

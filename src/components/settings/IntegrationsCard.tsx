@@ -44,7 +44,7 @@ const fetchGoogleCalendars = async (accessToken: string): Promise<GoogleCalendar
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Erro ao buscar calendários do Google:", errorData);
+    // console.error("Erro ao buscar calendários do Google:", errorData); // Removido console.error
     throw new Error("Falha ao buscar calendários do Google.");
   }
 
@@ -93,7 +93,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
           .eq("id", userId)
           .single();
         if (error && error.code !== 'PGRST116') {
-          console.error("Erro ao carregar google_calendar_id:", error);
+          // console.error("Erro ao carregar google_calendar_id:", error); // Removido console.error
         } else if (profileData) {
           setSelectedCalendarId(profileData.google_calendar_id);
         }
@@ -146,7 +146,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
       setSelectedCalendarId(null);
     } catch (err: any) {
       showError("Erro ao desconectar Google Calendar: " + err.message);
-      console.error("Erro ao desconectar Google Calendar:", err);
+      // console.error("Erro ao desconectar Google Calendar:", err); // Removido console.error
     }
   };
 
@@ -172,7 +172,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
       showSuccess("Eventos do Google Calendar sincronizados!");
     } catch (err: any) {
       showError("Erro ao salvar seleção do calendário ou sincronizar eventos: " + err.message);
-      console.error("Erro ao salvar seleção do calendário ou sincronizar eventos:", err);
+      // console.error("Erro ao salvar seleção do calendário ou sincronizar eventos:", err); // Removido console.error
     } finally {
       setIsSavingCalendar(false);
     }
@@ -231,7 +231,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                   ) : (
                     <LinkIcon className="mr-2 h-4 w-4" />
                   )}
-                  {isSavingCalendar ? "Salvando e Sincronizando..." : "Salvar Calendário e Sincronizar"}
+                  {isSavingCalendar ? "Salvar Calendário e Sincronizar..." : "Salvar Calendário e Sincronizar"}
                 </Button>
                 <Button
                   type="button"

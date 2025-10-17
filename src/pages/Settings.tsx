@@ -67,7 +67,7 @@ const Settings: React.FC = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Erro ao verificar status do Google Calendar ou e-mail do perfil:", profileError);
+      // console.error("Erro ao verificar status do Google Calendar ou e-mail do perfil:", profileError); // Removido console.error
     } else if (profileData) {
       setIsGoogleConnected(!!profileData.google_access_token);
       // No need to update form.setValue for email here, as it's handled by ProfileManagementCard
@@ -118,7 +118,7 @@ const Settings: React.FC = () => {
       }
     } catch (error: any) {
       showError("Erro ao salvar configurações: " + error.message);
-      console.error("Erro ao salvar configurações:", error);
+      // console.error("Erro ao salvar configurações:", error); // Removido console.error
     }
   };
 
