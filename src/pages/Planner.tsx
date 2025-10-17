@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast"; // Importado showSuccess e showError
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm";
@@ -37,7 +37,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, created_at")
+    .select("id, user_id, title, description, date, start_time, end_time, location, created_at, updated_at") // Added user_id, updated_at
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -51,7 +51,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location")
+    .select("id, user_id, title, description, date, start_time, end_time, location, created_at, updated_at") // Added user_id, created_at, updated_at
     .eq("user_id", userId)
     .gte("date", today) // Apenas reuniões a partir de hoje
     .order("date", { ascending: true })
@@ -413,7 +413,7 @@ const Planner: React.FC = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
-                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined)}
+                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues & { id?: string } : undefined)} // Adjusted type
                     onMeetingSaved={handleMeetingSaved}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />

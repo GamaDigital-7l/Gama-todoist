@@ -31,7 +31,7 @@ const meetingSchema = z.object({
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  initialData?: (MeetingFormValues & { id: string }); // Para edição, o ID é necessário
+  initialData?: (MeetingFormValues & { id?: string }); // Para edição, o ID é necessário, mas opcional para criação
   onMeetingSaved: () => void;
   onClose: () => void;
 }

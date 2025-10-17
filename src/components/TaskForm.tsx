@@ -383,7 +383,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             ))}
           </div>
           {form.formState.errors.recurrence_rule && ( // Renamed
-            <p className className="text-red-500 text-sm mt-1">
+            <p className="text-red-500 text-sm mt-1">
               {form.formState.errors.recurrence_rule.message}
             </p>
           )}
