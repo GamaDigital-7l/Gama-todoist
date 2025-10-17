@@ -84,6 +84,8 @@ const Notes: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
+  console.log("Notes.tsx userId:", userId); // Log de depuração
+
   const { data: allNotes, isLoading, error, refetch } = useQuery<Note[], Error>({
     queryKey: ["notes", userId],
     queryFn: () => fetchNotes(userId!),
@@ -200,6 +202,7 @@ const Notes: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 bg-input border-border text-foreground focus-visible:ring-ring"
+            disabled={!userId} // Desabilitar se não houver userId
           />
         </div>
         <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
@@ -207,6 +210,7 @@ const Notes: React.FC = () => {
             <Button
               variant="outline"
               className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+              disabled={!userId} // Desabilitar se não houver userId
             >
               <TagIcon className="h-4 w-4" />
               {selectedFilterTagIds.length > 0 ? (

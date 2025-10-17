@@ -18,7 +18,13 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
+  console.log("QuickNoteCreator.tsx userId:", userId); // Log de depuração
+
   const handleOpenFormWithDefaults = (type: "text" | "checklist") => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para criar notas.");
+      return;
+    }
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
@@ -45,9 +51,10 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
             className="flex-grow bg-input border-none text-foreground focus-visible:ring-0"
             onClick={() => handleOpenFormWithDefaults("text")}
             readOnly
+            disabled={!userId} // Desabilitar se não houver userId
           />
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("checklist")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("checklist")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>

@@ -87,6 +87,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const isPinned = form.watch("pinned");
 
+  console.log("NoteForm.tsx userId (inside component):", userId); // Log de depuração
+
   useEffect(() => {
     if (noteType === "checklist" && initialData?.type === "checklist") {
       try {
@@ -203,7 +205,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
-    console.log("NoteForm userId before Supabase call:", userId); // Log de depuração
+    console.log("NoteForm userId before Supabase call (onSubmit):", userId); // Log de depuração
 
     if (!userId) {
       showError("Usuário não autenticado.");
@@ -293,6 +295,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           {...form.register("title")}
           placeholder="Título"
           className="w-full bg-transparent border-none text-foreground text-lg font-semibold focus-visible:ring-0 px-0 mb-2"
+          disabled={!userId} // Desabilitar se não houver userId
         />
 
         {noteType === "text" ? (
@@ -305,7 +308,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            readOnly={false}
+            readOnly={!userId} // Desabilitar se não houver userId
             className="bg-transparent text-foreground"
           />
         ) : (
@@ -318,12 +321,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                     setChecklistItems(prev => prev.map((i, idx) => idx === index ? { ...i, completed: checked as boolean } : i));
                   }}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  disabled={!userId} // Desabilitar se não houver userId
                 />
                 <Input
                   value={item.text}
                   onChange={(e) => updateChecklistItem(index, e.target.value)}
                   placeholder={`Item ${index + 1}`}
                   className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0"
+                  disabled={!userId} // Desabilitar se não houver userId
                 />
                 <Button
                   type="button"
@@ -331,13 +336,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   size="icon"
                   onClick={() => removeChecklistItem(index)}
                   className="text-red-500 hover:bg-red-500/10"
+                  disabled={!userId} // Desabilitar se não houver userId
                 >
                   <XCircle className="h-4 w-4" />
                   <span className="sr-only">Remover Item</span>
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="ghost" onClick={addChecklistItem} className="w-full justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button type="button" variant="ghost" onClick={addChecklistItem} className="w-full justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item
             </Button>
           </div>
@@ -349,6 +355,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           size="icon"
           onClick={handlePinToggle}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+          disabled={!userId} // Desabilitar se não houver userId
         >
           {isPinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
           <span className="sr-only">{isPinned ? "Desafixar" : "Fixar"}</span>
@@ -359,7 +366,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         <div className="flex items-center gap-1">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Adicionar Lembrete</span>
               </Button>
@@ -386,7 +393,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
                 <TagIcon className="h-5 w-5" />
                 <span className="sr-only">Adicionar Rótulo</span>
               </Button>
@@ -399,13 +406,13 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
             </PopoverContent>
           </Popover>
 
-          <Button variant="ghost" size="icon" onClick={() => form.setValue("type", noteType === "text" ? "checklist" : "text")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+          <Button variant="ghost" size="icon" onClick={() => form.setValue("type", noteType === "text" ? "checklist" : "text")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
             {noteType === "text" ? <ListTodo className="h-5 w-5" /> : <TextCursorInput className="h-5 w-5" />}
             <span className="sr-only">{noteType === "text" ? "Mudar para Checklist" : "Mudar para Texto"}</span>
           </Button>
         </div>
 
-        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={!userId}>
           Salvar e Fechar
         </Button>
       </div>
