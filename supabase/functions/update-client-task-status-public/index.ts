@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format } from "https://esm.sh/date-fns@2.30.0";
+import { format, parseISO } from "https://esm.sh/date-fns@2.30.0";
 import { utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1";
-import { ptBR } from "https://esm.sh/date-fns/locale/ptBR@2.30.0"; // Importação corrigida para ptBR
+import { ptBR } from "https://esm.sh/date-fns@2.30.0/locale/ptBR"; // Caminho de importação corrigido
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
