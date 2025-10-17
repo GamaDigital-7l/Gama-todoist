@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client"; // Caminho de importação corrigido
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
@@ -20,7 +20,7 @@ import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import ClientMoodboardPage from "./pages/ClientMoodboardPage";
-// import ClientKanbanPage from "./pages/ClientKanbanPage"; // Removido o import da nova página
+import ClientKanbanPage from "./pages/ClientKanbanPage"; // Descomentado o import
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -98,7 +98,8 @@ const App = () => (
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetails />} />
                 <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} />
-                {/* <Route path="/clients/:clientId/kanban" element={<ClientKanbanPage />} /> */} {/* Rota removida */}
+                {/* A rota ClientKanbanPage agora é renderizada dentro de ClientDetails via Tabs,
+                    então não precisamos de uma rota de nível superior aqui para ela. */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/results" element={<Results />} />

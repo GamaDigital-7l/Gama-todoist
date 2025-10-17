@@ -10,12 +10,12 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientForm from "@/components/ClientForm";
 import ClientCard from "@/components/ClientCard";
-import { Client, ClientType, ClientTask } from "@/types/client"; // Importar ClientTask
+import { Client, ClientType, ClientTask } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom"; // Importar Link para navegação
-import { format, isSameMonth, endOfMonth, differenceInDays } from "date-fns"; // Importar funções de data
-import { ptBR } from "date-fns/locale"; // Importar locale para formatação de data
+import { Link } from "react-router-dom";
+import { format, isSameMonth, endOfMonth, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   let query = supabase
@@ -31,7 +31,6 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
   return data || [];
 };
 
-// Nova função para buscar todas as tarefas de clientes para o mês atual
 const fetchClientTasksForCurrentMonth = async (userId: string, monthYearRef: string): Promise<ClientTask[]> => {
   const { data, error } = await supabase
     .from("client_tasks")
@@ -319,7 +318,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}/kanban`}> {/* Link para o Kanban */}
+                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}> {/* Link para o Dashboard do Cliente */}
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -336,7 +335,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}/kanban`}>
+                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -353,7 +352,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}/kanban`}>
+                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -370,7 +369,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}/kanban`}>
+                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}

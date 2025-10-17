@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Edit, Trash2, PlusCircle, LayoutDashboard, KanbanSquare } from "lucide-react"; // Adicionado KanbanSquare
+import { ArrowLeft, Loader2, Edit, Trash2, PlusCircle, LayoutDashboard, KanbanSquare } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, Moodboard } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -15,8 +15,9 @@ import ClientForm from "@/components/ClientForm";
 import MoodboardForm from "@/components/MoodboardForm";
 import MoodboardCard from "@/components/MoodboardCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ClientKanbanPage from "./ClientKanbanPage"; // Importar ClientKanbanPage
-import { format, parseISO } from "date-fns"; // Importar format e parseISO
+import ClientKanbanPage from "./ClientKanbanPage";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale"; // Importação adicionada
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
   const { data, error } = await supabase
@@ -224,14 +225,14 @@ const ClientDetails: React.FC = () => {
 
       {/* Tabs para Dashboard, Moodboards e Kanban */}
       <Tabs defaultValue="dashboard" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border rounded-md mb-4"> {/* Alterado grid-cols-2 para grid-cols-3 */}
+        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border rounded-md mb-4">
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
           </TabsTrigger>
           <TabsTrigger value="moodboards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <PlusCircle className="mr-2 h-4 w-4" /> Moodboards
           </TabsTrigger>
-          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md"> {/* Nova aba Kanban */}
+          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <KanbanSquare className="mr-2 h-4 w-4" /> Kanban
           </TabsTrigger>
         </TabsList>
@@ -305,8 +306,7 @@ const ClientDetails: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="kanban" className="flex-1 flex flex-col"> {/* Conteúdo da nova aba Kanban */}
-          {/* Reutiliza o ClientKanbanPage, passando o clientId */}
+        <TabsContent value="kanban" className="flex-1 flex flex-col">
           {id && <ClientKanbanPage />}
         </TabsContent>
       </Tabs>

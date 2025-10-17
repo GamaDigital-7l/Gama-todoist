@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react"; // Removido Eye
 import { Client } from "@/types/client";
 import { Link } from "react-router-dom";
 
@@ -28,11 +28,11 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete }) => 
           <CardTitle className="text-xl font-semibold text-foreground">{client.name}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => onEdit(client)} className="text-blue-500 hover:bg-blue-500/10">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(client); }} className="text-blue-500 hover:bg-blue-500/10">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Editar Cliente</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(client.id)} className="text-red-500 hover:bg-red-500/10">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onDelete(client.id); }} className="text-red-500 hover:bg-red-500/10">
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Deletar Cliente</span>
           </Button>
@@ -42,11 +42,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete }) => 
         {client.description && (
           <CardDescription className="text-muted-foreground mb-3">{client.description}</CardDescription>
         )}
-        <Link to={`/clients/${client.id}`} className="w-full"> {/* Link atualizado para a página de detalhes */}
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            <Eye className="mr-2 h-4 w-4" /> Ver Dashboard
-          </Button>
-        </Link>
+        {/* O botão "Ver Dashboard" foi removido. O card inteiro será clicável através do Link no componente pai. */}
       </CardContent>
     </Card>
   );
