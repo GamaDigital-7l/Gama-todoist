@@ -11,7 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
-import { Client } from "@/types/client";
+import { Client, ClientType } from "@/types/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const clientSchema = z.object({
   name: z.string().min(1, "O nome do cliente é obrigatório."),
@@ -22,6 +29,11 @@ const clientSchema = z.object({
   logo_url: z.string().url("URL da logo inválida.").optional().or(z.literal("")),
   description: z.string().optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FFFFFF"),
+  type: z.enum(["fixed", "freela", "agency"]).default("freela"), // Novo campo
+  monthly_delivery_goal: z.preprocess( // Novo campo
+    (val) => (val === "" ? 0 : Number(val)),
+    z.number().int().min(0, "A meta deve ser um número positivo.").default(0),
+  ),
 });
 
 export type ClientFormValues = z.infer<typeof clientSchema>;
@@ -42,7 +54,7 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const BUCKET_NAME = "client-visual-references"; // Define o nome do bucket como uma constante
+const BUCKET_NAME = "client-visual-references";
 
 const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onClose }) => {
   const { session } = useSession();
@@ -60,6 +72,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
       logo_url: "",
       description: "",
       color: "#FFFFFF",
+      type: "freela", // Default para novo cliente
+      monthly_delivery_goal: 0, // Default para novo cliente
     },
   });
 
@@ -78,7 +92,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         const filePath = `client_logos/${userId}/${Date.now()}-${sanitizedFilename}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(BUCKET_NAME) // Usando a constante do bucket
+          .from(BUCKET_NAME)
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false,
@@ -100,6 +114,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         logo_url: finalLogoUrl,
         description: values.description || null,
         color: values.color,
+        type: values.type, // Novo campo
+        monthly_delivery_goal: values.monthly_delivery_goal, // Novo campo
         updated_at: new Date().toISOString(),
       };
 
@@ -143,6 +159,42 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         {form.formState.errors.name && (
           <p className="text-red-500 text-sm mt-1">
             {form.formState.errors.name.message}
+          </p>
+        )}
+      </div>
+      <div>
+        <Label htmlFor="type" className="text-foreground">Tipo de Cliente</Label>
+        <Select
+          onValueChange={(value: ClientType) => form.setValue("type", value)}
+          value={form.watch("type")}
+        >
+          <SelectTrigger id="type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Selecionar tipo" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="fixed">Fixo</SelectItem>
+            <SelectItem value="freela">Freela</SelectItem>
+            <SelectItem value="agency">Agência</SelectItem>
+          </SelectContent>
+        </Select>
+        {form.formState.errors.type && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.type.message}
+          </p>
+        )}
+      </div>
+      <div>
+        <Label htmlFor="monthly_delivery_goal" className="text-foreground">Meta de Entregas Mensais</Label>
+        <Input
+          id="monthly_delivery_goal"
+          type="number"
+          {...form.register("monthly_delivery_goal", { valueAsNumber: true })}
+          placeholder="Ex: 8"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.monthly_delivery_goal && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.monthly_delivery_goal.message}
           </p>
         )}
       </div>

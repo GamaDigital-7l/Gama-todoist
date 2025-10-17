@@ -1,3 +1,6 @@
+export type ClientType = 'fixed' | 'freela' | 'agency';
+export type ClientTaskStatus = 'backlog' | 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published';
+
 export interface Client {
   id: string;
   user_id: string;
@@ -5,6 +8,8 @@ export interface Client {
   logo_url?: string | null;
   description?: string | null;
   color: string;
+  type: ClientType; // Novo campo
+  monthly_delivery_goal: number; // Novo campo
   created_at: string;
   updated_at: string;
 }
@@ -22,10 +27,10 @@ export interface Moodboard {
 
 export interface VisualReferenceElement {
   id: string;
-  moodboard_id: string; // Alterado de client_id
+  moodboard_id: string;
   user_id: string;
   element_type: 'image' | 'text';
-  content: string; // URL para imagem, texto real para nota de texto
+  content: string;
   x: number;
   y: number;
   width?: number | null;
@@ -39,6 +44,40 @@ export interface VisualReferenceElement {
     backgroundColor?: string;
     [key: string]: any;
   } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientTask {
+  id: string;
+  client_id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  month_year_reference: string; // Ex: "2025-10"
+  status: ClientTaskStatus;
+  due_date?: string | null; // ISO string
+  is_completed: boolean;
+  completed_at?: string | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  tags?: { id: string; name: string; color: string }[]; // Para carregar tags associadas
+}
+
+export interface ClientTaskGenerationPattern {
+  week: number; // 1, 2, 3, 4
+  day_of_week: string; // "Monday", "Tuesday", etc.
+  count: number; // Quantidade de tarefas a gerar
+}
+
+export interface ClientTaskGenerationTemplate {
+  id: string;
+  client_id: string;
+  user_id: string;
+  template_name: string;
+  delivery_count: number;
+  generation_pattern: ClientTaskGenerationPattern[]; // JSONB
   created_at: string;
   updated_at: string;
 }

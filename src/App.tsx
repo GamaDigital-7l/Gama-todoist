@@ -20,7 +20,8 @@ import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import ClientMoodboardPage from "./pages/ClientMoodboardPage";
-import Results from "./pages/Results"; // Importar a nova página de Resultados
+import ClientKanbanPage from "./pages/ClientKanbanPage"; // Importar a nova página
+import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -97,9 +98,10 @@ const App = () => (
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetails />} />
                 <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} />
+                <Route path="/clients/:clientId/kanban" element={<ClientKanbanPage />} /> {/* Nova rota para Kanban */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/results" element={<Results />} /> {/* Nova rota para Resultados */}
+                <Route path="/results" element={<Results />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
