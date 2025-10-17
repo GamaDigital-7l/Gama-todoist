@@ -144,6 +144,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
 
         try {
           const sanitizedFilename = sanitizeFilename(file.name);
+          // O caminho do arquivo agora inclui o userId como uma pasta para RLS
           const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
 
           const { data: uploadData, error: uploadError } = await supabase.storage
