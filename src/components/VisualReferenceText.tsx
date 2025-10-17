@@ -85,7 +85,7 @@ const VisualReferenceText: React.FC<VisualReferenceTextProps> = ({
       onDoubleClick={handleDoubleClick}
     >
       <div
-        className="relative w-full h-full p-2 bg-yellow-100 dark:bg-yellow-800 text-gray-900 dark:text-gray-100 rounded-md shadow-md flex items-center justify-center group"
+        className="relative w-full h-full p-2 rounded-md shadow-md flex items-center justify-center group"
         style={{
           backgroundColor: metadata?.backgroundColor || (isSelected ? "hsl(var(--accent))" : "hsl(var(--secondary))"),
           color: metadata?.fontColor || "hsl(var(--foreground))",
