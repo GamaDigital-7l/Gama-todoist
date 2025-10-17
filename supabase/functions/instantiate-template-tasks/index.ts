@@ -43,7 +43,7 @@ serve(async (req) => {
         title,
         description,
         recurrence_type,
-        recurrence_details,
+        recurrence_rule,
         origin_board,
         template_task_tags (tag_id)
       `);
@@ -77,11 +77,11 @@ serve(async (req) => {
 
       if (template.recurrence_type === 'daily') {
         shouldInstantiate = true;
-      } else if (template.recurrence_type === 'weekly' && template.recurrence_details) {
-        const days = template.recurrence_details.split(',');
+      } else if (template.recurrence_type === 'weekly' && template.recurrence_rule) {
+        const days = template.recurrence_rule.split(',');
         shouldInstantiate = days.some(day => DAYS_OF_WEEK_MAP[day] === currentDayOfWeekSaoPaulo);
-      } else if (template.recurrence_type === 'monthly' && template.recurrence_details) {
-        shouldInstantiate = template.recurrence_details === currentDayOfMonthSaoPaulo;
+      } else if (template.recurrence_type === 'monthly' && template.recurrence_rule) {
+        shouldInstantiate = template.recurrence_rule === currentDayOfMonthSaoPaulo;
       }
 
       if (shouldInstantiate) {
@@ -93,11 +93,14 @@ serve(async (req) => {
           time: null, // Tarefas padrão não têm horário predefinido, pode ser adicionado manualmente
           is_completed: false,
           recurrence_type: 'none', // A tarefa instanciada não é recorrente por si só
-          recurrence_details: null,
+          recurrence_rule: null,
           origin_board: template.origin_board,
           created_at: nowUtc.toISOString(),
           updated_at: nowUtc.toISOString(),
           parent_task_id: null, // Tarefas padrão não geram subtarefas diretamente
+          current_board: template.origin_board, // Initialize current_board
+          is_priority: false, // Default value
+          overdue: false, // Default value
         });
       }
     }

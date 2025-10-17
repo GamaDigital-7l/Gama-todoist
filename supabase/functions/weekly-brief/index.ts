@@ -134,7 +134,7 @@ serve(async (req) => {
       }
 
       const completedTasks = tasks?.filter(task => task.is_completed && task.completed_at && parseISO(task.completed_at) >= parseISO(oneWeekAgoSaoPaulo)) || [];
-      const overdueTasks = tasks?.filter(task => task.origin_board === 'overdue' && task.due_date && parseISO(task.due_date) < nowSaoPaulo && !task.is_completed) || [];
+      const overdueTasks = tasks?.filter(task => task.origin_board === 'atrasadas' && task.due_date && parseISO(task.due_date) < nowSaoPaulo && !task.is_completed) || [];
       const totalTasksCreated = tasks?.length || 0;
 
       let aiClient;

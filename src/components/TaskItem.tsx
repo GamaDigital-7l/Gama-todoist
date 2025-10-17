@@ -57,7 +57,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
         completedAt = new Date().toISOString();
         lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
         if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
+          newOriginBoard = "concluidas"; // Mover para o quadro de finalizadas se não for recorrente
         }
       } else { // Se a tarefa está sendo desmarcada
         completedAt = null;
@@ -107,8 +107,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       // Invalidação de cache mais granular
       queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
       queryClient.invalidateQueries({ queryKey: ["userProfile", userId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.origin_board, userId] }); // Invalida o board de origem
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "completed", userId] }); // Invalida o board de destino
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "concluidas" : task.origin_board, userId] }); // Invalida o board de origem
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "concluidas", userId] }); // Invalida o board de destino
       queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
       refetchTasks(); // Refetch local para atualizar a lista
     },
@@ -157,10 +157,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       case "daily":
         return "Recorre Diariamente";
       case "weekly":
-        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        const days = task.recurrence_rule?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
         return `Recorre Semanalmente nos dias: ${days}`;
       case "monthly":
-        return `Recorre Mensalmente no dia ${task.recurrence_details}`;
+        return `Recorre Mensalmente no dia ${task.recurrence_rule}`;
       case "none":
       default:
         return null;
@@ -191,7 +191,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 level === 0 ? "text-base" : "text-sm" // Texto menor para subtarefas
               )}
             >
-              {task.origin_board === 'overdue' && (
+              {task.origin_board === 'atrasadas' && (
                 <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 icon-glow" />
               )}
               {task.title}

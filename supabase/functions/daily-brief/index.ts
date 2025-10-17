@@ -126,7 +126,7 @@ serve(async (req) => {
     } else {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
-        .select("title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date")
+        .select("title, description, due_date, time, recurrence_type, recurrence_rule, is_completed, last_successful_completion_date")
         .eq("user_id", userId)
         .or(`due_date.eq.${todaySaoPaulo},recurrence_type.neq.none`);
 
@@ -135,9 +135,9 @@ serve(async (req) => {
         throw tasksError;
       }
 
-      const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
-        if (!details) return false;
-        const days = details.split(',');
+      const isDayIncluded = (rule: string | null | undefined, dayIndex: number) => {
+        if (!rule) return false;
+        const days = rule.split(',');
         return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
       };
 
@@ -148,13 +148,13 @@ serve(async (req) => {
           if (task.recurrence_type === "daily") {
             isTaskDueToday = true;
           }
-          if (task.recurrence_type === "weekly" && task.recurrence_details) {
-            if (isDayIncluded(task.recurrence_details, currentDayOfWeekSaoPaulo)) {
+          if (task.recurrence_type === "weekly" && task.recurrence_rule) {
+            if (isDayIncluded(task.recurrence_rule, currentDayOfWeekSaoPaulo)) {
               isTaskDueToday = true;
             }
           }
-          if (task.recurrence_type === "monthly" && task.recurrence_details) {
-            if (parseInt(task.recurrence_details) === nowSaoPaulo.getDate()) {
+          if (task.recurrence_type === "monthly" && task.recurrence_rule) {
+            if (parseInt(task.recurrence_rule) === nowSaoPaulo.getDate()) {
               isTaskDueToday = true;
             }
           }

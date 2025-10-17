@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfMonth, startOfMonth, endOfMonth
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -57,7 +57,7 @@ const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Prom
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -80,7 +80,7 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -103,14 +103,14 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
     `)
     .eq("user_id", userId)
-    .eq("origin_board", "completed")
+    .eq("origin_board", "concluidas")
     .order("completed_at", { ascending: false });
   if (error) {
     throw error;
@@ -126,7 +126,7 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -194,37 +194,37 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: todayPriorityTasks, isLoading: isLoadingTodayPriority, error: errorTodayPriority, refetch: refetchTodayPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "today_priority", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "today_priority"),
+    queryKey: ["dashboardTasks", "hoje-prioridade", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "hoje-prioridade"),
     enabled: !!userId,
   });
 
   const { data: todayNoPriorityTasks, isLoading: isLoadingTodayNoPriority, error: errorTodayNoPriority, refetch: refetchTodayNoPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "today_no_priority", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "today_no_priority"),
+    queryKey: ["dashboardTasks", "hoje-sem-prioridade", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "hoje-sem-prioridade"),
     enabled: !!userId,
   });
 
   const { data: jobsWoeTodayTasks, isLoading: isLoadingJobsWoeToday, error: errorJobsWoeToday, refetch: refetchJobsWoeToday } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "jobs_woe_today", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "jobs_woe_today"),
+    queryKey: ["dashboardTasks", "woe-hoje", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "woe-hoje"),
     enabled: !!userId,
   });
 
   const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "overdue", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "overdue"),
+    queryKey: ["dashboardTasks", "atrasadas", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "atrasadas"),
     enabled: !!userId,
   });
 
   const { data: recurrentTasks, isLoading: isLoadingRecurrent, error: errorRecurrent, refetch: refetchRecurrent } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "recurrent", userId],
+    queryKey: ["dashboardTasks", "recorrentes", userId],
     queryFn: () => fetchRecurrentTasks(userId!),
     enabled: !!userId,
   });
 
   const { data: completedTasks, isLoading: isLoadingCompleted, error: errorCompleted, refetch: refetchCompleted } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "completed", userId],
+    queryKey: ["dashboardTasks", "concluidas", userId],
     queryFn: () => fetchCompletedTasks(userId!),
     enabled: !!userId,
   });
@@ -302,8 +302,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayPriority}
           error={errorTodayPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
-          originBoard="today_priority"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="hoje-prioridade" onTaskAdded={handleTaskAdded} />}
+          originBoard="hoje-prioridade"
         />
         <TaskListBoard
           title="Hoje sem Prioridade"
@@ -311,8 +311,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayNoPriority}
           error={errorTodayNoPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
-          originBoard="today_no_priority"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="hoje-sem-prioridade" onTaskAdded={handleTaskAdded} />}
+          originBoard="hoje-sem-prioridade"
         />
         <TaskListBoard
           title="Jobs Woe hoje"
@@ -320,8 +320,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingJobsWoeToday}
           error={errorJobsWoeToday}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
-          originBoard="jobs_woe_today"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="woe-hoje" onTaskAdded={handleTaskAdded} />}
+          originBoard="woe-hoje"
         />
         <TaskListBoard
           title="Atrasadas"
@@ -330,7 +330,7 @@ const Dashboard: React.FC = () => {
           error={errorOverdue}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="overdue"
+          originBoard="atrasadas"
         />
         <TaskListBoard
           title="Recorrentes"
@@ -339,7 +339,7 @@ const Dashboard: React.FC = () => {
           error={errorRecurrent}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="recurrent"
+          originBoard="recorrentes"
         />
         <TaskListBoard
           title="Finalizadas"
@@ -348,7 +348,7 @@ const Dashboard: React.FC = () => {
           error={errorCompleted}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="completed"
+          originBoard="concluidas"
         />
         <DashboardTaskList />
       </div>

@@ -25,7 +25,7 @@ const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -47,7 +47,7 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
   const { data, error } = await supabase
     .from("template_tasks")
     .select(`
-      id, user_id, title, description, recurrence_type, recurrence_details, origin_board, created_at, updated_at,
+      id, user_id, title, description, recurrence_type, recurrence_rule, origin_board, created_at, updated_at,
       template_task_tags(
         tags(id, name, color)
       )
@@ -136,15 +136,15 @@ const Tasks: React.FC = () => {
     };
 
     if (filterType === "daily") {
-      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today";
+      return task.origin_board === "hoje-prioridade" || task.origin_board === "hoje-sem-prioridade" || task.origin_board === "woe-hoje";
     }
 
     if (task.recurrence_type !== "none") {
       switch (filterType) {
         case "weekly":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_rule, currentDayOfWeek));
         case "monthly":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_rule, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_rule === currentDayOfMonth);
         case "all":
         default:
           return true;

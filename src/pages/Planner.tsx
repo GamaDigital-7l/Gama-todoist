@@ -70,7 +70,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
       last_successful_completion_date, origin_board, parent_task_id, created_at,
       task_tags(
         tags(id, name, color)
@@ -95,10 +95,10 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     if (task.recurrence_type !== "none") {
       if (task.recurrence_type === "daily") {
         isTaskRelevantForDate = true;
-      } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
-        isTaskRelevantForDate = isDayIncluded(task.recurrence_details, currentDayOfWeek);
-      } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
-        isTaskRelevantForDate = parseInt(task.recurrence_details) === date.getDate();
+      } else if (task.recurrence_type === "weekly" && task.recurrence_rule) {
+        isTaskRelevantForDate = isDayIncluded(task.recurrence_rule, currentDayOfWeek);
+      } else if (task.recurrence_type === "monthly" && task.recurrence_rule) {
+        isTaskRelevantForDate = parseInt(task.recurrence_rule) === date.getDate();
       }
     } else if (task.due_date) {
       isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;

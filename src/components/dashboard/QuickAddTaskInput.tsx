@@ -53,17 +53,17 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
       // Se uma dueDate for fornecida, use-a. Caso contrário, use a lógica existente.
       if (dueDate) {
         finalDueDate = format(dueDate, "yyyy-MM-dd");
-      } else if (originBoard === "today_priority") {
+      } else if (originBoard === "hoje-prioridade") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
         tagColor = '#EF4444';
-      } else if (originBoard === "today_no_priority") {
+      } else if (originBoard === "hoje-sem-prioridade") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-sem-prioridade';
         tagColor = '#3B82F6';
-      } else if (originBoard === "jobs_woe_today") {
+      } else if (originBoard === "woe-hoje") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
-        tagName = 'jobs-woe-hoje';
+        tagName = 'woe-hoje';
         tagColor = '#8B5CF6';
       }
 
@@ -101,9 +101,12 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         due_date: finalDueDate,
         time: null,
         recurrence_type: "none",
-        recurrence_details: null,
+        recurrence_rule: null,
         origin_board: originBoard,
         is_completed: false,
+        current_board: originBoard, // Initialize current_board
+        is_priority: false,
+        overdue: false,
       }).select("id").single();
 
       if (insertError) throw insertError;

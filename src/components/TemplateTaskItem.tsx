@@ -62,10 +62,10 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
       case "daily":
         return "Diariamente";
       case "weekly":
-        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        const days = task.recurrence_rule?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
         return `Semanalmente nos dias: ${days}`;
       case "monthly":
-        return `Mensalmente no dia ${task.recurrence_details}`;
+        return `Mensalmente no dia ${task.recurrence_rule}`;
       case "none":
       default:
         return "Nenhuma";
@@ -75,9 +75,9 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
   const getOriginBoardText = (board: TemplateFormOriginBoard) => {
     switch (board) {
       case "general": return "Geral";
-      case "today_priority": return "Hoje - Prioridade";
-      case "today_no_priority": return "Hoje - Sem Prioridade";
-      case "jobs_woe_today": return "Jobs Woe hoje";
+      case "hoje-prioridade": return "Hoje - Prioridade";
+      case "hoje-sem-prioridade": return "Hoje - Sem Prioridade";
+      case "woe-hoje": return "Jobs Woe hoje";
       default: return board;
     }
   };

@@ -38,17 +38,17 @@ const templateTaskSchema = z.object({
   title: z.string().min(1, "O título da tarefa padrão é obrigatório."),
   description: z.string().optional(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
-  recurrence_details: z.string().optional().nullable(),
-  origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
+  recurrence_rule: z.string().optional().nullable(), // Renamed from recurrence_details
+  origin_board: z.enum(["general", "hoje-prioridade", "hoje-sem-prioridade", "woe-hoje"]).default("general"),
   selected_tag_ids: z.array(z.string()).optional(),
 });
 
 export type TemplateTaskFormValues = z.infer<typeof templateTaskSchema>;
 
 interface TemplateTaskFormProps {
-  initialData?: Omit<TemplateTaskFormValues, 'recurrence_details' | 'origin_board'> & {
+  initialData?: Omit<TemplateTaskFormValues, 'recurrence_rule' | 'origin_board'> & {
     id: string;
-    recurrence_details?: string | null;
+    recurrence_rule?: string | null; // Renamed from recurrence_details
     tags?: { id: string; name: string; color: string }[];
     origin_board: TemplateFormOriginBoard;
   };
@@ -64,14 +64,14 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     resolver: zodResolver(templateTaskSchema),
     defaultValues: initialData ? {
       ...initialData,
-      recurrence_details: initialData.recurrence_details || undefined,
+      recurrence_rule: initialData.recurrence_rule || undefined, // Renamed from recurrence_details
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || "general",
     } : {
       title: "",
       description: "",
       recurrence_type: "none",
-      recurrence_details: undefined,
+      recurrence_rule: undefined,
       origin_board: "general",
       selected_tag_ids: [],
     },
@@ -79,24 +79,24 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
 
   const recurrenceType = form.watch("recurrence_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const watchedRecurrenceDetails = form.watch("recurrence_details");
+  const watchedRecurrenceRule = form.watch("recurrence_rule"); // Renamed from watchedRecurrenceDetails
 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   useEffect(() => {
-    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
-      setSelectedDays(watchedRecurrenceDetails.split(','));
+    if (recurrenceType === "weekly" && watchedRecurrenceRule) {
+      setSelectedDays(watchedRecurrenceRule.split(','));
     } else {
       setSelectedDays([]);
     }
-  }, [recurrenceType, watchedRecurrenceDetails]);
+  }, [recurrenceType, watchedRecurrenceRule]);
 
   const handleDayToggle = (dayValue: string) => {
     setSelectedDays(prev => {
       const newDays = prev.includes(dayValue)
         ? prev.filter(d => d !== dayValue)
         : [...prev, dayValue];
-      form.setValue("recurrence_details", newDays.join(','), { shouldDirty: true });
+      form.setValue("recurrence_rule", newDays.join(','), { shouldDirty: true }); // Renamed
       return newDays;
     });
   };
@@ -118,7 +118,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         title: values.title,
         description: values.description || null,
         recurrence_type: values.recurrence_type,
-        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
+        recurrence_rule: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_rule || null, // Renamed
         origin_board: values.origin_board,
         updated_at: new Date().toISOString(),
       };
@@ -197,7 +197,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         <Select
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_details", null);
+            form.setValue("recurrence_rule", null); // Renamed
             setSelectedDays([]);
           }}
           value={recurrenceType}
@@ -232,9 +232,9 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
               </div>
             ))}
           </div>
-          {form.formState.errors.recurrence_details && (
+          {form.formState.errors.recurrence_rule && ( // Renamed
             <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_details.message}
+              {form.formState.errors.recurrence_rule.message}
             </p>
           )}
         </div>
@@ -242,19 +242,19 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
 
       {recurrenceType === "monthly" && (
         <div>
-          <Label htmlFor="recurrence_details_monthly" className="text-foreground">Dia do Mês</Label>
+          <Label htmlFor="recurrence_rule_monthly" className="text-foreground">Dia do Mês</Label> {/* Renamed */}
           <Input
-            id="recurrence_details_monthly"
+            id="recurrence_rule_monthly" // Renamed
             type="number"
             min="1"
             max="31"
-            {...form.register("recurrence_details", { valueAsNumber: true })}
+            {...form.register("recurrence_rule", { valueAsNumber: true })} // Renamed
             placeholder="Ex: 15"
             className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
           />
-          {form.formState.errors.recurrence_details && (
+          {form.formState.errors.recurrence_rule && ( // Renamed
             <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_details.message}
+              {form.formState.errors.recurrence_rule.message}
             </p>
           )}
         </div>
@@ -271,9 +271,9 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
             <SelectItem value="general">Geral</SelectItem>
-            <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
-            <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
-            <SelectItem value="jobs_woe_today">Jobs Woe hoje</SelectItem>
+            <SelectItem value="hoje-prioridade">Hoje - Prioridade</SelectItem>
+            <SelectItem value="hoje-sem-prioridade">Hoje - Sem Prioridade</SelectItem>
+            <SelectItem value="woe-hoje">Jobs Woe hoje</SelectItem>
           </SelectContent>
         </Select>
       </div>
