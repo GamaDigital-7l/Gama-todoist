@@ -10,21 +10,19 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientForm from "@/components/ClientForm";
 import ClientCard from "@/components/ClientCard";
-import { Client, ClientType } from "@/types/client";
+import { Client, ClientType, ClientTask } from "@/types/client"; // Importar ClientTask
 import { useSession } from "@/integrations/supabase/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom"; // Importar Link para navegação
+import { format, isSameMonth, endOfMonth, differenceInDays } from "date-fns"; // Importar funções de data
+import { ptBR } from "date-fns/locale"; // Importar locale para formatação de data
 
-const fetchClients = async (userId: string, type?: ClientType): Promise<Client[]> => {
+const fetchClients = async (userId: string): Promise<Client[]> => {
   let query = supabase
     .from("clients")
     .select("*")
     .eq("user_id", userId)
     .order("name", { ascending: true });
-
-  if (type) {
-    query = query.eq("type", type);
-  }
 
   const { data, error } = await query;
   if (error) {
@@ -33,13 +31,45 @@ const fetchClients = async (userId: string, type?: ClientType): Promise<Client[]
   return data || [];
 };
 
+// Nova função para buscar todas as tarefas de clientes para o mês atual
+const fetchClientTasksForCurrentMonth = async (userId: string, monthYearRef: string): Promise<ClientTask[]> => {
+  const { data, error } = await supabase
+    .from("client_tasks")
+    .select(`
+      id, client_id, is_completed,
+      client_task_tags(
+        tags(id, name, color)
+      )
+    `)
+    .eq("user_id", userId)
+    .eq("month_year_reference", monthYearRef);
+
+  if (error) {
+    throw error;
+  }
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.client_task_tags.map((ctt: any) => ctt.tags),
+  })) || [];
+  return mappedData;
+};
+
 const Clients: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
+  const currentMonth = new Date();
+  const monthYearRef = format(currentMonth, "yyyy-MM");
+
   const { data: allClients, isLoading, error, refetch } = useQuery<Client[], Error>({
     queryKey: ["clients", userId],
     queryFn: () => fetchClients(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: clientTasksForCurrentMonth, isLoading: isLoadingClientTasks, error: clientTasksError } = useQuery<ClientTask[], Error>({
+    queryKey: ["clientTasksForCurrentMonth", userId, monthYearRef],
+    queryFn: () => fetchClientTasksForCurrentMonth(userId!, monthYearRef),
     enabled: !!userId,
   });
 
@@ -104,22 +134,61 @@ const Clients: React.FC = () => {
     ? allClients
     : allClients?.filter(client => client.type === activeTab);
 
-  // Placeholder para os indicadores do topo
+  // --- Cálculos para os Indicadores do Topo ---
   const totalClients = allClients?.length || 0;
   const fixedClients = allClients?.filter(c => c.type === 'fixed').length || 0;
   const freelaClients = allClients?.filter(c => c.type === 'freela').length || 0;
   const agencyClients = allClients?.filter(c => c.type === 'agency').length || 0;
 
-  // Estes cálculos serão mais complexos e virão em etapas futuras
-  const averageProgress = 0; // Placeholder
-  const clientsInGreen = 0; // Placeholder
-  const clientsInYellow = 0; // Placeholder
-  const clientsInRed = 0; // Placeholder
-  const mostAdvancedClient = "N/A"; // Placeholder
-  const mostDelayedClient = "N/A"; // Placeholder
+  let totalProgressSum = 0;
+  let clientsWithGoals = 0;
+  let mostAdvancedClientName = "N/A";
+  let mostAdvancedClientProgress = -1;
+  let mostDelayedClientName = "N/A";
+  let mostDelayedClientProgress = 101; // Maior que 100 para iniciar
 
+  const clientsProgressMap = new Map<string, { completed: number; total: number; goal: number; progress: number }>();
 
-  if (isLoading) {
+  allClients?.forEach(client => {
+    const clientTasks = clientTasksForCurrentMonth?.filter(task => task.client_id === client.id) || [];
+    const completedTasks = clientTasks.filter(task => task.is_completed).length;
+    const totalTasks = clientTasks.length;
+    const monthlyGoal = client.monthly_delivery_goal || 0;
+
+    let progress = 0;
+    if (monthlyGoal > 0) {
+      progress = (completedTasks / monthlyGoal) * 100;
+    } else if (totalTasks > 0) {
+      progress = (completedTasks / totalTasks) * 100;
+    }
+
+    clientsProgressMap.set(client.id, {
+      completed: completedTasks,
+      total: totalTasks,
+      goal: monthlyGoal,
+      progress: progress,
+    });
+
+    if (monthlyGoal > 0 || totalTasks > 0) {
+      totalProgressSum += progress;
+      clientsWithGoals++;
+
+      if (progress > mostAdvancedClientProgress) {
+        mostAdvancedClientProgress = progress;
+        mostAdvancedClientName = client.name;
+      }
+      if (progress < mostDelayedClientProgress) {
+        mostDelayedClientProgress = progress;
+        mostDelayedClientName = client.name;
+      }
+    }
+  });
+
+  const averageProgress = clientsWithGoals > 0 ? (totalProgressSum / clientsWithGoals) : 0;
+
+  const daysUntilEndOfMonth = differenceInDays(endOfMonth(currentMonth), currentMonth);
+
+  if (isLoading || isLoadingClientTasks) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Seus Clientes</h1>
@@ -134,6 +203,16 @@ const Clients: React.FC = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Seus Clientes</h1>
         <p className="text-lg text-red-500">Erro ao carregar clientes: {error.message}</p>
+      </div>
+    );
+  }
+
+  if (clientTasksError) {
+    showError("Erro ao carregar tarefas de clientes: " + clientTasksError.message);
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+        <h1 className="text-3xl font-bold text-foreground">Seus Clientes</h1>
+        <p className="text-lg text-red-500">Erro ao carregar tarefas de clientes: {clientTasksError.message}</p>
       </div>
     );
   }
@@ -195,9 +274,10 @@ const Clients: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{averageProgress}%</div>
+            <div className="text-2xl font-bold text-foreground">{averageProgress.toFixed(0)}%</div>
             <p className="text-xs text-muted-foreground">
-              {clientsInGreen} no verde, {clientsInYellow} no amarelo, {clientsInRed} no vermelho
+              {/* Estes sub-indicadores seriam mais complexos, por enquanto, manteremos o progresso médio */}
+              {clientsWithGoals} clientes com metas/tarefas
             </p>
           </CardContent>
         </Card>
@@ -207,9 +287,9 @@ const Clients: React.FC = () => {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{mostAdvancedClient}</div>
+            <div className="text-2xl font-bold text-foreground">{mostAdvancedClientName}</div>
             <p className="text-xs text-muted-foreground">
-              (100% concluído)
+              ({mostAdvancedClientProgress.toFixed(0)}% concluído)
             </p>
           </CardContent>
         </Card>
@@ -219,9 +299,9 @@ const Clients: React.FC = () => {
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{mostDelayedClient}</div>
+            <div className="text-2xl font-bold text-foreground">{mostDelayedClientName}</div>
             <p className="text-xs text-muted-foreground">
-              (20% concluído)
+              ({mostDelayedClientProgress.toFixed(0)}% concluído)
             </p>
           </CardContent>
         </Card>
