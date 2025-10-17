@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,11 +26,15 @@ import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "../TagSelector";
 import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { Checkbox } from "@/components/ui/checkbox";
+import TimePicker from "../TimePicker";
+import { useQuery } from "@tanstack/react-query";
 
 const clientTaskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
   description: z.string().optional(),
   due_date: z.date().optional().nullable(),
+  time: z.string().optional().nullable(), // Novo campo
+  responsible_id: z.string().nullable().optional(), // Novo campo
   status: z.enum(["backlog", "in_production", "in_approval", "approved", "scheduled", "published"]).default("backlog"),
   selected_tag_ids: z.array(z.string()).optional(),
   is_completed: z.boolean().default(false),
@@ -46,6 +50,23 @@ interface ClientTaskFormProps {
   onClose: () => void;
 }
 
+interface ProfileOption {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+const fetchProfiles = async (): Promise<ProfileOption[]> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name")
+    .order("first_name", { ascending: true });
+  if (error) {
+    throw error;
+  }
+  return data || [];
+};
+
 const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef, initialData, onTaskSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -55,11 +76,15 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
     defaultValues: initialData ? {
       ...initialData,
       due_date: initialData.due_date ? parseISO(initialData.due_date) : undefined,
+      time: initialData.time || undefined,
+      responsible_id: initialData.responsible_id || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
     } : {
       title: "",
       description: "",
       due_date: undefined,
+      time: undefined,
+      responsible_id: undefined,
       status: "backlog",
       selected_tag_ids: [],
       is_completed: false,
@@ -67,6 +92,11 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
   });
 
   const selectedTagIds = form.watch("selected_tag_ids") || [];
+
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery<ProfileOption[], Error>({
+    queryKey: ["profiles"],
+    queryFn: fetchProfiles,
+  });
 
   const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
     form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
@@ -85,6 +115,8 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
+        time: values.time || null, // Novo campo
+        responsible_id: values.responsible_id || null, // Novo campo
         status: values.status,
         is_completed: values.is_completed,
         completed_at: values.is_completed ? new Date().toISOString() : null,
@@ -191,6 +223,41 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             />
           </PopoverContent>
         </Popover>
+      </div>
+
+      <div>
+        <Label htmlFor="time" className="text-foreground">Horário (Opcional)</Label>
+        <TimePicker
+          value={form.watch("time") || undefined}
+          onChange={(time) => form.setValue("time", time || null)}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="responsible_id" className="text-foreground">Responsável (Opcional)</Label>
+        <Select
+          onValueChange={(value: string) => form.setValue("responsible_id", value === "none-selected" ? null : value)}
+          value={form.watch("responsible_id") || "none-selected"}
+          disabled={isLoadingProfiles}
+        >
+          <SelectTrigger id="responsible_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+            {isLoadingProfiles ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
+            ) : (
+              <SelectValue placeholder="Selecionar responsável" />
+            )}
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="none-selected">Nenhum</SelectItem>
+            {profiles?.map(profile => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.first_name} {profile.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>

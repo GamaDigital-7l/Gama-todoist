@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, getWeek, getDay, addDays, startOfMonth, endOfMonth, isSameDay, parseISO } from "https://esm.sh/date-fns@2.30.0";
+import { format, getWeek, getDay, addDays, startOfMonth, endOfMonth, isSameDay, parseISO, addDays as dateFnsAddDays } from "https://esm.sh/date-fns@2.30.0";
 import { utcToZonedTime } from "https://esm.sh/date-fns-tz@2.0.1";
 
 const corsHeaders = {
@@ -78,7 +78,7 @@ serve(async (req) => {
       );
     }
 
-    // 2. Buscar templates de geração de tarefas para o cliente
+    // 2. Buscar templates de geração de tarefas ATIVOS para o cliente
     const { data: templates, error: templatesError } = await supabaseServiceRole
       .from('client_task_generation_templates')
       .select(`
@@ -86,18 +86,21 @@ serve(async (req) => {
         template_name,
         delivery_count,
         generation_pattern,
+        is_active,
+        default_due_days,
         client_task_tags(
           tags(id, name, color)
         )
       `)
       .eq('client_id', clientId)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('is_active', true); // Filtrar apenas templates ativos
 
     if (templatesError) throw templatesError;
 
     if (!templates || templates.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No task generation templates found for this client." }),
+        JSON.stringify({ message: "No active task generation templates found for this client." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -127,7 +130,9 @@ serve(async (req) => {
           const adjustedWeekNumber = weekNumber - firstDayOfMonthWeek + 1;
 
           if (adjustedWeekNumber === pattern.week && dayOfWeek === DAYS_OF_WEEK_MAP[pattern.day_of_week]) {
-            const dueDate = format(currentDay, "yyyy-MM-dd");
+            const taskDueDate = template.default_due_days !== null && template.default_due_days !== undefined
+              ? format(dateFnsAddDays(currentDay, template.default_due_days), "yyyy-MM-dd")
+              : null;
 
             // Verificar se já existe uma tarefa com o mesmo título e data para evitar duplicatas
             const { data: existingTask, error: checkExistingError } = await supabaseServiceRole
@@ -136,7 +141,7 @@ serve(async (req) => {
               .eq('client_id', clientId)
               .eq('user_id', userId)
               .eq('title', template.template_name) // Usar o nome do template como título padrão
-              .eq('due_date', dueDate)
+              .eq('due_date', taskDueDate) // Comparar com a data de vencimento calculada
               .limit(1);
 
             if (checkExistingError) {
@@ -145,7 +150,7 @@ serve(async (req) => {
             }
 
             if (existingTask && existingTask.length > 0) {
-              console.log(`Tarefa "${template.template_name}" já existe para ${dueDate}. Pulando.`);
+              console.log(`Tarefa "${template.template_name}" já existe para ${taskDueDate}. Pulando.`);
               tasksGeneratedForPattern++; // Contar como gerada para não exceder o limite
               currentDay = addDays(currentDay, 1); // Avançar para o próximo dia
               continue;
@@ -160,8 +165,11 @@ serve(async (req) => {
               description: `Gerado a partir do template: ${template.template_name}`,
               month_year_reference: monthYearRef,
               status: 'backlog', // Status inicial
-              due_date: dueDate,
+              due_date: taskDueDate, // Usar o prazo padrão do template
+              time: null, // Responsável e hora não são definidos por template por enquanto
+              responsible_id: null,
               is_completed: false,
+              completed_at: null,
               order_index: 0, // Será reordenado no frontend se necessário
               created_at: nowUtc.toISOString(),
               updated_at: nowUtc.toISOString(),

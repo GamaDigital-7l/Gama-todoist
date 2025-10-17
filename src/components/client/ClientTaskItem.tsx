@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CalendarDays, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { Edit, Trash2, CalendarDays, CheckCircle2, AlertCircle, Clock, User } from "lucide-react"; // Adicionado User
 import { useSession } from "@/integrations/supabase/auth";
 import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { Badge } from "@/components/ui/badge";
@@ -142,8 +142,18 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
         <p className="text-xs text-muted-foreground mb-2 break-words">{task.description}</p>
       )}
       {task.due_date && (
-        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
           <CalendarDays className="h-3 w-3" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
+        </p>
+      )}
+      {task.time && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" /> Horário: {task.time}
+        </p>
+      )}
+      {task.responsible && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <User className="h-3 w-3" /> Responsável: {task.responsible.first_name} {task.responsible.last_name}
         </p>
       )}
       {isAwaitingApproval && (

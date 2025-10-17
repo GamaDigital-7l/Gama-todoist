@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle, XCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const DAYS_OF_WEEK_OPTIONS = [
   { value: "Sunday", label: "Domingo" },
@@ -43,6 +44,11 @@ const clientTaskGenerationTemplateSchema = z.object({
     z.number().int().min(0, "A meta deve ser um número positivo.").default(0),
   ),
   generation_pattern: z.array(generationPatternSchema).min(1, "Deve haver pelo menos um padrão de geração."),
+  is_active: z.boolean().default(true), // Novo campo
+  default_due_days: z.preprocess( // Novo campo
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int().min(0, "O prazo deve ser um número positivo.").nullable().optional(),
+  ),
 });
 
 export type ClientTaskGenerationTemplateFormValues = z.infer<typeof clientTaskGenerationTemplateSchema>;
@@ -63,10 +69,14 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
     defaultValues: initialData ? {
       ...initialData,
       generation_pattern: initialData.generation_pattern || [{ week: 1, day_of_week: "Monday", count: 1 }],
+      is_active: initialData.is_active,
+      default_due_days: initialData.default_due_days || undefined,
     } : {
       template_name: "",
       delivery_count: 0,
       generation_pattern: [{ week: 1, day_of_week: "Monday", count: 1 }],
+      is_active: true,
+      default_due_days: undefined,
     },
   });
 
@@ -86,6 +96,8 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
         template_name: values.template_name,
         delivery_count: values.delivery_count,
         generation_pattern: values.generation_pattern,
+        is_active: values.is_active, // Novo campo
+        default_due_days: values.default_due_days || null, // Novo campo
         updated_at: new Date().toISOString(),
       };
 
@@ -146,6 +158,32 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
         {form.formState.errors.delivery_count && (
           <p className="text-red-500 text-sm mt-1">
             {form.formState.errors.delivery_count.message}
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_active"
+          checked={form.watch("is_active")}
+          onCheckedChange={(checked) => form.setValue("is_active", checked as boolean)}
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+        />
+        <Label htmlFor="is_active" className="text-foreground">Template Ativo</Label>
+      </div>
+
+      <div>
+        <Label htmlFor="default_due_days" className="text-foreground">Prazo Padrão (dias para entrega, opcional)</Label>
+        <Input
+          id="default_due_days"
+          type="number"
+          {...form.register("default_due_days", { valueAsNumber: true })}
+          placeholder="Ex: 5"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.default_due_days && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.default_due_days.message}
           </p>
         )}
       </div>

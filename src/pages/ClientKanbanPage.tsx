@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, User, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -50,7 +50,8 @@ const fetchClientTasks = async (clientId: string, userId: string, monthYearRef: 
       *,
       client_task_tags(
         tags(id, name, color)
-      )
+      ),
+      responsible:profiles(id, first_name, last_name, avatar_url)
     `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
@@ -63,6 +64,7 @@ const fetchClientTasks = async (clientId: string, userId: string, monthYearRef: 
   const mappedData = data?.map((task: any) => ({
     ...task,
     tags: task.client_task_tags.map((ctt: any) => ctt.tags),
+    responsible: task.responsible ? task.responsible : null,
   })) || [];
   return mappedData;
 };
@@ -183,12 +185,15 @@ const ClientKanbanPage: React.FC = () => {
       month_year_reference: monthYearRef,
       status: status,
       due_date: null,
+      time: null, // Novo campo
+      responsible_id: null, // Novo campo
       is_completed: false,
       completed_at: null,
       order_index: clientTasks?.filter(t => t.status === status).length || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       tags: [],
+      responsible: null,
     });
     setIsTaskFormOpen(true);
   };
@@ -393,7 +398,7 @@ const ClientKanbanPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 p-4">
-                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], is_active: true, default_due_days: undefined, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   <PlusCircle className="mr-2 h-4 w-4" /> Novo Template
                 </Button>
                 {clientTaskTemplates && clientTaskTemplates.length > 0 ? (

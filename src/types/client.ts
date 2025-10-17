@@ -21,14 +21,17 @@ export interface ClientTask {
   title: string;
   description?: string | null;
   month_year_reference: string; // Ex: "2025-10"
-  status: ClientTaskStatus; // Novo campo
+  status: ClientTaskStatus;
   due_date?: string | null; // ISO string
+  time?: string | null; // Novo campo: Formato "HH:mm"
+  responsible_id?: string | null; // Novo campo: ID do responsável
   is_completed: boolean;
   completed_at?: string | null;
-  order_index: number; // Novo campo
+  order_index: number;
   created_at: string;
   updated_at: string;
   tags?: { id: string; name: string; color: string }[]; // Para carregar tags associadas
+  responsible?: { id: string; first_name: string; last_name: string; avatar_url: string } | null; // Para carregar dados do responsável
 }
 
 export interface ClientTaskGenerationPattern {
@@ -42,8 +45,10 @@ export interface ClientTaskGenerationTemplate {
   client_id: string;
   user_id: string;
   template_name: string;
-  delivery_count: number; // Novo campo
-  generation_pattern: ClientTaskGenerationPattern[]; // Novo campo (JSONB)
+  delivery_count: number;
+  generation_pattern: ClientTaskGenerationPattern[]; // JSONB
+  is_active: boolean; // Novo campo
+  default_due_days?: number | null; // Novo campo
   created_at: string;
   updated_at: string;
 }

@@ -2,10 +2,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Repeat } from "lucide-react";
+import { Edit, Trash2, Repeat, CheckCircle2, PauseCircle } from "lucide-react"; // Adicionado CheckCircle2, PauseCircle
 import { ClientTaskGenerationTemplate, ClientTaskGenerationPattern } from "@/types/client";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge"; // Adicionado Badge
 
 interface ClientTaskGenerationTemplateItemProps {
   template: ClientTaskGenerationTemplate;
@@ -38,7 +39,23 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Repeat className="h-3 w-3" /> Meta Mensal: {template.delivery_count} entregas
           </p>
+          {template.default_due_days !== null && template.default_due_days !== undefined && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              Prazo Padrão: {template.default_due_days} dias
+            </p>
+          )}
           {renderPattern(template.generation_pattern)}
+          <div className="mt-1">
+            {template.is_active ? (
+              <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/50 w-fit">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Ativo
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="bg-red-500/20 text-red-500 border-red-500/50 w-fit">
+                <PauseCircle className="h-3 w-3 mr-1" /> Pausado
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
