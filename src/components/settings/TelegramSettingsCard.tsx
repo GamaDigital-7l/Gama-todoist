@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UseFormReturn } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Send } from "lucide-react";
+import { Send, AlertTriangle } from "lucide-react"; // Importar AlertTriangle
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Session } from "@supabase/supabase-js";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Importar Alert components
 
 interface SettingsFormValues {
   telegram_bot_token?: string | null;
@@ -29,6 +30,8 @@ const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ userId, ses
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
   const telegramEnabled = form.watch("telegram_enabled");
+  const telegramBotToken = form.watch("telegram_bot_token");
+  const telegramChatId = form.watch("telegram_chat_id");
 
   const handleSendTestMessage = async () => {
     if (!userId) {
@@ -70,6 +73,8 @@ const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ userId, ses
     }
   };
 
+  const areTelegramCredentialsMissing = telegramEnabled && (!telegramBotToken || !telegramChatId);
+
   return (
     <Card className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader>
@@ -89,6 +94,16 @@ const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ userId, ses
             />
             <Label htmlFor="telegram_enabled" className="text-foreground">Habilitar Notificações do Telegram</Label>
           </div>
+
+          {areTelegramCredentialsMissing && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Credenciais do Telegram Ausentes!</AlertTitle>
+              <AlertDescription>
+                Para receber notificações do Telegram, por favor, preencha o Token do Bot e o ID do Chat.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {telegramEnabled && (
             <>
@@ -130,7 +145,7 @@ const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ userId, ses
               <Button
                 type="button"
                 onClick={handleSendTestMessage}
-                disabled={isSendingTest || !form.watch("telegram_bot_token") || !form.watch("telegram_chat_id")}
+                disabled={isSendingTest || !telegramBotToken || !telegramChatId}
                 className="w-full bg-blue-600 text-white hover:bg-blue-700"
               >
                 <Send className="mr-2 h-4 w-4" />

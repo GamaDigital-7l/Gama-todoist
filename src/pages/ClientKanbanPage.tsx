@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"; // Importar useSearchParams
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
@@ -115,6 +115,7 @@ const ClientKanbanPage: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams(); // Inicializar useSearchParams
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthYearRef = format(currentMonth, "yyyy-MM");
@@ -153,6 +154,23 @@ const ClientKanbanPage: React.FC = () => {
   // Estados para Drag and Drop
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [draggedFromStatus, setDraggedFromStatus] = useState<ClientTaskStatus | null>(null);
+
+  // Efeito para abrir o formulário de edição de tarefa se `openTaskId` estiver na URL
+  useEffect(() => {
+    if (clientTasks && !isTaskFormOpen) {
+      const openTaskId = searchParams.get('openTaskId');
+      if (openTaskId) {
+        const taskToOpen = clientTasks.find(task => task.id === openTaskId);
+        if (taskToOpen) {
+          handleEditTask(taskToOpen);
+        }
+        // Remover o parâmetro da URL para evitar que o formulário abra novamente em um refresh
+        searchParams.delete('openTaskId');
+        navigate({ search: searchParams.toString() }, { replace: true });
+      }
+    }
+  }, [clientTasks, searchParams, navigate, isTaskFormOpen]);
+
 
   const updateTaskStatusMutation = useMutation({
     mutationFn: async ({ taskId, newStatus, newOrderIndex }: { taskId: string; newStatus: ClientTaskStatus; newOrderIndex: number }) => {
