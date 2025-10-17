@@ -124,7 +124,7 @@ const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ userId, ses
                   <br />
                   `https://api.telegram.org/bot[SEU_TOKEN_DO_BOT]/getUpdates`
                   <br />
-                  Procure por <code>"chat":{"id":...}</code>
+                  Procure por <code>"chat":&lcub;"id":...&rcub;</code>
                 </p>
               </div>
               <Button
