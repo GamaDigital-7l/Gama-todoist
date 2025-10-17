@@ -188,7 +188,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col items-center justify-center text-center mb-8">
         {/* Logo da Agência (Ex: Gama Creative) - Pode ser uma imagem fixa ou configurável */}
-        <img src="/favicon.png" alt="Gama Creative Logo" className="h-16 w-16 mb-4" />
+        <img src="/favicon.svg" alt="Gama Creative Logo" className="h-16 w-16 mb-4" />
         <h1 className="text-4xl font-bold mb-2">Gama Creative</h1>
         
         {client.logo_url && (
