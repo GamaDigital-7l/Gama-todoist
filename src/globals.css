@@ -122,29 +122,23 @@
   @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
 }
 
-/* Estilos para o Quill Editor no modo bubble */
-.quill-no-toolbar .ql-toolbar {
-  display: none; /* Esconde o toolbar */
-}
+/* Estilos para o Quill Editor */
+/* Removido .quill-no-toolbar */
 
-.quill-no-toolbar .ql-container.ql-bubble:not(.ql-disabled) a::before {
-  content: attr(href); /* Mostra o link em vez do texto "Link" */
-}
-
-.quill-no-toolbar .ql-editor {
+.ql-editor {
   padding: 8px 12px;
   min-height: 80px;
-  background-color: transparent;
+  background-color: hsl(var(--background)); /* Fundo explícito */
   z-index: 10;
   position: relative;
   overflow-y: auto;
-  border: 1px dashed var(--border); /* Borda temporária para visualizar a área */
-  cursor: text; /* Garante que o cursor de texto apareça */
-  pointer-events: auto; /* Garante que o elemento receba eventos do mouse */
-  background-color: hsl(var(--background)); 
+  border: 1px solid var(--border); /* Borda sólida para visibilidade */
+  border-radius: 0.375rem; /* Arredondamento para combinar com outros inputs */
+  cursor: text;
+  pointer-events: auto;
 }
 
-.quill-no-toolbar .ql-editor.ql-blank::before {
+.ql-editor.ql-blank::before {
   left: 12px;
   font-style: normal;
   color: hsl(var(--muted-foreground));
@@ -152,15 +146,65 @@
 
 /* Estilos para imagens dentro do Quill */
 .ql-editor img {
-  max-width: 100%; /* Garante que a imagem não exceda a largura do contêiner */
-  height: auto; /* Mantém a proporção da imagem */
-  display: block; /* Remove espaço extra abaixo da imagem */
-  margin: 10px 0; /* Adiciona um pouco de margem para melhor visualização */
-  border-radius: 0.5rem; /* Bordas arredondadas para as imagens */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Esconder tooltips do Quill que podem aparecer ao clicar em links/imagens */
-.quill-no-toolbar .ql-tooltip {
-  display: none !important;
+/* Estilos para a barra de ferramentas do Quill (tema snow) */
+.ql-toolbar.ql-snow {
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+  background-color: hsl(var(--secondary)); /* Fundo para a barra de ferramentas */
+}
+
+.ql-container.ql-snow {
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.ql-snow .ql-stroke {
+  stroke: hsl(var(--foreground));
+}
+
+.ql-snow .ql-fill {
+  fill: hsl(var(--foreground));
+}
+
+.ql-snow .ql-picker {
+  color: hsl(var(--foreground));
+}
+
+.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  background-color: hsl(var(--popover));
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ql-snow .ql-picker-item.ql-selected,
+.ql-snow .ql-picker-item:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.ql-snow .ql-tooltip {
+  background-color: hsl(var(--popover));
+  border: 1px solid var(--border);
+  color: hsl(var(--foreground));
+}
+
+.ql-snow .ql-tooltip a {
+  color: hsl(var(--primary));
+}
+
+.ql-snow .ql-tooltip input {
+  background-color: hsl(var(--input));
+  border: 1px solid var(--border);
+  color: hsl(var(--foreground));
 }

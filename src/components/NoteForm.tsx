@@ -12,7 +12,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PlusCircle, XCircle, CalendarIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
+import { PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import TagSelector from "./TagSelector";
 import TimePicker from "./TimePicker";
@@ -121,85 +121,22 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     form.setValue("pinned", !isPinned, { shouldDirty: true });
   };
 
-  // Custom image handler for Quill
-  const imageHandler = useCallback(() => {
-    if (!userId) {
-      showError("Usuário não autenticado. Faça login para fazer upload de imagens.");
-      return;
-    }
-
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
-
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (file) {
-        const quill = quillRef.current?.getEditor();
-        if (!quill) return;
-
-        const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
-        quill.setSelection(range.index + 1);
-
-        try {
-          const sanitizedFilename = sanitizeFilename(file.name);
-          const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
-
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("note-assets")
-            .upload(filePath, file, {
-              cacheControl: "3600",
-              upsert: false,
-            });
-
-          if (uploadError) {
-            throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
-          }
-
-          const { data: publicUrlData } = supabase.storage
-            .from("note-assets")
-            .getPublicUrl(filePath);
-          
-          const imageUrl = publicUrlData.publicUrl;
-
-          // Replace placeholder with actual image
-          const index = range.index;
-          quill.deleteText(index, 1);
-          quill.insertEmbed(index, 'image', imageUrl);
-          showSuccess("Imagem adicionada com sucesso!");
-
-        } catch (err: any) {
-          console.error("Erro ao fazer upload da imagem:", err);
-          showError("Erro ao adicionar imagem: " + err.message);
-          // Remove placeholder if upload fails
-          quill.deleteText(range.index, 1);
-        }
-      }
-    };
-  }, [userId]);
-
+  // Removendo o custom image handler temporariamente para isolar o problema de digitação
   const modules = React.useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link', 'image'], // Adicionado 'image' ao toolbar
-        ['clean']
-      ],
-      handlers: {
-        'image': imageHandler, // Usar o manipulador de imagem personalizado
-      }
-    },
-  }), [imageHandler]);
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+      ['link'], // Removido 'image' daqui
+      ['clean']
+    ],
+  }), []);
 
   const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
-    'link', 'image' // Adicionado 'image' aos formatos
+    'link' // Removido 'image' daqui
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
@@ -236,6 +173,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
         pinned: values.pinned,
+        archived: false, // Garante que não está arquivada ao salvar/atualizar
+        trashed: false, // Garante que não está na lixeira ao salvar/atualizar
         updated_at: new Date().toISOString(),
       };
 
@@ -284,8 +223,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
       <div className="relative p-4 bg-card">
-        {/* imagePreview e lógica de imagem de capa removidos */}
-
         <Input
           id="note-title"
           {...form.register("title")}
@@ -297,13 +234,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           <ReactQuill
             key={noteType}
             ref={quillRef}
-            theme="bubble"
+            theme="snow" // Alterado para 'snow'
             value={form.watch("content")}
             onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            className="bg-transparent text-foreground quill-no-toolbar"
+            readOnly={false} // Explicitamente definido como false
+            className="bg-transparent text-foreground" // Removido quill-no-toolbar
           />
         ) : (
           <div className="space-y-2">
