@@ -43,16 +43,6 @@
     --status-today: #4CAF50;     /* Verde para hoje */
     --status-completed: rgba(169, 169, 184, 0.2); /* Cinza translúcido */
     --status-recurring: #9370DB; /* Lilás */
-
-    /* Cores específicas para a Sidebar */
-    --sidebar-background: 220 15% 10%; /* Um pouco mais escuro que o card */
-    --sidebar-foreground: 210 20% 90%; /* Texto da sidebar */
-    --sidebar-primary: 228 100% 67%; /* Azul neon para ícones/texto ativo */
-    --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 220 15% 18%; /* Fundo de hover/ativo da sidebar */
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 220 15% 25%;
-    --sidebar-ring: 228 100% 67%;
   }
 
   .dark {

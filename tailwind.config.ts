@@ -53,14 +53,14 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+          DEFAULT: "hsl(220 15% 10%)", // Um pouco mais escuro que o card
+          foreground: "hsl(210 20% 90%)", // Texto da sidebar
+          primary: "hsl(228 100% 67%)", // Azul neon para ícones/texto ativo
+          "primary-foreground": "hsl(210 20% 98%)",
+          accent: "hsl(220 15% 18%)", // Fundo de hover/ativo da sidebar
+          "accent-foreground": "hsl(210 20% 98%)",
+          border: "hsl(220 15% 25%)",
+          ring: "hsl(228 100% 67%)",
         },
       },
       borderRadius: {

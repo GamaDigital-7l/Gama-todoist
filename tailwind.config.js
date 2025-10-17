@@ -61,7 +61,16 @@ module.exports = {
           today: "var(--status-today)",     // Verde suave
           completed: "var(--status-completed)", // Cinza translúcido
           recurring: "var(--status-recurring)", // Lilás
-        }
+        },
+        // Cores específicas para a Sidebar
+        'sidebar-background': 'hsl(220 15% 10%)',
+        'sidebar-foreground': 'hsl(210 20% 90%)',
+        'sidebar-primary': 'hsl(228 100% 67%)',
+        'sidebar-primary-foreground': 'hsl(210 20% 98%)',
+        'sidebar-accent': 'hsl(220 15% 18%)',
+        'sidebar-accent-foreground': 'hsl(210 20% 98%)',
+        'sidebar-border': 'hsl(220 15% 25%)',
+        'sidebar-ring': 'hsl(228 100% 67%)',
       },
       borderRadius: {
         lg: "var(--radius)", // Padrão para componentes maiores
