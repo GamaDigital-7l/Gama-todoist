@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UseFormReturn } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Send, AlertTriangle } from "lucide-react"; // Importar AlertTriangle
+import { Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Session } from "@supabase/supabase-js";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Importar Alert components
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ptBR } from "date-fns/locale";
 
 interface SettingsFormValues {
   telegram_bot_token?: string | null;

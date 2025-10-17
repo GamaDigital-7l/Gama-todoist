@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
+import { ptBR } from "date-fns/locale";
 
 const healthMetricSchema = z.object({
   date: z.date().default(new Date()),
@@ -106,7 +107,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("date") ? (
-                format(form.watch("date")!, "PPP")
+                format(form.watch("date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -118,6 +119,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
               selected={form.watch("date") || undefined}
               onSelect={(date) => form.setValue("date", date || new Date())}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>

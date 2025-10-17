@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ptBR } from "date-fns/locale";
 
 const clientSchema = z.object({
   name: z.string().min(1, "O nome do cliente é obrigatório."),

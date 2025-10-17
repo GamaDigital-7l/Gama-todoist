@@ -18,6 +18,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TimePicker from "./TimePicker";
 import { Meeting } from "@/types/meeting"; // Mantido para referência, mas o tipo de prop foi alterado
+import { ptBR } from "date-fns/locale";
 
 const meetingSchema = z.object({
   title: z.string().min(1, "O título da reunião é obrigatório."),
@@ -139,7 +140,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("date") ? (
-                format(form.watch("date")!, "PPP")
+                format(form.watch("date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -151,6 +152,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
               selected={form.watch("date") || undefined}
               onSelect={(date) => form.setValue("date", date || new Date())}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>

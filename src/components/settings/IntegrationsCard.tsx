@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
+import { ptBR } from "date-fns/locale";
 
 interface IntegrationsCardProps {
   userId: string | undefined;

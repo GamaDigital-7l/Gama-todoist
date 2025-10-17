@@ -499,6 +499,7 @@ const Planner: React.FC = () => {
                     onTaskSaved={handleTaskAdded}
                     onClose={() => setIsTaskFormOpen(false)}
                     initialOriginBoard="general"
+                    initialDueDate={selectedDate} // Passa a data selecionada
                   />
                 </DialogContent>
               </Dialog>

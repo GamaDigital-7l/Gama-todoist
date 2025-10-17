@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
+import { ptBR } from "date-fns/locale";
 
 const tagSchema = z.object({
   name: z.string().min(1, "O nome da tag é obrigatório."),

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, AlertCircle } from "lucide-react"; // Adicionado AlertCircle
+import { PlusCircle, AlertCircle } from "lucide-react";
 import { useSession } from "@/integrations/supabase/auth";
 import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -22,7 +22,8 @@ interface TaskListBoardProps {
   refetchTasks: () => void;
   showAddButton?: boolean;
   quickAddTaskInput?: React.ReactNode;
-  originBoard?: OriginBoard; // Mantido para o QuickAddTaskInput
+  originBoard?: OriginBoard;
+  selectedDate?: Date; // Nova prop
 }
 
 const TaskListBoard: React.FC<TaskListBoardProps> = ({
@@ -34,6 +35,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   showAddButton = false,
   quickAddTaskInput,
   originBoard = "general",
+  selectedDate, // Recebe a data selecionada
 }) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
@@ -131,6 +133,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
                 onTaskSaved={refetchTasks}
                 onClose={() => setIsTaskFormOpen(false)}
                 initialOriginBoard={originBoard}
+                initialDueDate={selectedDate} // Passa a data selecionada para o TaskForm
               />
             </DialogContent>
           </Dialog>

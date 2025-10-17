@@ -11,7 +11,7 @@ import ProfileManagementCard from "@/components/settings/ProfileManagementCard";
 import IntegrationsCard from "@/components/settings/IntegrationsCard";
 import NotificationSettingsCard from "@/components/settings/NotificationSettingsCard";
 import AISettingsCard from "@/components/settings/AISettingsCard";
-import TelegramSettingsCard from "@/components/settings/TelegramSettingsCard"; // Importar o novo componente
+import TelegramSettingsCard from "@/components/settings/TelegramSettingsCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button"; // Importar Button
+import { Button } from "@/components/ui/button";
+import { ptBR } from "date-fns/locale";
 
 // Lista de fusos horários comuns (pode ser expandida)
 const TIMEZONES = [

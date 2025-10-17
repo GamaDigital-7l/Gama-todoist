@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
+import { ptBR } from "date-fns/locale";
 
 interface SettingsFormValues {
   groq_api_key?: string | null;

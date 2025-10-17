@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ptBR } from "date-fns/locale";
 
 const healthGoalSchema = z.object({
   title: z.string().min(1, "O título da meta é obrigatório."),
@@ -165,7 +166,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("start_date") ? (
-                format(form.watch("start_date")!, "PPP")
+                format(form.watch("start_date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -177,6 +178,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
               selected={form.watch("start_date") || undefined}
               onSelect={(date) => form.setValue("start_date", date || new Date())}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>
@@ -194,7 +196,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("target_date") ? (
-                format(form.watch("target_date")!, "PPP")
+                format(form.watch("target_date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -206,6 +208,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
               selected={form.watch("target_date") || undefined}
               onSelect={(date) => form.setValue("target_date", date!)}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>

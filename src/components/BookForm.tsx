@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/integrations/supabase/auth";
+import { ptBR } from "date-fns/locale";
 
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),

@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star } from "lucide-react"; // Adicionado Clock, CalendarCheck, XCircle, Repeat, Star
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon } from "lucide-react";
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -17,6 +17,10 @@ import { Task, OriginBoard, DAYS_OF_WEEK_MAP } from "@/types/task";
 import TaskListBoard from "@/components/dashboard/TaskListBoard";
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { useQueryClient } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { ptBR } from "date-fns/locale";
 
 interface Profile {
   id: string;
@@ -53,31 +57,12 @@ const fetchUserProfile = async (userId: string): Promise<Profile | null> => {
   return data as Profile | null;
 };
 
-const fetchTasksByCurrentBoard = async (userId: string, board: OriginBoard): Promise<Task[]> => {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
-      task_tags(
-        tags(id, name, color)
-      )
-    `)
-    .eq("user_id", userId)
-    .eq("current_board", board) // Usar current_board
-    .order("created_at", { ascending: false });
-  if (error) {
-    throw error;
-  }
-  const mappedData = data?.map((task: any) => ({
-    ...task,
-    tags: task.task_tags.map((tt: any) => tt.tags),
-  })) || [];
-  return mappedData;
-};
+// Nova função para buscar tarefas para boards específicos baseadas na data selecionada
+const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date, board: OriginBoard): Promise<Task[]> => {
+  const formattedDate = format(selectedDate, "yyyy-MM-dd");
+  const currentDayOfWeek = getDay(selectedDate); // 0 for Sunday, 1 for Monday, etc.
 
-const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
-  const { data, error } = await supabase
+  let query = supabase
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
@@ -86,36 +71,77 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
         tags(id, name, color)
       )
     `)
-    .eq("user_id", userId)
-    .neq("recurrence_type", "none")
-    .order("created_at", { ascending: false });
-  if (error) {
-    throw error;
-  }
-  const mappedData = data?.map((task: any) => ({
-    ...task,
-    tags: task.task_tags.map((tt: any) => tt.tags),
-  })) || [];
-  return mappedData;
-};
+    .eq("user_id", userId);
 
-const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
-      task_tags(
-        tags(id, name, color)
-      )
-    `)
-    .eq("user_id", userId)
-    .eq("current_board", "completed") // Usar current_board
-    .order("completed_at", { ascending: false });
+  if (board === "overdue") {
+    // Para 'overdue', queremos tarefas com due_date anterior à data selecionada e não concluídas
+    query = query
+      .lt("due_date", formattedDate)
+      .eq("is_completed", false)
+      .eq("current_board", "overdue"); // Apenas tarefas que já estão no board 'overdue'
+  } else if (board === "completed") {
+    // Para 'completed', queremos tarefas concluídas na data selecionada
+    query = query
+      .eq("is_completed", true)
+      .eq("current_board", "completed")
+      .gte("completed_at", `${formattedDate}T00:00:00Z`)
+      .lte("completed_at", `${formattedDate}T23:59:59Z`);
+  } else if (board === "recurrent") {
+    // Para 'recurrent', queremos tarefas recorrentes que são devidas na data selecionada
+    query = query
+      .neq("recurrence_type", "none")
+      .eq("is_completed", false); // Apenas tarefas recorrentes não concluídas para o ciclo atual
+  } else {
+    // Para 'today_priority', 'today_no_priority', 'jobs_woe_today'
+    query = query
+      .eq("current_board", board)
+      .eq("is_completed", false); // Apenas tarefas não concluídas
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
+
   if (error) {
     throw error;
   }
-  const mappedData = data?.map((task: any) => ({
+
+  const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+    if (!details) return false;
+    const days = details.split(',');
+    return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+  };
+
+  const filteredData = data?.filter(task => {
+    if (board === "overdue" || board === "completed") {
+      return true; // A filtragem já foi feita na query Supabase
+    }
+    if (board === "recurrent") {
+      // Para tarefas recorrentes, verificar se a recorrência se aplica à data selecionada
+      if (task.recurrence_type === "daily") return true;
+      if (task.recurrence_type === "weekly" && task.recurrence_details) {
+        return isDayIncluded(task.recurrence_details, currentDayOfWeek);
+      }
+      if (task.recurrence_type === "monthly" && task.recurrence_details) {
+        return parseInt(task.recurrence_details) === selectedDate.getDate();
+      }
+      return false;
+    }
+    // Para boards de 'hoje', filtrar por due_date ou recorrência
+    if (task.due_date && isSameDay(parseISO(task.due_date), selectedDate)) {
+      return true;
+    }
+    if (task.recurrence_type !== "none") {
+      if (task.recurrence_type === "daily") return true;
+      if (task.recurrence_type === "weekly" && task.recurrence_details) {
+        return isDayIncluded(task.recurrence_details, currentDayOfWeek);
+      }
+      if (task.recurrence_type === "monthly" && task.recurrence_details) {
+        return parseInt(task.recurrence_details) === selectedDate.getDate();
+      }
+    }
+    return false;
+  }) || [];
+
+  const mappedData = filteredData.map((task: any) => ({
     ...task,
     tags: task.task_tags.map((tt: any) => tt.tags),
   })) || [];
@@ -183,9 +209,7 @@ const Dashboard: React.FC = () => {
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
-  // Removido: const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({ ... });
-  // Removido: const { data: latestHealthMetric, isLoading: isLoadingLatestMetric } = useQuery<HealthMetric | null, Error>({ ... });
-  // Removido: const { data: activeHealthGoal, isLoading: isLoadingActiveGoal } = useQuery<HealthGoal | null, Error>({ ... });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { data: allTasks, isLoading: isLoadingAllTasks, error: errorAllTasks, refetch: refetchAllTasks } = useQuery<Task[], Error>({
     queryKey: ["allTasks", userId],
@@ -194,38 +218,38 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: todayPriorityTasks, isLoading: isLoadingTodayPriority, error: errorTodayPriority, refetch: refetchTodayPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "today_priority", userId],
-    queryFn: () => fetchTasksByCurrentBoard(userId!, "today_priority"), // Usar current_board
+    queryKey: ["dashboardTasks", "today_priority", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "today_priority"),
     enabled: !!userId,
   });
 
   const { data: todayNoPriorityTasks, isLoading: isLoadingTodayNoPriority, error: errorTodayNoPriority, refetch: refetchTodayNoPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "today_no_priority", userId],
-    queryFn: () => fetchTasksByCurrentBoard(userId!, "today_no_priority"), // Usar current_board
+    queryKey: ["dashboardTasks", "today_no_priority", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "today_no_priority"),
     enabled: !!userId,
   });
 
   const { data: jobsWoeTodayTasks, isLoading: isLoadingJobsWoeToday, error: errorJobsWoeToday, refetch: refetchJobsWoeToday } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "jobs_woe_today", userId],
-    queryFn: () => fetchTasksByCurrentBoard(userId!, "jobs_woe_today"), // Usar current_board
+    queryKey: ["dashboardTasks", "jobs_woe_today", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "jobs_woe_today"),
     enabled: !!userId,
   });
 
   const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "overdue", userId],
-    queryFn: () => fetchTasksByCurrentBoard(userId!, "overdue"), // Usar current_board
+    queryKey: ["dashboardTasks", "overdue", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "overdue"),
     enabled: !!userId,
   });
 
   const { data: recurrentTasks, isLoading: isLoadingRecurrent, error: errorRecurrent, refetch: refetchRecurrent } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "recurrent", userId],
-    queryFn: () => fetchRecurrentTasks(userId!),
+    queryKey: ["dashboardTasks", "recurrent", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "recurrent"),
     enabled: !!userId,
   });
 
   const { data: completedTasks, isLoading: isLoadingCompleted, error: errorCompleted, refetch: refetchCompleted } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "completed", userId],
-    queryFn: () => fetchCompletedTasks(userId!), // Usar current_board
+    queryKey: ["dashboardTasks", "completed", userId, selectedDate.toISOString()],
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "completed"),
     enabled: !!userId,
   });
 
@@ -264,35 +288,60 @@ const Dashboard: React.FC = () => {
   const failedRecurrentTasks = recurrentTasks?.filter(task => !getAdjustedTaskCompletionStatus(task)) || [];
   const failedRecurrentCount = failedRecurrentTasks.length;
 
-  // Lógica para "Dias com mais tarefas cumpridas" e "Dias com mais tarefas falhadas"
-  // Isso exigiria uma análise mais profunda de dados históricos e pode ser complexo para o escopo atual.
-  // Por enquanto, vamos focar em contagens mais diretas.
-  // Se o usuário realmente precisar disso, podemos considerar uma Edge Function para pré-processar esses dados.
-
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Crie uma nova tarefa para organizar seu dia.
-              </DialogDescription>
-            </DialogHeader>
-            <TaskForm
-              onTaskSaved={handleTaskAdded}
-              onClose={() => setIsTaskFormOpen(false)}
-              initialOriginBoard="general"
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                {selectedDate ? (
+                  format(selectedDate, "PPP", { locale: ptBR })
+                ) : (
+                  <span>Escolha uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => setSelectedDate(date || new Date())}
+                initialFocus
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+          <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Crie uma nova tarefa para organizar seu dia.
+                </DialogDescription>
+              </DialogHeader>
+              <TaskForm
+                onTaskSaved={handleTaskAdded}
+                onClose={() => setIsTaskFormOpen(false)}
+                initialOriginBoard="general"
+                initialDueDate={selectedDate} // Passa a data selecionada
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -302,8 +351,9 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayPriority}
           error={errorTodayPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
           originBoard="today_priority"
+          selectedDate={selectedDate}
         />
         <TaskListBoard
           title="Hoje sem Prioridade"
@@ -311,8 +361,9 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayNoPriority}
           error={errorTodayNoPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
           originBoard="today_no_priority"
+          selectedDate={selectedDate}
         />
         <TaskListBoard
           title="Jobs Woe hoje"
@@ -320,8 +371,9 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingJobsWoeToday}
           error={errorJobsWoeToday}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
+          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
           originBoard="jobs_woe_today"
+          selectedDate={selectedDate}
         />
         <TaskListBoard
           title="Atrasadas"
@@ -331,6 +383,7 @@ const Dashboard: React.FC = () => {
           refetchTasks={handleTaskAdded}
           showAddButton={false}
           originBoard="overdue"
+          selectedDate={selectedDate}
         />
         <TaskListBoard
           title="Recorrentes"
@@ -340,6 +393,7 @@ const Dashboard: React.FC = () => {
           refetchTasks={handleTaskAdded}
           showAddButton={false}
           originBoard="recurrent"
+          selectedDate={selectedDate}
         />
         <TaskListBoard
           title="Finalizadas"
@@ -349,6 +403,7 @@ const Dashboard: React.FC = () => {
           refetchTasks={handleTaskAdded}
           showAddButton={false}
           originBoard="completed"
+          selectedDate={selectedDate}
         />
         <DashboardTaskList />
       </div>

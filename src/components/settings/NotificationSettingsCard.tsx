@@ -17,18 +17,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { UseFormReturn } from "react-hook-form";
 import { Session } from "@supabase/supabase-js";
-import TimePicker from "../TimePicker"; // Importar TimePicker
+import TimePicker from "../TimePicker";
+import { ptBR } from "date-fns/locale";
 
 interface SettingsFormValues {
   groq_api_key?: string | null;
   openai_api_key?: string | null;
   ai_provider_preference: "groq" | "openai";
   notification_channel: "web_push" | "none";
-  telegram_enabled: boolean; // Adicionado
-  daily_brief_morning_time: string; // Adicionado
-  daily_brief_evening_time: string; // Adicionado
-  weekly_brief_day: string; // Adicionado
-  weekly_brief_time: string; // Adicionado
+  telegram_enabled: boolean;
+  daily_brief_morning_time: string;
+  daily_brief_evening_time: string;
+  weekly_brief_day: string;
+  weekly_brief_time: string;
 }
 
 interface NotificationSettingsCardProps {
@@ -57,7 +58,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
   const [isSendingWeeklyBriefTest, setIsSendingWeeklyBriefTest] = React.useState(false);
 
   const notificationChannel = form.watch("notification_channel");
-  const telegramEnabled = form.watch("telegram_enabled"); // Observar telegram_enabled
+  const telegramEnabled = form.watch("telegram_enabled");
 
   const handleSendTestNotification = async () => {
     if (!userId) {

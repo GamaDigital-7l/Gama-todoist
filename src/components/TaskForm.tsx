@@ -27,7 +27,8 @@ import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OriginBoard, RecurrenceType, Task } from "@/types/task";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Adicionado useQueryClient
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ptBR } from "date-fns/locale";
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -68,6 +69,7 @@ interface TaskFormProps {
   onClose: () => void;
   initialOriginBoard?: OriginBoard;
   initialParentTaskId?: string;
+  initialDueDate?: Date; // Nova prop
 }
 
 interface ParentTaskOption {
@@ -88,7 +90,7 @@ const fetchUserTasks = async (userId: string): Promise<ParentTaskOption[]> => {
   return data || [];
 };
 
-const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general", initialParentTaskId }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general", initialParentTaskId, initialDueDate }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient(); // Inicializado useQueryClient
@@ -109,7 +111,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     } : {
       title: "",
       description: "",
-      due_date: undefined,
+      due_date: initialDueDate || undefined, // Usa initialDueDate aqui
       time: undefined,
       recurrence_type: "none",
       recurrence_details: undefined,
@@ -148,7 +150,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
       if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
-        form.setValue("due_date", new Date());
+        form.setValue("due_date", initialDueDate || new Date()); // Usa initialDueDate se disponível
         form.setValue("current_board", initialOriginBoard); // Definir current_board
         
         let tagName: string;
@@ -204,7 +206,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     };
 
     setupInitialBoardDefaults();
-  }, [initialData, initialOriginBoard, userId, form]);
+  }, [initialData, initialOriginBoard, userId, form, initialDueDate]);
 
 
   const handleDayToggle = (dayValue: string) => {
@@ -334,7 +336,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("due_date") ? (
-                format(form.watch("due_date")!, "PPP")
+                format(form.watch("due_date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -346,6 +348,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               selected={form.watch("due_date") || undefined}
               onSelect={(date) => form.setValue("due_date", date || null)}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>
