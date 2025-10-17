@@ -179,7 +179,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader>
         <CardTitle className="text-foreground">Integrações</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -202,7 +202,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                     <SelectTrigger id="google-calendar-select" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
                       {isLoadingCalendars ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Carregando calendários...
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando calendários...
                         </div>
                       ) : (
                         <SelectValue placeholder="Selecione um calendário" />

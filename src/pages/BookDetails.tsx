@@ -102,7 +102,7 @@ const BookDetails: React.FC = () => {
         </div>
       </div>
 
-      <Card className="bg-card border border-border rounded-lg shadow-sm">
+      <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader>
           <CardTitle className="text-foreground">Detalhes do Livro</CardTitle>
         </CardHeader>

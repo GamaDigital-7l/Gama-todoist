@@ -158,7 +158,7 @@ const Goals: React.FC = () => {
       {goals && goals.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {goals.map((goal) => (
-            <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xl font-semibold text-foreground break-words">{goal.title}</CardTitle>
                 <div className="flex items-center gap-2 flex-shrink-0">

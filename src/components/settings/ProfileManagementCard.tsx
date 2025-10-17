@@ -62,7 +62,7 @@ const ProfileManagementCard: React.FC<ProfileManagementCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader>
         <CardTitle className="text-foreground">Gerenciamento de Perfil</CardTitle>
         <CardDescription className="text-muted-foreground">

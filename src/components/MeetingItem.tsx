@@ -67,7 +67,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
           <label className="text-sm font-medium leading-none text-foreground">

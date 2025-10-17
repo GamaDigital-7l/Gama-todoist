@@ -28,7 +28,7 @@ interface AISettingsCardProps {
 
 const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader>
         <CardTitle className="text-foreground">Chaves de API e Preferências de IA</CardTitle>
         <CardDescription className="text-muted-foreground">

@@ -176,7 +176,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   return (
     <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
       <div className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-md shadow-sm",
+        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl shadow-sm frosted-glass card-hover-effect",
         level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
       )}>
         <div className="flex items-center gap-3 flex-grow min-w-0">

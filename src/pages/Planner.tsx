@@ -337,7 +337,7 @@ const Planner: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coluna Esquerda: Calendário e Próximas Reuniões */}
         <div className="flex flex-col gap-6">
-          <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center">
+          <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center frosted-glass card-hover-effect">
             <CardHeader className="w-full text-center pb-2">
               <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
             </CardHeader>
@@ -353,7 +353,7 @@ const Planner: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border border-border rounded-xl shadow-lg">
+          <Card className="bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" /> Próximas Reuniões
@@ -367,7 +367,7 @@ const Planner: React.FC = () => {
                 <p className="text-center text-muted-foreground">Carregando próximas reuniões...</p>
               ) : futureMeetings && futureMeetings.length > 0 ? (
                 futureMeetings.map((meeting) => (
-                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
                     <p className="text-sm font-medium text-foreground flex items-center gap-1">
                       {meeting.title}
                     </p>
@@ -397,7 +397,7 @@ const Planner: React.FC = () => {
         {/* Colunas do Meio e Direita: Reuniões/Eventos do Dia e Tarefas do Dia */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card de Reuniões e Eventos do Dia */}
-          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
+          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
@@ -431,7 +431,7 @@ const Planner: React.FC = () => {
                 <p className="text-center text-muted-foreground">Carregando eventos...</p>
               ) : combinedEvents && combinedEvents.length > 0 ? (
                 combinedEvents.map((event) => (
-                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
                     <p className="text-sm font-medium text-foreground flex items-center gap-1">
                       {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500" />}
                       {event.title}
@@ -473,7 +473,7 @@ const Planner: React.FC = () => {
           </Card>
 
           {/* Card de Tarefas do Dia */}
-          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
+          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <ListTodo className="h-5 w-5 text-primary" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}

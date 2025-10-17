@@ -347,7 +347,7 @@ const Tasks: React.FC = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader>
             <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
           </CardHeader>

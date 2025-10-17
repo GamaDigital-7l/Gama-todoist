@@ -143,7 +143,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
   const isAnyNotificationChannelEnabled = notificationChannel === "web_push" || telegramEnabled;
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader>
         <CardTitle className="text-foreground">Configurações de Notificação</CardTitle>
         <CardDescription className="text-muted-foreground">

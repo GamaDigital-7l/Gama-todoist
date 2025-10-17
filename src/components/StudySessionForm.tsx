@@ -99,7 +99,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card rounded-xl frosted-glass card-hover-effect">
       <div>
         <Label htmlFor="title" className="text-foreground">Título da Sessão</Label>
         <Input

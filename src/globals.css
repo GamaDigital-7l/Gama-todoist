@@ -11,6 +11,7 @@
 
     --card: 220 15% 12%; /* Fundo de cards, um pouco mais claro que o background */
     --card-foreground: 210 20% 98%;
+    --card-rgb: 26, 29, 35; /* RGB para o card, usado no frosted-glass */
 
     --popover: 220 15% 12%; /* Fundo de popovers, igual ao card */
     --popover-foreground: 210 20% 98%;
@@ -32,6 +33,7 @@
     --destructive-foreground: 210 20% 98%;
 
     --border: 220 15% 20%; /* Borda sutil */
+    --border-rgb: 40, 47, 62; /* RGB para a borda, usado no frosted-glass */
     --input: 220 15% 15%; /* Fundo de inputs */
     --ring: 228 100% 67%; /* Cor do ring de foco, azul neon */
 

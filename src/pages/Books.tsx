@@ -181,7 +181,7 @@ const Books: React.FC = () => {
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
-            <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <Link to={`/books/${book.id}`} className="block">
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}

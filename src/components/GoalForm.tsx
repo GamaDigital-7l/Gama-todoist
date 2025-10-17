@@ -100,7 +100,7 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialData, onGoalSaved, onClose }
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card rounded-xl frosted-glass card-hover-effect">
       <div>
         <Label htmlFor="title" className="text-foreground">Título</Label>
         <Input

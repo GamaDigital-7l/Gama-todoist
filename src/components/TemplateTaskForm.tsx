@@ -59,7 +59,7 @@ interface TemplateTaskFormProps {
   onClose: () => void;
 }
 
-const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemplateTaskSaved, onClose }) => {
+const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialData, onTemplateTaskSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
@@ -173,7 +173,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card rounded-xl frosted-glass card-hover-effect">
       <div>
         <Label htmlFor="title" className="text-foreground">Título</Label>
         <Input

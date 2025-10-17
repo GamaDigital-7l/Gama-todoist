@@ -71,7 +71,7 @@ const AIChat: React.FC = () => {
         Converse com seu assistente de IA para obter ajuda e insights.
       </p>
 
-      <Card className="flex flex-col flex-grow bg-card border border-border rounded-lg shadow-sm">
+      <Card className="flex flex-col flex-grow bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader className="border-b border-border">
           <CardTitle className="text-foreground">Chat com IA</CardTitle>
         </CardHeader>

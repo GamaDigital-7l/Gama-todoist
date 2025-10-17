@@ -71,7 +71,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
+      <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         </CardHeader>
@@ -84,7 +84,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   if (error) {
     return (
-      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
+      <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         </CardHeader>
@@ -96,7 +96,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   }
 
   return (
-    <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
