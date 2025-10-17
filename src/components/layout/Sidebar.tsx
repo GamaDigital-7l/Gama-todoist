@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users } from "lucide-react"; // Importar Users
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users, BarChart2 } from "lucide-react"; // Importar BarChart2
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -145,6 +145,18 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
           >
             <Users className="h-4 w-4" />
             Clientes
+          </NavLink>
+          <NavLink
+            to="/results" {/* Novo link para Resultados */}
+            className={({ isActive }) =>
+              cn(
+                "nav-link-base",
+                isActive ? "nav-link-active" : "nav-link-inactive"
+              )
+            }
+          >
+            <BarChart2 className="h-4 w-4" />
+            Resultados
           </NavLink>
           <NavLink
             to="/ai-chat"

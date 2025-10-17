@@ -19,7 +19,8 @@ import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
-import ClientMoodboardPage from "./pages/ClientMoodboardPage"; // Importar a nova página de Moodboard
+import ClientMoodboardPage from "./pages/ClientMoodboardPage";
+import Results from "./pages/Results"; // Importar a nova página de Resultados
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
@@ -69,12 +70,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <TooltipProvider>
-        <Sonner /> {/* Apenas Sonner é mantido */}
+        <Sonner />
         <BrowserRouter>
           <SessionContextProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
-              {/* Rota para o leitor de PDF em tela cheia, fora do Layout */}
               <Route path="/books/:id/read" element={<ProtectedRoute><BookReaderFullScreen /></ProtectedRoute>} />
               <Route
                 path="/"
@@ -96,9 +96,10 @@ const App = () => (
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetails />} />
-                <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} /> {/* Nova rota para Moodboard */}
+                <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} />
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/results" element={<Results />} /> {/* Nova rota para Resultados */}
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -7,7 +7,7 @@ import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, CalendarDays, Users } from "lucide-react";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, CalendarDays, Users, BarChart2 } from "lucide-react"; // Importar BarChart2
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -112,6 +112,15 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Users className="h-5 w-5" /> Clientes
+              </NavLink>
+              <NavLink
+                to="/results" // Novo link para Resultados
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-2.5 py-2 rounded-lg ${isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`
+                }
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <BarChart2 className="h-5 w-5" /> Resultados
               </NavLink>
               <NavLink
                 to="/ai-chat"
