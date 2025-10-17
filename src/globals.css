@@ -181,7 +181,10 @@
   }
 
   .nav-link-inactive {
-    @apply hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
     color: hsl(var(--sidebar-foreground));
+    &:hover {
+      background-color: hsl(var(--sidebar-accent));
+      color: hsl(var(--sidebar-accent-foreground));
+    }
   }
 }
