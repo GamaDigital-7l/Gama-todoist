@@ -75,11 +75,10 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
     .eq("user_id", userId);
 
   if (board === "overdue") {
-    // Para 'overdue', queremos tarefas com due_date anterior à data selecionada e não concluídas
+    // Para 'overdue', queremos todas as tarefas marcadas como 'overdue' e não concluídas
     query = query
-      .lt("due_date", formattedDate)
       .eq("is_completed", false)
-      .eq("current_board", "overdue"); // Apenas tarefas que já estão no board 'overdue'
+      .eq("current_board", "overdue");
   } else if (board === "completed") {
     // Para 'completed', queremos tarefas concluídas na data selecionada
     query = query
