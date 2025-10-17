@@ -119,7 +119,11 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
       showSuccess("Tarefa adicionada com sucesso!");
       setInput("");
-      onTaskAdded();
+      onTaskAdded(); // Chama o refetch do componente pai
+      // Invalidação de cache mais granular
+      queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", originBoard, userId] });
+      queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] });
       queryClient.invalidateQueries({ queryKey: ["tags", userId] });
     } catch (err: any) {
       showError("Erro ao adicionar tarefa: " + err.message);

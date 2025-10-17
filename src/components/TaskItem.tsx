@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, PlusCircle } from "lucide-react";
+import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle } from "lucide-react"; // Adicionado AlertCircle
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
@@ -27,6 +27,7 @@ const POINTS_PER_TASK = 10;
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) => {
   const { session } = useSession();
+  const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
@@ -35,6 +36,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
+      if (!userId) {
+        showError("Usuário não autenticado.");
+        throw new Error("Usuário não autenticado.");
+      }
+
       const { data: taskToUpdate, error: fetchTaskError } = await supabase
         .from("tasks")
         .select("recurrence_type, origin_board")
@@ -70,47 +76,41 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
           completed_at: completedAt,
           origin_board: newOriginBoard,
         })
-        .eq("id", taskId);
+        .eq("id", taskId)
+        .eq("user_id", userId); // Adicionado user_id para segurança
 
       if (updateError) throw updateError;
 
-      if (!currentStatus && session?.user?.id) { // Se a tarefa foi marcada como concluída
-        let currentPoints = 0;
-        const { data: existingProfile, error: fetchProfileError } = await supabase
+      if (!currentStatus) { // Se a tarefa foi marcada como concluída, adicionar pontos
+        const { data: profileData, error: fetchProfileError } = await supabase
           .from("profiles")
           .select("points")
-          .eq("id", session.user.id)
+          .eq("id", userId)
           .single();
 
-        if (fetchProfileError && fetchProfileError.code !== 'PGRST116') {
-          throw fetchProfileError;
-        }
-
-        if (existingProfile) {
-          currentPoints = existingProfile.points || 0;
-        } else {
-          const { error: insertProfileError } = await supabase
-            .from("profiles")
-            .insert({ id: session.user.id, points: 0 });
-
-          if (insertProfileError) {
-            throw insertProfileError;
-          }
+        let currentPoints = 0;
+        if (profileData) {
+          currentPoints = profileData.points || 0;
         }
 
         const newPoints = currentPoints + POINTS_PER_TASK;
         const { error: pointsError } = await supabase
           .from("profiles")
-          .update({ points: newPoints })
-          .eq("id", session.user.id);
+          .update({ points: newPoints, updated_at: new Date().toISOString() })
+          .eq("id", userId);
 
         if (pointsError) throw pointsError;
-        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       }
     },
-    onSuccess: () => {
-      refetchTasks();
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] });
+    onSuccess: (_, variables) => {
+      showSuccess("Tarefa atualizada com sucesso!");
+      // Invalidação de cache mais granular
+      queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+      queryClient.invalidateQueries({ queryKey: ["userProfile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.origin_board, userId] }); // Invalida o board de origem
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "completed", userId] }); // Invalida o board de destino
+      queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
+      refetchTasks(); // Refetch local para atualizar a lista
     },
     onError: (err: any) => {
       showError("Erro ao atualizar tarefa: " + err.message);
@@ -135,8 +135,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
 
         if (error) throw error;
         showSuccess("Tarefa deletada com sucesso!");
+        // Invalidação de cache mais granular
+        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", task.origin_board, userId] });
+        queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] });
         refetchTasks();
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks"] });
       } catch (err: any) {
         showError("Erro ao deletar tarefa: " + err.message);
         console.error("Erro ao deletar tarefa:", err);
@@ -188,6 +191,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}
             >
+              {task.origin_board === 'overdue' && (
+                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />
+              )}
               {task.title}
             </label>
             {task.description && (

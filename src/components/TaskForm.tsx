@@ -27,7 +27,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OriginBoard, RecurrenceType, Task } from "@/types/task";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Adicionado useQueryClient
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -87,6 +87,7 @@ const fetchUserTasks = async (userId: string): Promise<ParentTaskOption[]> => {
 const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, initialOriginBoard = "general", initialParentTaskId }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const queryClient = useQueryClient(); // Inicializado useQueryClient
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -263,6 +264,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       form.reset();
       onTaskSaved();
       onClose();
+      // Invalidação de cache mais granular
+      queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", values.origin_board, userId] });
+      queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] });
+      queryClient.invalidateQueries({ queryKey: ["userTasksForParentSelection", userId] });
     } catch (error: any) {
       showError("Erro ao salvar tarefa: " + error.message);
       console.error("Erro ao salvar tarefa:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon } from "lucide-react";
+import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2 } from "lucide-react"; // Adicionado Edit, Trash2
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
@@ -148,7 +148,10 @@ const Planner: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<MeetingFormValues & { id: string } | undefined>(undefined);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
 
   const { data: meetings, isLoading: isLoadingMeetings, error: meetingsError, refetch: refetchMeetings } = useQuery<Meeting[], Error>({
     queryKey: ["meetings", userId, selectedDate?.toISOString()],
@@ -196,6 +199,76 @@ const Planner: React.FC = () => {
   const handleMeetingSaved = () => {
     refetchMeetings();
     refetchFutureMeetings(); // Refetch future meetings after a meeting is saved
+    setIsMeetingFormOpen(false); // Fechar o formulário após salvar
+    setEditingMeeting(undefined); // Resetar o estado de edição
+  };
+
+  const handleEditMeeting = (meeting: Meeting) => {
+    const editableMeeting: MeetingFormValues & { id: string } = {
+      id: meeting.id,
+      title: meeting.title,
+      description: meeting.description || undefined,
+      date: parseISO(meeting.date),
+      start_time: meeting.start_time,
+      end_time: meeting.end_time || undefined,
+      location: meeting.location || undefined,
+    };
+    setEditingMeeting(editableMeeting);
+    setIsMeetingFormOpen(true);
+  };
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    if (window.confirm("Tem certeza que deseja deletar esta reunião?")) {
+      try {
+        const { error } = await supabase
+          .from("meetings")
+          .delete()
+          .eq("id", meetingId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Reunião deletada com sucesso!");
+        refetchMeetings();
+        refetchFutureMeetings();
+      } catch (err: any) {
+        showError("Erro ao deletar reunião: " + err.message);
+        console.error("Erro ao deletar reunião:", err);
+      }
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsTaskFormOpen(true);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    if (window.confirm("Tem certeza que deseja deletar esta tarefa e todas as suas subtarefas?")) {
+      try {
+        await supabase.from("task_tags").delete().eq("task_id", taskId);
+
+        const { error } = await supabase
+          .from("tasks")
+          .delete()
+          .eq("id", taskId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Tarefa deletada com sucesso!");
+        handleTaskAdded(); // Refetch all relevant task queries
+      } catch (err: any) {
+        showError("Erro ao deletar tarefa: " + err.message);
+        console.error("Erro ao deletar tarefa:", err);
+      }
+    }
   };
 
   const buildTaskTree = (allTasks: Task[]): Task[] => {
@@ -235,6 +308,7 @@ const Planner: React.FC = () => {
       end_time: m.end_time ? parseISO(`${m.date}T${m.end_time}`) : undefined,
       location: m.location,
       html_link: undefined,
+      original_meeting: m, // Adiciona a reunião original para edição/exclusão
     })),
     ...(googleEvents || []).map(ge => ({
       type: 'google_event',
@@ -245,6 +319,7 @@ const Planner: React.FC = () => {
       end_time: parseISO(ge.end_time),
       location: ge.location,
       html_link: ge.html_link,
+      original_meeting: undefined, // Eventos do Google não têm original_meeting
     })),
   ].sort((a, b) => a.start_time.getTime() - b.start_time.getTime());
 
@@ -320,7 +395,10 @@ const Planner: React.FC = () => {
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
-              <Dialog open={isMeetingFormOpen} onOpenChange={setIsMeetingFormOpen}>
+              <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
+                setIsMeetingFormOpen(open);
+                if (!open) setEditingMeeting(undefined); // Resetar o estado de edição ao fechar
+              }}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
@@ -328,13 +406,13 @@ const Planner: React.FC = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                   <DialogHeader>
-                    <DialogTitle className="text-foreground">Adicionar Nova Reunião</DialogTitle>
+                    <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
-                      Crie uma nova reunião para a data selecionada.
+                      {editingMeeting ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
-                    initialData={selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined}
+                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined)}
                     onMeetingSaved={handleMeetingSaved}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />
@@ -369,21 +447,11 @@ const Planner: React.FC = () => {
                     )}
                     {event.type === 'meeting' && (
                       <div className="flex items-center gap-2 mt-2">
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          const meetingToEdit = meetings?.find(m => m.id === event.id);
-                          if (meetingToEdit) {
-                            setIsMeetingFormOpen(true);
-                            // Passar initialData para o formulário de reunião
-                            // Isso exigiria um estado de edição no Planner ou um refatoramento do MeetingForm
-                            // Por simplicidade, vamos apenas abrir o formulário vazio por enquanto
-                          }
-                        }} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Editar Reunião</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          // Lógica para deletar reunião
-                        }} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Deletar Reunião</span>
                         </Button>
@@ -403,7 +471,10 @@ const Planner: React.FC = () => {
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <ListTodo className="h-5 w-5 text-primary" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
-              <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+              <Dialog open={isTaskFormOpen} onOpenChange={(open) => {
+                setIsTaskFormOpen(open);
+                if (!open) setEditingTask(undefined); // Resetar o estado de edição ao fechar
+              }}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
@@ -411,16 +482,16 @@ const Planner: React.FC = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                   <DialogHeader>
-                    <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+                    <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
-                      Crie uma nova tarefa para a data selecionada.
+                      {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para a data selecionada."}
                     </DialogDescription>
                   </DialogHeader>
                   <TaskForm
+                    initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : (selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", selected_tag_ids: [] } as any : undefined)}
                     onTaskSaved={handleTaskAdded}
                     onClose={() => setIsTaskFormOpen(false)}
                     initialOriginBoard="general"
-                    initialData={selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", selected_tag_ids: [] } as any : undefined}
                   />
                 </DialogContent>
               </Dialog>

@@ -2,12 +2,12 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle } from "lucide-react";
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat } from "lucide-react"; // Adicionado Clock, CalendarCheck, XCircle, Repeat
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay } from "date-fns";
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -119,6 +119,27 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
   return mappedData;
 };
 
+const fetchAllTasks = async (userId: string): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      task_tags(
+        tags(id, name, color)
+      )
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    throw error;
+  }
+  const mappedData = data?.map((task: any) => ({
+    ...task,
+    tags: task.task_tags.map((tt: any) => tt.tags),
+  })) || [];
+  return mappedData;
+};
+
 
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
@@ -158,9 +179,13 @@ const Dashboard: React.FC = () => {
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
-  const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({
-    queryKey: ["userProfile", userId],
-    queryFn: () => fetchUserProfile(userId!),
+  // Removido: const { data: profile, isLoading: isLoadingProfile } = useQuery<Profile | null, Error>({ ... });
+  // Removido: const { data: latestHealthMetric, isLoading: isLoadingLatestMetric } = useQuery<HealthMetric | null, Error>({ ... });
+  // Removido: const { data: activeHealthGoal, isLoading: isLoadingActiveGoal } = useQuery<HealthGoal | null, Error>({ ... });
+
+  const { data: allTasks, isLoading: isLoadingAllTasks, error: errorAllTasks, refetch: refetchAllTasks } = useQuery<Task[], Error>({
+    queryKey: ["allTasks", userId],
+    queryFn: () => fetchAllTasks(userId!),
     enabled: !!userId,
   });
 
@@ -200,60 +225,7 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   });
 
-  const { data: latestHealthMetric, isLoading: isLoadingLatestMetric } = useQuery<HealthMetric | null, Error>({
-    queryKey: ["latestHealthMetric", userId],
-    queryFn: () => fetchLatestHealthMetric(userId!),
-    enabled: !!userId,
-  });
-
-  const { data: activeHealthGoal, isLoading: isLoadingActiveGoal } = useQuery<HealthGoal | null, Error>({
-    queryKey: ["activeHealthGoal", userId],
-    queryFn: () => fetchActiveHealthGoal(userId!),
-    enabled: !!userId,
-  });
-
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
-
-  const getTodayCompletedTasksCount = (priorityTasks: Task[], noPriorityTasks: Task[], jobsWoeTasks: Task[]): { completed: number; total: number } => {
-    let completedToday = 0;
-    let totalToday = 0;
-
-    [...priorityTasks, ...noPriorityTasks, ...jobsWoeTasks].forEach(task => {
-      totalToday++;
-      if (getAdjustedTaskCompletionStatus(task)) {
-        completedToday++;
-      }
-    });
-
-    return { completed: completedToday, total: totalToday };
-  };
-
-  const todayTasksStats = getTodayCompletedTasksCount(todayPriorityTasks || [], todayNoPriorityTasks || [], jobsWoeTodayTasks || []);
-
-  const currentWeight = latestHealthMetric?.weight_kg || null;
-  let healthGoalProgress = {
-    totalToLose: 0,
-    currentWeightLost: 0,
-    remainingToLose: 0,
-    progressPercentage: 0,
-    daysRemaining: 0,
-  };
-
-  if (activeHealthGoal && currentWeight !== null) {
-    const totalToLose = activeHealthGoal.initial_weight_kg - activeHealthGoal.target_weight_kg;
-    const currentWeightLost = activeHealthGoal.initial_weight_kg - currentWeight;
-    const remainingToLose = totalToLose - currentWeightLost;
-    const progressPercentage = totalToLose > 0 ? (currentWeightLost / totalToLose) * 100 : 0;
-    const daysRemaining = differenceInDays(parseISO(activeHealthGoal.target_date), new Date());
-
-    healthGoalProgress = {
-      totalToLose,
-      currentWeightLost,
-      remainingToLose,
-      progressPercentage: Math.max(0, Math.min(100, progressPercentage)),
-      daysRemaining: Math.max(0, daysRemaining),
-    };
-  }
 
   const handleTaskAdded = () => {
     refetchTodayPriority();
@@ -262,8 +234,36 @@ const Dashboard: React.FC = () => {
     refetchOverdue();
     refetchRecurrent();
     refetchCompleted();
+    refetchAllTasks(); // Adicionado refetch para todas as tarefas
     queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
   };
+
+  // --- Novas Lógicas para Estatísticas ---
+  const today = new Date();
+  const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Domingo como início da semana
+  const endOfThisWeek = endOfWeek(today, { weekStartsOn: 0 });
+  const startOfThisMonth = startOfMonth(today);
+  const endOfThisMonth = endOfMonth(today);
+
+  const totalTasksCount = allTasks?.length || 0;
+  const totalOverdueCount = overdueTasks?.length || 0;
+  const totalRecurrentCount = recurrentTasks?.length || 0;
+
+  const completedThisWeekCount = completedTasks?.filter(task => 
+    task.completed_at && parseISO(task.completed_at) >= startOfThisWeek && parseISO(task.completed_at) <= endOfThisWeek
+  ).length || 0;
+
+  const completedThisMonthCount = completedTasks?.filter(task =>
+    task.completed_at && parseISO(task.completed_at) >= startOfThisMonth && parseISO(task.completed_at) <= endOfThisMonth
+  ).length || 0;
+
+  const failedRecurrentTasks = recurrentTasks?.filter(task => !getAdjustedTaskCompletionStatus(task)) || [];
+  const failedRecurrentCount = failedRecurrentTasks.length;
+
+  // Lógica para "Dias com mais tarefas cumpridas" e "Dias com mais tarefas falhadas"
+  // Isso exigiria uma análise mais profunda de dados históricos e pode ser complexo para o escopo atual.
+  // Por enquanto, vamos focar em contagens mais diretas.
+  // Se o usuário realmente precisar disso, podemos considerar uma Edge Function para pré-processar esses dados.
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
@@ -289,6 +289,94 @@ const Dashboard: React.FC = () => {
             />
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Novos Cartões de Estatísticas de Tarefas */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
+            <ListTodo className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingAllTasks ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{totalTasksCount}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Todas as tarefas criadas.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
+            <XCircle className="h-5 w-5 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingOverdue ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{totalOverdueCount}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Tarefas que passaram do prazo.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
+            <Repeat className="h-5 w-5 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingRecurrent ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{failedRecurrentCount}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Tarefas recorrentes não concluídas no ciclo.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
+            <CalendarCheck className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingCompleted ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{completedThisWeekCount}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Tarefas finalizadas esta semana.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
+            <CalendarCheck className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingCompleted ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{completedThisMonthCount}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Tarefas finalizadas este mês.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -347,67 +435,6 @@ const Dashboard: React.FC = () => {
           originBoard="completed"
         />
         <DashboardTaskList />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Tarefas Diárias</CardTitle>
-            <ListTodo className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            {(isLoadingTodayPriority || isLoadingTodayNoPriority || isLoadingJobsWoeToday) ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{todayTasksStats.completed}/{todayTasksStats.total} Concluídas</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Você está no caminho certo!
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Pontuação Total</CardTitle>
-            <Award className="h-5 w-5 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingProfile ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">+{profile?.points || 0} Pontos</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Continue assim para subir de nível!
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Meta de Saúde</CardTitle>
-            <HeartPulse className="h-5 w-5 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingActiveGoal || isLoadingLatestMetric ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : activeHealthGoal && currentWeight !== null ? (
-              <>
-                <div className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5 text-green-500" /> {healthGoalProgress.remainingToLose.toFixed(1)} kg restantes
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  para {activeHealthGoal.target_weight_kg} kg até {format(parseISO(activeHealthGoal.target_date), "dd/MM")}.
-                </p>
-                <Progress value={healthGoalProgress.progressPercentage} className="w-full mt-2" />
-                <p className="text-xs text-muted-foreground text-right mt-1">{healthGoalProgress.progressPercentage.toFixed(0)}%</p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma meta de saúde ativa. Adicione uma!
-              </p>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

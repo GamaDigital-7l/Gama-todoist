@@ -3,7 +3,7 @@
 import React from "react";
 import TaskForm from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Adicionado useQueryClient
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,6 +66,7 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
 const Tasks: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const queryClient = useQueryClient(); // Inicializado useQueryClient
 
   const { data: tasks, isLoading, error, refetch } = useQuery<Task[], Error>({
     queryKey: ["tasks", userId],
@@ -85,57 +86,11 @@ const Tasks: React.FC = () => {
   const [isTemplateFormOpen, setIsTemplateFormOpen] = React.useState(false);
   const [editingTemplateTask, setEditingTemplateTask] = React.useState<TemplateTask | undefined>(undefined);
 
-  const handleToggleComplete = async (taskId: string, currentStatus: boolean) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    try {
-      const { data: taskToUpdate, error: fetchTaskError } = await supabase
-        .from("tasks")
-        .select("recurrence_type, origin_board")
-        .eq("id", taskId)
-        .single();
-
-      if (fetchTaskError) throw fetchTaskError;
-
-      let newOriginBoard = taskToUpdate.origin_board;
-      let completedAt = null;
-      let lastSuccessfulCompletionDate = null;
-
-      if (!currentStatus) { // Se a tarefa está sendo marcada como concluída
-        completedAt = new Date().toISOString();
-        lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
-        if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
-        }
-      } else { // Se a tarefa está sendo desmarcada
-        completedAt = null;
-        lastSuccessfulCompletionDate = null;
-        if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "general"; // Mover de volta para geral se não for recorrente
-        }
-      }
-
-      const { error } = await supabase
-        .from("tasks")
-        .update({
-          is_completed: !currentStatus,
-          updated_at: new Date().toISOString(),
-          last_successful_completion_date: lastSuccessfulCompletionDate,
-          completed_at: completedAt,
-          origin_board: newOriginBoard,
-        })
-        .eq("id", taskId)
-        .eq("user_id", userId);
-
-      if (error) throw error;
-      showSuccess("Tarefa atualizada com sucesso!");
-      refetch();
-    } catch (err: any) {
-      showError("Erro ao atualizar tarefa: " + err.message);
-      console.error("Erro ao atualizar tarefa:", err);
-    }
+  const handleTaskUpdated = () => {
+    refetch(); // Refetch all tasks for this page
+    queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] }); // Invalida todas as queries do dashboard
+    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] }); // Invalida a query de todas as tarefas
+    queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -155,7 +110,7 @@ const Tasks: React.FC = () => {
 
         if (error) throw error;
         showSuccess("Tarefa deletada com sucesso!");
-        refetch();
+        handleTaskUpdated(); // Chama a função de atualização
       } catch (err: any) {
         showError("Erro ao deletar tarefa: " + err.message);
         console.error("Erro ao deletar tarefa:", err);
@@ -243,7 +198,7 @@ const Tasks: React.FC = () => {
     return (
       <div className="space-y-3">
         {filteredTaskTree.map((task) => (
-          <TaskItem key={task.id} task={task} refetchTasks={refetch} />
+          <TaskItem key={task.id} task={task} refetchTasks={handleTaskUpdated} />
         ))}
       </div>
     );
@@ -296,7 +251,7 @@ const Tasks: React.FC = () => {
             </DialogHeader>
             <TaskForm
               initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
-              onTaskSaved={refetch}
+              onTaskSaved={handleTaskUpdated}
               onClose={() => setIsFormOpen(false)}
             />
           </DialogContent>
