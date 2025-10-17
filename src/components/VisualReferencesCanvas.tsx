@@ -384,7 +384,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
               <DialogDescription className="text-muted-foreground">
                 Cole a URL da imagem que deseja adicionar ao canvas.
               </DialogDescription>
-            </DialogDescription>
+            </DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="imageUrl" className="text-foreground">URL da Imagem</Label>
