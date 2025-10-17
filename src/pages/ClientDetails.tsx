@@ -16,6 +16,7 @@ import MoodboardForm from "@/components/MoodboardForm";
 import MoodboardCard from "@/components/MoodboardCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientKanbanPage from "./ClientKanbanPage"; // Importar ClientKanbanPage
+import { format, parseISO } from "date-fns"; // Importar format e parseISO
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
   const { data, error } = await supabase
