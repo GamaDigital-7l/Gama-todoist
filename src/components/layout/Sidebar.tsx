@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays } from "lucide-react";
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users } from "lucide-react"; // Importar Users
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -141,6 +141,19 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
           >
             <NotebookText className="h-4 w-4" />
             Notas
+          </NavLink>
+          <NavLink
+            to="/clients"
+            className={({ isActive }) =>
+              cn(
+                "nav-link-base",
+                isActive ? "nav-link-active" : "nav-link-inactive"
+              )
+            }
+            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
+          >
+            <Users className="h-4 w-4" />
+            Clientes
           </NavLink>
           <NavLink
             to="/ai-chat"
