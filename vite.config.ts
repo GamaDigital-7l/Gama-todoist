@@ -17,8 +17,7 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Adiciona um alias para lucide-react para usar nosso shim
-      "lucide-react": path.resolve(__dirname, "./src/lib/lucide-shim.ts"),
+      // O alias para 'lucide-react' foi removido para evitar dependência circular.
     },
   },
 }));
