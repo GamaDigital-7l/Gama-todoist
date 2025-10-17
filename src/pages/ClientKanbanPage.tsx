@@ -6,11 +6,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; /
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, ClientTask, ClientTaskStatus } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { format, subMonths, addMonths, parseISO } from "date-fns";
+import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -250,12 +250,18 @@ const ClientKanbanPage: React.FC = () => {
     }
 
     try {
-      // Esta lógica será implementada em uma Edge Function para automação
-      // Por enquanto, um placeholder para simular a geração
-      showSuccess("Funcionalidade de geração automática de tarefas em desenvolvimento!");
-      // Aqui você chamaria uma Edge Function que processaria os templates e criaria as tarefas
-      // Ex: await supabase.functions.invoke('generate-client-tasks', { body: { clientId, monthYearRef } });
-      refetchClientTasks(); // Refetch para ver as novas tarefas (se a função fosse real)
+      const { data, error } = await supabase.functions.invoke('generate-client-tasks', {
+        body: { clientId, monthYearRef },
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+      showSuccess(data.message || "Tarefas geradas com sucesso!");
+      refetchClientTasks(); // Refetch para ver as novas tarefas
     } catch (err: any) {
       showError("Erro ao gerar tarefas: " + err.message);
       console.error("Erro ao gerar tarefas:", err);
@@ -265,6 +271,16 @@ const ClientKanbanPage: React.FC = () => {
   const completedTasksCount = clientTasks?.filter(task => task.is_completed).length || 0;
   const totalTasksForMonth = clientTasks?.length || 0;
   const progressPercentage = totalTasksForMonth > 0 ? (completedTasksCount / totalTasksForMonth) * 100 : 0;
+
+  // Lógica para alerta de "Mês atual" e "Próximo mês"
+  const today = new Date();
+  const isCurrentMonth = isSameMonth(currentMonth, today);
+  const isNextMonth = isSameMonth(currentMonth, addMonths(today, 1));
+
+  // Lógica para alerta de "Faltam X/Y até DD/MM"
+  const remainingTasks = (client?.monthly_delivery_goal || 0) - completedTasksCount;
+  const daysUntilEndOfMonth = differenceInDays(endOfMonth(currentMonth), today);
+  const showAlert = isCurrentMonth && remainingTasks > 0 && daysUntilEndOfMonth <= 7; // Alerta se faltam 7 dias ou menos
 
   if (!clientId) {
     return (
@@ -412,7 +428,19 @@ const ClientKanbanPage: React.FC = () => {
           </div>
           <div className="flex-1 w-full sm:w-auto">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-foreground">Progresso do Mês: {completedTasksCount}/{totalTasksForMonth} ({progressPercentage.toFixed(0)}%)</span>
+              <span className="text-sm font-medium text-foreground">
+                Meta do Mês: {client.monthly_delivery_goal} | Concluídas: {completedTasksCount}/{totalTasksForMonth} ({progressPercentage.toFixed(0)}%)
+              </span>
+              {isCurrentMonth && completedTasksCount < (client?.monthly_delivery_goal || 0) && showAlert && (
+                <span className="flex items-center gap-1 text-sm text-orange-500">
+                  <AlertCircle className="h-4 w-4" /> Faltam {remainingTasks}/{client.monthly_delivery_goal} até {format(endOfMonth(currentMonth), "dd/MM", { locale: ptBR })}
+                </span>
+              )}
+              {isCurrentMonth && completedTasksCount >= (client?.monthly_delivery_goal || 0) && (
+                <span className="flex items-center gap-1 text-sm text-green-500">
+                  <CheckCircle2 className="h-4 w-4" /> Meta Batida!
+                </span>
+              )}
               <Button onClick={handleGenerateTasksForMonth} size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
                 <CalendarDays className="mr-2 h-4 w-4" /> Gerar Tarefas do Mês
               </Button>
@@ -468,7 +496,7 @@ const ClientKanbanPage: React.FC = () => {
             <DialogDescription className="text-muted-foreground">
               {editingTask?.id ? "Atualize os detalhes da tarefa." : "Crie uma nova tarefa para este cliente."}
             </DialogDescription>
-          </DialogHeader>
+          </DialogDescription>
           <ClientTaskForm
             clientId={clientId!}
             monthYearRef={monthYearRef}

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, subDays, isToday, parseISO, getDay, isBefore, startOfDay } from "https://esm.sh/date-fns@2.30.0";
+import { format, subDays, isToday, parseISO, getDay, isBefore, startOfDay, isSameMonth, addMonths } from "https://esm.sh/date-fns@2.30.0";
 import { utcToZonedTime, zonedTimeToUtc } from "https://esm.sh/date-fns-tz@2.0.1";
 
 const corsHeaders = {
@@ -41,6 +41,9 @@ serve(async (req) => {
       const yesterdayInUserTimezone = format(subDays(nowInUserTimezone, 1), "yyyy-MM-dd", { timeZone: userTimezone });
       const currentDayOfWeekInUserTimezone = getDay(nowInUserTimezone); // 0 para domingo, 1 para segunda, etc.
       const currentDayOfMonthInUserTimezone = nowInUserTimezone.getDate().toString();
+      const currentMonthYearRef = format(nowInUserTimezone, "yyyy-MM", { timeZone: userTimezone });
+      const previousMonthYearRef = format(subDays(nowInUserTimezone, 1), "yyyy-MM", { timeZone: userTimezone });
+
 
       console.log(`[User ${userId}] Executando daily-reset para o dia: ${todayInUserTimezone} no fuso horário ${userTimezone}. Verificando tarefas de: ${yesterdayInUserTimezone}`);
 
@@ -200,6 +203,66 @@ serve(async (req) => {
           .in('id', tasksToMoveFromOverdueToGeneral.map(task => task.id));
         if (updateGeneralError) throw updateGeneralError;
         console.log(`[User ${userId}] Movidas ${tasksToMoveFromOverdueToGeneral.length} tarefas de 'overdue' para 'general'.`);
+      }
+
+      // 5. Lógica para resetar tarefas de clientes no início do mês
+      // Esta lógica deve ser executada apenas no primeiro dia do mês
+      if (nowInUserTimezone.getDate() === 1) {
+        console.log(`[User ${userId}] Executando reset mensal para tarefas de clientes.`);
+
+        // Mover tarefas do mês anterior para 'completed' ou 'backlog' dependendo do status
+        const { data: clientTasksToReset, error: fetchClientTasksToResetError } = await supabase
+          .from('client_tasks')
+          .select('id, is_completed, status')
+          .eq('user_id', userId)
+          .eq('month_year_reference', previousMonthYearRef); // Tarefas do mês anterior
+
+        if (fetchClientTasksToResetError) throw fetchClientTasksToResetError;
+
+        const updates = clientTasksToReset.map(task => {
+          let newStatus = task.status;
+          if (!task.is_completed) {
+            // Se não foi concluída, move para backlog (ou mantém se já estiver lá)
+            newStatus = 'backlog';
+          } else {
+            // Se foi concluída, mantém o status final (published, approved, etc.)
+            // ou move para um status de "histórico" se houver um
+          }
+          return {
+            id: task.id,
+            status: newStatus,
+            updated_at: nowUtc.toISOString(),
+          };
+        });
+
+        if (updates.length > 0) {
+          const { error: updateClientTasksError } = await supabase
+            .from('client_tasks')
+            .upsert(updates, { onConflict: 'id' }); // Usar upsert para atualizar em lote
+          if (updateClientTasksError) throw updateClientTasksError;
+          console.log(`[User ${userId}] Resetadas/atualizadas ${updates.length} tarefas de clientes do mês anterior.`);
+        }
+
+        // Gerar novas tarefas para o mês atual
+        const { data: clients, error: fetchClientsError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', userId);
+
+        if (fetchClientsError) throw fetchClientsError;
+
+        for (const client of clients || []) {
+          console.log(`[User ${userId}, Client ${client.id}] Gerando tarefas para o mês atual (${currentMonthYearRef}).`);
+          const { error: invokeGenerateError } = await supabase.functions.invoke('generate-client-tasks', {
+            body: { clientId: client.id, monthYearRef: currentMonthYearRef },
+            headers: {
+              'Authorization': `Bearer ${userId}`, // Usar o user_id como token para a Edge Function
+            },
+          });
+          if (invokeGenerateError) {
+            console.error(`[User ${userId}, Client ${client.id}] Erro ao invocar generate-client-tasks:`, invokeGenerateError);
+          }
+        }
       }
     }
 
