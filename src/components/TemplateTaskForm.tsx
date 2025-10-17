@@ -38,17 +38,17 @@ const templateTaskSchema = z.object({
   title: z.string().min(1, "O título da tarefa padrão é obrigatório."),
   description: z.string().optional(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
-  recurrence_rule: z.string().optional().nullable(), // Renamed from recurrence_details
-  origin_board: z.enum(["general", "hoje-prioridade", "hoje-sem-prioridade", "woe-hoje"]).default("general"),
+  recurrence_details: z.string().optional().nullable(),
+  origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
   selected_tag_ids: z.array(z.string()).optional(),
 });
 
 export type TemplateTaskFormValues = z.infer<typeof templateTaskSchema>;
 
 interface TemplateTaskFormProps {
-  initialData?: Omit<TemplateTaskFormValues, 'recurrence_rule' | 'origin_board'> & {
+  initialData?: Omit<TemplateTaskFormValues, 'recurrence_details' | 'origin_board'> & {
     id: string;
-    recurrence_rule?: string | null; // Renamed from recurrence_details
+    recurrence_details?: string | null;
     tags?: { id: string; name: string; color: string }[];
     origin_board: TemplateFormOriginBoard;
   };
@@ -64,14 +64,14 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
     resolver: zodResolver(templateTaskSchema),
     defaultValues: initialData ? {
       ...initialData,
-      recurrence_rule: initialData.recurrence_rule || undefined, // Renamed from recurrence_details
+      recurrence_details: initialData.recurrence_details || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || "general",
     } : {
       title: "",
       description: "",
       recurrence_type: "none",
-      recurrence_rule: undefined,
+      recurrence_details: undefined,
       origin_board: "general",
       selected_tag_ids: [],
     },
@@ -79,24 +79,24 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
 
   const recurrenceType = form.watch("recurrence_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const watchedRecurrenceRule = form.watch("recurrence_rule"); // Renamed from watchedRecurrenceDetails
+  const watchedRecurrenceDetails = form.watch("recurrence_details");
 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   useEffect(() => {
-    if (recurrenceType === "weekly" && watchedRecurrenceRule) {
-      setSelectedDays(watchedRecurrenceRule.split(','));
+    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
+      setSelectedDays(watchedRecurrenceDetails.split(','));
     } else {
       setSelectedDays([]);
     }
-  }, [recurrenceType, watchedRecurrenceRule]);
+  }, [recurrenceType, watchedRecurrenceDetails]);
 
   const handleDayToggle = (dayValue: string) => {
     setSelectedDays(prev => {
       const newDays = prev.includes(dayValue)
         ? prev.filter(d => d !== dayValue)
         : [...prev, dayValue];
-      form.setValue("recurrence_rule", newDays.join(','), { shouldDirty: true }); // Renamed
+      form.setValue("recurrence_details", newDays.join(','), { shouldDirty: true });
       return newDays;
     });
   };
@@ -118,7 +118,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         title: values.title,
         description: values.description || null,
         recurrence_type: values.recurrence_type,
-        recurrence_rule: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_rule || null, // Renamed
+        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         origin_board: values.origin_board,
         updated_at: new Date().toISOString(),
       };
@@ -174,7 +174,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios matinais"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -188,7 +188,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa padrão (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       
@@ -197,15 +197,15 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         <Select
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_rule", null); // Renamed
+            form.setValue("recurrence_details", null);
             setSelectedDays([]);
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily">Diário</SelectItem>
             <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem>
@@ -232,9 +232,9 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
               </div>
             ))}
           </div>
-          {form.formState.errors.recurrence_rule && ( // Renamed
+          {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_rule.message}
+              {form.formState.errors.recurrence_details.message}
             </p>
           )}
         </div>
@@ -242,19 +242,19 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
 
       {recurrenceType === "monthly" && (
         <div>
-          <Label htmlFor="recurrence_rule_monthly" className="text-foreground">Dia do Mês</Label> {/* Renamed */}
+          <Label htmlFor="recurrence_details_monthly" className="text-foreground">Dia do Mês</Label>
           <Input
-            id="recurrence_rule_monthly" // Renamed
+            id="recurrence_details_monthly"
             type="number"
             min="1"
             max="31"
-            {...form.register("recurrence_rule", { valueAsNumber: true })} // Renamed
+            {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
-            className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
           />
-          {form.formState.errors.recurrence_rule && ( // Renamed
+          {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_rule.message}
+              {form.formState.errors.recurrence_details.message}
             </p>
           )}
         </div>
@@ -266,14 +266,14 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           onValueChange={(value: TemplateFormOriginBoard) => form.setValue("origin_board", value)}
           value={form.watch("origin_board")}
         >
-          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar quadro" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="general">Geral</SelectItem>
-            <SelectItem value="hoje-prioridade">Hoje - Prioridade</SelectItem>
-            <SelectItem value="hoje-sem-prioridade">Hoje - Sem Prioridade</SelectItem>
-            <SelectItem value="woe-hoje">Jobs Woe hoje</SelectItem>
+            <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
+            <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
+            <SelectItem value="jobs_woe_today">Jobs Woe hoje</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -283,7 +283,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         onTagSelectionChange={handleTagSelectionChange}
       />
 
-      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">{initialData ? "Atualizar Tarefa Padrão" : "Adicionar Tarefa Padrão"}</Button>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa Padrão" : "Adicionar Tarefa Padrão"}</Button>
     </form>
   );
 };

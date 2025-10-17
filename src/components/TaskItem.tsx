@@ -57,7 +57,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
         completedAt = new Date().toISOString();
         lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
         if (taskToUpdate.recurrence_type === "none") {
-          newOriginBoard = "concluidas"; // Mover para o quadro de finalizadas se não for recorrente
+          newOriginBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
         }
       } else { // Se a tarefa está sendo desmarcada
         completedAt = null;
@@ -107,8 +107,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       // Invalidação de cache mais granular
       queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
       queryClient.invalidateQueries({ queryKey: ["userProfile", userId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "concluidas" : task.origin_board, userId] }); // Invalida o board de origem
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "concluidas", userId] }); // Invalida o board de destino
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.origin_board, userId] }); // Invalida o board de origem
+      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.origin_board : "completed", userId] }); // Invalida o board de destino
       queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
       refetchTasks(); // Refetch local para atualizar a lista
     },
@@ -157,10 +157,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       case "daily":
         return "Recorre Diariamente";
       case "weekly":
-        const days = task.recurrence_rule?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
         return `Recorre Semanalmente nos dias: ${days}`;
       case "monthly":
-        return `Recorre Mensalmente no dia ${task.recurrence_rule}`;
+        return `Recorre Mensalmente no dia ${task.recurrence_details}`;
       case "none":
       default:
         return null;
@@ -172,8 +172,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   return (
     <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
       <div className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl shadow-sm transition-all duration-300",
-        level === 0 ? "p-3 border border-border bg-card frosted-glass" : "p-2 bg-secondary/20"
+        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-md shadow-sm",
+        level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
       )}>
         <div className="flex items-center gap-3 flex-grow min-w-0">
           <Checkbox
@@ -186,13 +186,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             <label
               htmlFor={`task-${task.id}`}
               className={cn(
-                "font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-base" : "text-sm" // Texto menor para subtarefas
+                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}
             >
-              {task.origin_board === 'atrasadas' && (
-                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 icon-glow" />
+              {task.origin_board === 'overdue' && (
+                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />
               )}
               {task.title}
             </label>
@@ -215,7 +215,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Clock className={cn("h-3 w-3 text-primary", level > 0 && "h-2.5 w-2.5")} /> {task.time}
+                <Clock className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {task.time}
               </p>
             )}
             {task.recurrence_type !== "none" && (
@@ -223,13 +223,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Repeat className={cn("h-3 w-3 text-primary", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
+                <Repeat className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
               </p>
             )}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (
-                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
+                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
                     {tag.name}
                   </Badge>
                 ))}
@@ -245,12 +245,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             }}
           >
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10 btn-glow">
+              <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10">
                 <PlusCircle className="h-4 w-4" />
                 <span className="sr-only">Adicionar Subtarefa</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -266,11 +266,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             </DialogContent>
           </Dialog>
 
-          <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
+          <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Editar Tarefa</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
+          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Deletar Tarefa</span>
           </Button>

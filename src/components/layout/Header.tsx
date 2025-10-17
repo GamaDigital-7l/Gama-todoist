@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
   const isMobile = useIsMobile();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-sidebar-border bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       {/* Gatilho do Sheet para mobile */}
       {isMobile ? (
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}> {/* Usa o novo estado e setter */}
@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
               <span className="sr-only">Alternar Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs bg-sidebar-background border-r border-sidebar-border frosted-glass">
+          <SheetContent side="left" className="sm:max-w-xs bg-sidebar-background border-r border-sidebar-border">
             <nav className="grid gap-6 text-lg font-medium p-4">
               <NavLink
                 to="/dashboard"
@@ -143,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
         )
       )}
 
-      <h1 className="text-base sm:text-xl font-bold truncate flex-1 text-center sm:text-left">Nexus Flow</h1>
+      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Nexus Flow</h1>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
       </div>

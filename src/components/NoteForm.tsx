@@ -31,7 +31,7 @@ const checklistItemSchema = z.object({
 
 const noteSchema = z.object({
   title: z.string().optional(),
-  content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML para texto, JSON string para checklist)
+  content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
@@ -62,8 +62,8 @@ const sanitizeFilename = (filename: string) => {
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
   const quillRef = useRef<ReactQuill>(null);
 
-  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Removido console.log
-  
+  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Log de depuração removido
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
@@ -142,8 +142,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
 
         const range = quill.getSelection(true);
         quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
-        quill.setSelection(range.index + 1, 0); // Fixed: Pass RangeStatic object
-        
+        quill.setSelection(range.index + 1);
+
         try {
           const sanitizedFilename = sanitizeFilename(file.name);
           // O caminho do arquivo agora inclui o userId como uma pasta para RLS
@@ -289,13 +289,13 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-2xl shadow-xl frosted-glass">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
       <div className="relative p-4 bg-card">
         <Input
           id="note-title"
           {...form.register("title")}
           placeholder="Título"
-          className="w-full bg-transparent border-none text-foreground text-lg font-semibold focus-visible:ring-0 px-0 mb-2 rounded-xl"
+          className="w-full bg-transparent border-none text-foreground text-lg font-semibold focus-visible:ring-0 px-0 mb-2"
           disabled={!userId} // Desabilitar se não houver userId
         />
 
@@ -328,7 +328,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   value={item.text}
                   onChange={(e) => updateChecklistItem(index, e.target.value)}
                   placeholder={`Item ${index + 1}`}
-                  className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0 rounded-xl"
+                  className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0"
                   disabled={!userId} // Desabilitar se não houver userId
                 />
                 <Button
@@ -344,7 +344,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="ghost" onClick={addChecklistItem} className="w-full justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-xl" disabled={!userId}>
+            <Button type="button" variant="ghost" onClick={addChecklistItem} className="w-full justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item
             </Button>
           </div>
@@ -372,7 +372,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                 <span className="sr-only">Adicionar Lembrete</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-4 bg-popover border-border rounded-2xl shadow-xl frosted-glass space-y-3">
+            <PopoverContent className="w-auto p-4 bg-popover border-border rounded-md shadow-lg space-y-3">
               <div>
                 <Label htmlFor="reminder_date" className="text-foreground">Data do Lembrete</Label>
                 <Calendar
@@ -399,7 +399,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                 <span className="sr-only">Adicionar Rótulo</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+            <PopoverContent className="w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
               <TagSelector
                 selectedTagIds={selectedTagIds}
                 onTagSelectionChange={handleTagSelectionChange}
@@ -413,7 +413,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           </Button>
         </div>
 
-        <Button type="submit" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow" disabled={!userId}>
+        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={!userId}>
           Salvar e Fechar
         </Button>
       </div>

@@ -19,13 +19,7 @@ const settingsSchema = z.object({
   notification_channel: z.enum(["web_push", "none"]).default("web_push"),
 });
 
-// Explicitly define the inferred type to ensure non-optional fields are seen as such
-type SettingsFormValues = {
-  groq_api_key?: string | null;
-  openai_api_key?: string | null;
-  ai_provider_preference: "groq" | "openai";
-  notification_channel: "web_push" | "none";
-};
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const Settings: React.FC = () => {
   const { session } = useSession();
@@ -130,7 +124,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-      <h1 className="text-3xl font-extrabold">Configurações</h1>
+      <h1 className="text-3xl font-bold">Configurações</h1>
       <p className="text-lg text-muted-foreground">
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>

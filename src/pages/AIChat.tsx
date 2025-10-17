@@ -64,14 +64,14 @@ const AIChat: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-      <h1 className="text-3xl font-extrabold flex items-center gap-2">
-        <MessageSquare className="h-7 w-7 text-primary icon-glow" /> Assistente de IA
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <MessageSquare className="h-7 w-7 text-primary" /> Assistente de IA
       </h1>
       <p className="text-lg text-muted-foreground">
         Converse com seu assistente de IA para obter ajuda e insights.
       </p>
 
-      <Card className="flex flex-col flex-grow bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+      <Card className="flex flex-col flex-grow bg-card border border-border rounded-lg shadow-sm">
         <CardHeader className="border-b border-border">
           <CardTitle className="text-foreground">Chat com IA</CardTitle>
         </CardHeader>
@@ -89,12 +89,12 @@ const AIChat: React.FC = () => {
               }`}
             >
               {msg.role === "assistant" && (
-                <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1 icon-glow" />
+                <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
               )}
               <div
-                className={`max-w-[80%] sm:max-w-[70%] p-3 rounded-xl break-words ${
+                className={`max-w-[80%] sm:max-w-[70%] p-3 rounded-lg break-words ${
                   msg.role === "user"
-                    ? "bg-gradient-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
@@ -107,8 +107,8 @@ const AIChat: React.FC = () => {
           ))}
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
-              <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1 icon-glow" />
-              <div className="max-w-[80%] sm:max-w-[70%] p-3 rounded-xl bg-secondary text-secondary-foreground">
+              <Bot className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+              <div className="max-w-[80%] sm:max-w-[70%] p-3 rounded-lg bg-secondary text-secondary-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             </div>
@@ -122,10 +122,10 @@ const AIChat: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
             disabled={isLoading}
           />
-          <Button onClick={handleSendMessage} disabled={isLoading} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+          <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

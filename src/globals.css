@@ -6,58 +6,58 @@
 
 @layer base {
   :root {
-    /* Nova Paleta de Cores - Dark Futurista */
-    --background: 240 10% 5%; /* Fundo principal escuro: #0F0C1A */
-    --foreground: 210 20% 98%; /* Texto principal claro: #FFFFFF */
+    --background: 220 15% 8%; /* Um preto fosco muito escuro */
+    --foreground: 210 20% 98%; /* Branco quase puro para texto principal */
 
-    --card: 240 10% 10%; /* Fundo de cards: #1A1726 (base para rgba) */
+    --card: 220 15% 12%; /* Fundo de cards, um pouco mais claro que o background */
     --card-foreground: 210 20% 98%;
 
-    --popover: 240 10% 10%; /* Fundo de popovers, igual ao card */
+    --popover: 220 15% 12%; /* Fundo de popovers, igual ao card */
     --popover-foreground: 210 20% 98%;
 
-    --primary: 244 100% 69%; /* Roxo profundo: #6C63FF (base para gradiente) */
-    --primary-light: 228 100% 67%; /* Azul neon suave: #5F77FF (base para gradiente) */
+    --primary: 260 70% 20%; /* Roxo profundo: #2A1A4A */
+    --primary-light: 260 70% 30%; /* Roxo mais claro: #4C2EFF (para gradientes) */
     --primary-foreground: 210 20% 98%;
 
-    --secondary: 240 10% 20%; /* Cinza escuro para elementos secundários */
+    --secondary: 228 100% 67%; /* Azul neon suave: #5F77FF */
     --secondary-foreground: 210 20% 98%;
 
     --muted: 215 14% 30%; /* Cinza para elementos secundários */
-    --muted-foreground: 220 10% 70%; /* Texto secundário: #A9A9B8 */
+    --muted-foreground: 215 14% 60%; /* Texto para o cinza */
 
-    --accent: 240 10% 15%; /* Cinza para hover/active */
+    --accent: 215 14% 20%; /* Cinza para hover/active */
     --accent-foreground: 210 20% 98%;
 
     --destructive: 0 80% 50%; /* Vermelho para ações perigosas */
     --destructive-foreground: 210 20% 98%;
 
-    --border: 240 10% 20%; /* Borda sutil */
-    --input: 240 10% 15%; /* Fundo de inputs */
-    --ring: 244 100% 69%; /* Cor do ring de foco, roxo */
+    --border: 220 15% 20%; /* Borda sutil */
+    --input: 220 15% 15%; /* Fundo de inputs */
+    --ring: 228 100% 67%; /* Cor do ring de foco, azul neon */
 
-    --radius: 1.25rem; /* 20px - Padrão para cards e botões */
+    --radius: 0.75rem; /* 12px - Padrão para componentes menores */
 
     /* Cores de status para cards de tarefas */
-    --status-overdue: #FF6347; /* Vermelho */
-    --status-urgent: #FFD700;   /* Amarelo */
-    --status-today: #32CD32;     /* Verde */
+    --status-overdue: #4C2EFF; /* Roxo vibrante */
+    --status-urgent: #5F77FF;   /* Azul vibrante */
+    --status-today: #4CAF50;     /* Verde para hoje */
     --status-completed: rgba(169, 169, 184, 0.2); /* Cinza translúcido */
-    --status-recurring: #8A2BE2; /* Azul violeta */
+    --status-recurring: #9370DB; /* Lilás */
 
     /* Cores específicas para a Sidebar */
-    --sidebar-background: 240 10% 8%; /* Um pouco mais escuro que o card */
+    --sidebar-background: 220 15% 10%; /* Um pouco mais escuro que o card */
     --sidebar-foreground: 210 20% 90%; /* Texto da sidebar */
-    --sidebar-primary: 244 100% 69%; /* Roxo para ícones/texto ativo */
+    --sidebar-primary: 228 100% 67%; /* Azul neon para ícones/texto ativo */
     --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 240 10% 15%; /* Fundo de hover/ativo da sidebar */
+    --sidebar-accent: 220 15% 18%; /* Fundo de hover/ativo da sidebar */
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 240 10% 18%;
-    --sidebar-ring: 244 100% 69%;
+    --sidebar-border: 220 15% 25%;
+    --sidebar-ring: 228 100% 67%;
   }
 
   .dark {
     /* No tema dark, as variáveis já estão definidas acima */
+    /* Se houvesse um tema light, as variáveis seriam redefinidas aqui */
   }
 }
 
@@ -77,7 +77,7 @@
   }
 
   h1 {
-    @apply text-4xl lg:text-5xl uppercase tracking-tight;
+    @apply text-4xl lg:text-5xl uppercase tracking-tight; /* Ajuste de espaçamento para maiúsculas */
     letter-spacing: -1px;
   }
 
@@ -88,53 +88,68 @@
 
   /* Subtítulos / seções */
   .subtitle {
-    @apply font-semibold text-muted-foreground;
+    @apply font-semibold text-[--muted-foreground]; /* Usando a cor definida para subtítulos */
   }
 
   /* Texto padrão / corpo */
   p, span, div {
-    @apply font-normal text-foreground;
+    @apply font-normal text-[--foreground]; /* Usando a cor definida para texto padrão */
   }
 
   /* Pequenos labels / legendas */
   .label-sm {
-    @apply font-medium text-muted-foreground opacity-80 text-sm;
+    @apply font-medium text-[--muted-foreground] opacity-80 text-sm;
   }
 
   /* Efeito de Frosted Glass (vidro fosco) */
   .frosted-glass {
-    background-color: hsla(var(--card), 0.7); /* Fundo do card com transparência */
-    backdrop-filter: blur(20px) saturate(180%); /* Efeito de blur e saturação */
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid hsla(var(--border), 0.3); /* Borda sutil */
+    background-color: rgba(var(--card-rgb), 0.6); /* Fundo do card com transparência */
+    backdrop-filter: blur(10px) saturate(180%); /* Efeito de blur e saturação */
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(var(--border-rgb), 0.3); /* Borda sutil */
   }
 }
 
 /* Utilitário para gradientes sutis */
 .bg-gradient-primary {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
 }
 
 /* Estilo para ícones monocromáticos */
 .icon-mono {
-  @apply text-foreground;
+  @apply text-foreground; /* Cor padrão branca */
 }
 
 /* Estilo para ícones com glow */
 .icon-glow {
-  @apply text-primary; /* Cor principal para glow */
-  filter: drop-shadow(0 0 5px hsla(var(--primary), 0.7));
+  @apply text-secondary; /* Cor azul neon */
+  filter: drop-shadow(0 0 3px rgba(95, 119, 255, 0.7));
 }
 
 /* Estilo para botões com glow */
 .btn-glow {
   @apply relative overflow-hidden;
-  box-shadow: 0 0 5px hsla(var(--primary), 0.4), 0 0 10px hsla(var(--primary-light), 0.3);
-  transition: all 0.3s ease-in-out;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(95, 119, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 0;
+}
+
+.btn-glow:hover::before {
+  opacity: 1;
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 10px hsla(var(--primary), 0.6), 0 0 20px hsla(var(--primary-light), 0.5);
+  box-shadow: 0 0 10px rgba(95, 119, 255, 0.6), 0 0 20px rgba(76, 46, 255, 0.5);
   transform: translateY(-1px);
 }
 
@@ -150,7 +165,7 @@
 
 .card-hover-effect:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 15px hsla(var(--primary), 0.2);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 15px rgba(95, 119, 255, 0.2);
 }
 
 /* Estilos para links de navegação da Sidebar */
@@ -160,16 +175,10 @@
   }
 
   .nav-link-active {
-    @apply shadow-sm;
-    background-color: hsl(var(--sidebar-accent));
-    color: hsl(var(--sidebar-primary));
+    @apply bg-sidebar-accent text-sidebar-primary shadow-sm;
   }
 
   .nav-link-inactive {
-    color: hsl(var(--sidebar-foreground));
-    &:hover {
-      background-color: hsl(var(--sidebar-accent));
-      color: hsl(var(--sidebar-accent-foreground));
-    }
+    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
   }
 }

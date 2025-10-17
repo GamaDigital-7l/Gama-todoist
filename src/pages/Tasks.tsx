@@ -25,7 +25,7 @@ const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -47,7 +47,7 @@ const fetchTemplateTasks = async (userId: string): Promise<TemplateTask[]> => {
   const { data, error } = await supabase
     .from("template_tasks")
     .select(`
-      id, user_id, title, description, recurrence_type, recurrence_rule, origin_board, created_at, updated_at,
+      id, user_id, title, description, recurrence_type, recurrence_details, origin_board, created_at, updated_at,
       template_task_tags(
         tags(id, name, color)
       )
@@ -136,15 +136,15 @@ const Tasks: React.FC = () => {
     };
 
     if (filterType === "daily") {
-      return task.origin_board === "hoje-prioridade" || task.origin_board === "hoje-sem-prioridade" || task.origin_board === "woe-hoje";
+      return task.origin_board === "today_priority" || task.origin_board === "today_no_priority" || task.origin_board === "jobs_woe_today";
     }
 
     if (task.recurrence_type !== "none") {
       switch (filterType) {
         case "weekly":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_rule, currentDayOfWeek));
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek));
         case "monthly":
-          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_rule, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_rule === currentDayOfMonth);
+          return task.recurrence_type === "daily" || (task.recurrence_type === "weekly" && isDayIncluded(task.recurrence_details, currentDayOfWeek)) || (task.recurrence_type === "monthly" && task.recurrence_details === currentDayOfMonth);
         case "all":
         default:
           return true;
@@ -230,7 +230,7 @@ const Tasks: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-extrabold text-foreground">Suas Tarefas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
@@ -239,11 +239,11 @@ const Tasks: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -263,24 +263,24 @@ const Tasks: React.FC = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="bg-card border border-border rounded-lg shadow-sm">
           <CardHeader>
             <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="current_tasks" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-xl frosted-glass">
-                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Minhas Tarefas</TabsTrigger>
-                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Tarefas Padrão</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md">
+                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Minhas Tarefas</TabsTrigger>
+                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Tarefas Padrão</TabsTrigger>
               </TabsList>
               <div className="mt-4">
                 <TabsContent value="current_tasks">
                   <Tabs defaultValue="daily" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-xl frosted-glass">
-                      <TabsTrigger value="daily" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Diárias</TabsTrigger>
-                      <TabsTrigger value="weekly" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Semanais</TabsTrigger>
-                      <TabsTrigger value="monthly" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Mensais</TabsTrigger>
-                      <TabsTrigger value="all" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Todas</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
+                      <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
+                      <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
+                      <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
+                      <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
                     </TabsList>
                     <div className="mt-4">
                       <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
@@ -300,11 +300,11 @@ const Tasks: React.FC = () => {
                       }}
                     >
                       <DialogTrigger asChild>
-                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
                           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                         <DialogHeader>
                           <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
                           <DialogDescription className="text-muted-foreground">

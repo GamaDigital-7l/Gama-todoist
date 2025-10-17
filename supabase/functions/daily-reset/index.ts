@@ -29,12 +29,12 @@ serve(async (req) => {
 
     console.log(`Executando daily-reset para o dia: ${todaySaoPaulo}. Verificando tarefas de: ${yesterdaySaoPaulo}`);
 
-    // 1. Mover tarefas não concluídas de 'hoje-prioridade', 'hoje-sem-prioridade' e 'woe-hoje' para 'atrasadas'
+    // 1. Mover tarefas não concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'overdue'
     // Inclui subtarefas na busca, mas a lógica de movimentação se aplica a todas as tarefas que se encaixam
     const { data: uncompletedTodayTasks, error: fetchUncompletedError } = await supabase
       .from('tasks')
       .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
-      .in('origin_board', ['hoje-prioridade', 'hoje-sem-prioridade', 'woe-hoje'])
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
       .eq('is_completed', false);
 
     if (fetchUncompletedError) throw fetchUncompletedError;
@@ -56,21 +56,21 @@ serve(async (req) => {
       const { error: updateOverdueError } = await supabase
         .from('tasks')
         .update({ 
-          origin_board: 'atrasadas', 
+          origin_board: 'overdue', 
           last_moved_to_overdue_at: nowUtc.toISOString(),
           is_completed: false // Garante que continue como não concluída
         })
         .in('id', tasksToMoveToOverdue.map(task => task.id));
       if (updateOverdueError) throw updateOverdueError;
-      console.log(`Movidas ${tasksToMoveToOverdue.length} tarefas para 'atrasadas'.`);
+      console.log(`Movidas ${tasksToMoveToOverdue.length} tarefas para 'overdue'.`);
     }
 
-    // 2. Mover tarefas concluídas de 'hoje-prioridade', 'hoje-sem-prioridade' e 'woe-hoje' para 'concluidas'
+    // 2. Mover tarefas concluídas de 'today_priority', 'today_no_priority' e 'jobs_woe_today' para 'completed'
     // Inclui subtarefas na busca
     const { data: completedTodayTasks, error: fetchCompletedError } = await supabase
       .from('tasks')
       .select('id, title, is_completed, due_date, recurrence_type, last_successful_completion_date, origin_board, parent_task_id')
-      .in('origin_board', ['hoje-prioridade', 'hoje-sem-prioridade', 'woe-hoje'])
+      .in('origin_board', ['today_priority', 'today_no_priority', 'jobs_woe_today'])
       .eq('is_completed', true);
 
     if (fetchCompletedError) throw fetchCompletedError;
@@ -87,19 +87,19 @@ serve(async (req) => {
       const { error: updateCompletedError } = await supabase
         .from('tasks')
         .update({ 
-          origin_board: 'concluidas', 
+          origin_board: 'completed', 
           completed_at: nowUtc.toISOString() 
         })
         .in('id', tasksToMoveToCompleted.map(task => task.id));
       if (updateCompletedError) throw updateCompletedError;
-      console.log(`Movidas ${tasksToMoveToCompleted.length} tarefas para 'concluidas'.`);
+      console.log(`Movidas ${tasksToMoveToCompleted.length} tarefas para 'completed'.`);
     }
 
     // 3. Resetar o status 'is_completed' para tarefas recorrentes que são devidas hoje
     // Inclui subtarefas na busca
     const { data: recurrentTasks, error: fetchRecurrentError } = await supabase
       .from('tasks')
-      .select('id, recurrence_type, recurrence_rule, is_completed, last_successful_completion_date, parent_task_id')
+      .select('id, recurrence_type, recurrence_details, is_completed, last_successful_completion_date, parent_task_id')
       .neq('recurrence_type', 'none');
 
     if (fetchRecurrentError) throw fetchRecurrentError;
@@ -112,15 +112,15 @@ serve(async (req) => {
 
       if (task.recurrence_type === 'daily') {
         shouldReset = true;
-      } else if (task.recurrence_type === 'weekly' && task.recurrence_rule) {
-        const days = task.recurrence_rule.split(',');
+      } else if (task.recurrence_type === 'weekly' && task.recurrence_details) {
+        const days = task.recurrence_details.split(',');
         const dayMap: { [key: string]: number } = {
           "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
           "Thursday": 4, "Friday": 5, "Saturday": 6
         };
         shouldReset = days.some(day => dayMap[day] === currentDayOfWeek);
-      } else if (task.recurrence_type === 'monthly' && task.recurrence_rule) {
-        shouldReset = task.recurrence_rule === currentDayOfMonth;
+      } else if (task.recurrence_type === 'monthly' && task.recurrence_details) {
+        shouldReset = task.recurrence_details === currentDayOfMonth;
       }
 
       // Se deve resetar E a tarefa está atualmente marcada como concluída para o período anterior
@@ -143,18 +143,18 @@ serve(async (req) => {
       console.log(`Resetadas ${tasksToResetCompletion.length} tarefas recorrentes para 'is_completed: false' e 'general' board.`);
     }
 
-    // 4. Mover tarefas de 'atrasadas' para 'general' se a data de vencimento for no futuro ou se for recorrente e não estiver atrasada
+    // 4. Mover tarefas de 'overdue' para 'general' se a data de vencimento for no futuro ou se for recorrente e não estiver atrasada
     // Inclui subtarefas na busca
     const { data: overdueTasks, error: fetchOverdueError } = await supabase
       .from('tasks')
-      .select('id, due_date, recurrence_type, recurrence_rule, origin_board, parent_task_id')
-      .eq('origin_board', 'atrasadas');
+      .select('id, due_date, recurrence_type, recurrence_details, origin_board, parent_task_id')
+      .eq('origin_board', 'overdue');
 
     if (fetchOverdueError) throw fetchOverdueError;
 
-    const isDayIncluded = (rule: string | null | undefined, dayIndex: number) => {
-      if (!rule) return false;
-      const days = rule.split(',');
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
       const dayMap: { [key: string]: number } = {
         "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3,
         "Thursday": 4, "Friday": 5, "Saturday": 6
@@ -176,8 +176,8 @@ serve(async (req) => {
       // Se a tarefa é recorrente e é devida hoje (ou no futuro, se aplicável)
       if (task.recurrence_type !== 'none') {
         if (task.recurrence_type === 'daily') return true;
-        if (task.recurrence_type === 'weekly' && task.recurrence_rule && isDayIncluded(task.recurrence_rule, currentDayOfWeek)) return true;
-        if (task.recurrence_type === 'monthly' && task.recurrence_rule === currentDayOfMonth) return true;
+        if (task.recurrence_type === 'weekly' && task.recurrence_details && isDayIncluded(task.recurrence_details, currentDayOfWeek)) return true;
+        if (task.recurrence_type === 'monthly' && task.recurrence_details === currentDayOfMonth) return true;
       }
       return false;
     });
@@ -188,7 +188,7 @@ serve(async (req) => {
         .update({ origin_board: 'general' })
         .in('id', tasksToMoveFromOverdueToGeneral.map(task => task.id));
       if (updateGeneralError) throw updateGeneralError;
-      console.log(`Movidas ${tasksToMoveFromOverdueToGeneral.length} tarefas de 'atrasadas' para 'general'.`);
+      console.log(`Movidas ${tasksToMoveFromOverdueToGeneral.length} tarefas de 'overdue' para 'general'.`);
     }
 
 

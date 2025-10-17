@@ -62,10 +62,10 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
       case "daily":
         return "Diariamente";
       case "weekly":
-        const days = task.recurrence_rule?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
+        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
         return `Semanalmente nos dias: ${days}`;
       case "monthly":
-        return `Mensalmente no dia ${task.recurrence_rule}`;
+        return `Mensalmente no dia ${task.recurrence_details}`;
       case "none":
       default:
         return "Nenhuma";
@@ -75,25 +75,25 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
   const getOriginBoardText = (board: TemplateFormOriginBoard) => {
     switch (board) {
       case "general": return "Geral";
-      case "hoje-prioridade": return "Hoje - Prioridade";
-      case "hoje-sem-prioridade": return "Hoje - Sem Prioridade";
-      case "woe-hoje": return "Jobs Woe hoje";
+      case "today_priority": return "Hoje - Prioridade";
+      case "today_no_priority": return "Hoje - Sem Prioridade";
+      case "jobs_woe_today": return "Jobs Woe hoje";
       default: return board;
     }
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-card frosted-glass shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-semibold leading-none text-foreground">
+          <label className="text-sm font-medium leading-none text-foreground">
             {templateTask.title}
           </label>
           {templateTask.description && (
             <p className="text-sm text-muted-foreground break-words">{templateTask.description}</p>
           )}
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Repeat className="h-3 w-3 text-primary" /> Recorrência: {getRecurrenceText(templateTask)}
+            <Repeat className="h-3 w-3" /> Recorrência: {getRecurrenceText(templateTask)}
           </p>
           <p className="text-xs text-muted-foreground">
             Quadro de Origem: {getOriginBoardText(templateTask.origin_board)}
@@ -101,7 +101,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
           {templateTask.tags && templateTask.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {templateTask.tags.map((tag) => (
-                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
+                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
                   {tag.name}
                 </Badge>
               ))}
@@ -110,11 +110,11 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => handleEditTemplateTask(templateTask)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
+        <Button variant="ghost" size="icon" onClick={() => handleEditTemplateTask(templateTask)} className="text-blue-500 hover:bg-blue-500/10">
           <Edit className="h-4 w-4" />
           <span className="sr-only">Editar Tarefa Padrão</span>
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplateTask.mutate(templateTask.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
+        <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplateTask.mutate(templateTask.id)} className="text-red-500 hover:bg-red-500/10">
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Deletar Tarefa Padrão</span>
         </Button>
@@ -128,7 +128,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
             if (!open) setEditingTemplateTask(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

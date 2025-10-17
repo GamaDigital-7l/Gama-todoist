@@ -49,7 +49,7 @@ const VisualReferenceImage: React.FC<VisualReferenceImageProps> = ({
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
       bounds="parent"
-      style={{ zIndex: z_index || 1, border: isSelected ? "2px solid hsl(var(--primary))" : "none", borderRadius: "1.25rem" }} // Aplicar border-radius
+      style={{ zIndex: z_index || 1, border: isSelected ? "2px solid hsl(var(--primary))" : "none" }}
       minWidth={50}
       minHeight={50}
       lockAspectRatio={true} // Manter proporção para imagens
@@ -59,7 +59,7 @@ const VisualReferenceImage: React.FC<VisualReferenceImageProps> = ({
         <img
           src={content}
           alt="Visual Reference"
-          className="w-full h-full object-contain bg-background rounded-2xl shadow-md" // Aplicar border-radius
+          className="w-full h-full object-contain bg-background rounded-md shadow-md"
         />
         <Button
           variant="ghost"
@@ -68,7 +68,7 @@ const VisualReferenceImage: React.FC<VisualReferenceImageProps> = ({
             e.stopPropagation(); // Prevent selecting the element when deleting
             onDelete(id);
           }}
-          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity btn-glow"
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <XCircle className="h-4 w-4" />
           <span className="sr-only">Remover Imagem</span>

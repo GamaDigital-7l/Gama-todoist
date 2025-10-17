@@ -151,7 +151,7 @@ const WebPushToggle: React.FC = () => {
 
   if (isLoading || isSessionLoading || isSubscribed === null) {
     return (
-      <Button disabled className="w-full rounded-xl">
+      <Button disabled className="w-full">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando status...
       </Button>
     );
@@ -168,12 +168,12 @@ const WebPushToggle: React.FC = () => {
   return (
     <>
       {isSubscribed ? (
-        <Button onClick={unsubscribeUser} disabled={isLoading} className="w-full bg-red-600 text-white hover:bg-red-700 rounded-xl btn-glow">
+        <Button onClick={unsubscribeUser} disabled={isLoading} className="w-full bg-red-600 text-white hover:bg-red-700">
           <BellOff className="mr-2 h-4 w-4" />
           {isLoading ? "Desativando..." : "Desativar Notificações Web Push"}
         </Button>
       ) : (
-        <Button onClick={subscribeUser} disabled={isLoading} className="w-full bg-green-600 text-white hover:bg-green-700 rounded-xl btn-glow">
+        <Button onClick={subscribeUser} disabled={isLoading} className="w-full bg-green-600 text-white hover:bg-green-700">
           <BellRing className="mr-2 h-4 w-4" />
           {isLoading ? "Ativando..." : "Ativar Notificações Web Push"}
         </Button>

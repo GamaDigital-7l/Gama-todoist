@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfMonth, startOfMonth, endOfMonth
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"; // Adicionado isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -57,7 +57,7 @@ const fetchTasksByOriginBoard = async (userId: string, board: OriginBoard): Prom
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -80,7 +80,7 @@ const fetchRecurrentTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -103,14 +103,14 @@ const fetchCompletedTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
     `)
     .eq("user_id", userId)
-    .eq("origin_board", "concluidas")
+    .eq("origin_board", "completed")
     .order("completed_at", { ascending: false });
   if (error) {
     throw error;
@@ -126,7 +126,7 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
@@ -194,37 +194,37 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: todayPriorityTasks, isLoading: isLoadingTodayPriority, error: errorTodayPriority, refetch: refetchTodayPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "hoje-prioridade", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "hoje-prioridade"),
+    queryKey: ["dashboardTasks", "today_priority", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "today_priority"),
     enabled: !!userId,
   });
 
   const { data: todayNoPriorityTasks, isLoading: isLoadingTodayNoPriority, error: errorTodayNoPriority, refetch: refetchTodayNoPriority } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "hoje-sem-prioridade", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "hoje-sem-prioridade"),
+    queryKey: ["dashboardTasks", "today_no_priority", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "today_no_priority"),
     enabled: !!userId,
   });
 
   const { data: jobsWoeTodayTasks, isLoading: isLoadingJobsWoeToday, error: errorJobsWoeToday, refetch: refetchJobsWoeToday } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "woe-hoje", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "woe-hoje"),
+    queryKey: ["dashboardTasks", "jobs_woe_today", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "jobs_woe_today"),
     enabled: !!userId,
   });
 
   const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "atrasadas", userId],
-    queryFn: () => fetchTasksByOriginBoard(userId!, "atrasadas"),
+    queryKey: ["dashboardTasks", "overdue", userId],
+    queryFn: () => fetchTasksByOriginBoard(userId!, "overdue"),
     enabled: !!userId,
   });
 
   const { data: recurrentTasks, isLoading: isLoadingRecurrent, error: errorRecurrent, refetch: refetchRecurrent } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "recorrentes", userId],
+    queryKey: ["dashboardTasks", "recurrent", userId],
     queryFn: () => fetchRecurrentTasks(userId!),
     enabled: !!userId,
   });
 
   const { data: completedTasks, isLoading: isLoadingCompleted, error: errorCompleted, refetch: refetchCompleted } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "concluidas", userId],
+    queryKey: ["dashboardTasks", "completed", userId],
     queryFn: () => fetchCompletedTasks(userId!),
     enabled: !!userId,
   });
@@ -272,14 +272,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-extrabold text-foreground">DASHBOARD</h1> {/* Título atualizado */}
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -302,8 +302,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayPriority}
           error={errorTodayPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="hoje-prioridade" onTaskAdded={handleTaskAdded} />}
-          originBoard="hoje-prioridade"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_priority"
         />
         <TaskListBoard
           title="Hoje sem Prioridade"
@@ -311,8 +311,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingTodayNoPriority}
           error={errorTodayNoPriority}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="hoje-sem-prioridade" onTaskAdded={handleTaskAdded} />}
-          originBoard="hoje-sem-prioridade"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} />}
+          originBoard="today_no_priority"
         />
         <TaskListBoard
           title="Jobs Woe hoje"
@@ -320,8 +320,8 @@ const Dashboard: React.FC = () => {
           isLoading={isLoadingJobsWoeToday}
           error={errorJobsWoeToday}
           refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="woe-hoje" onTaskAdded={handleTaskAdded} />}
-          originBoard="woe-hoje"
+          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} />}
+          originBoard="jobs_woe_today"
         />
         <TaskListBoard
           title="Atrasadas"
@@ -330,7 +330,7 @@ const Dashboard: React.FC = () => {
           error={errorOverdue}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="atrasadas"
+          originBoard="overdue"
         />
         <TaskListBoard
           title="Recorrentes"
@@ -339,7 +339,7 @@ const Dashboard: React.FC = () => {
           error={errorRecurrent}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="recorrentes"
+          originBoard="recurrent"
         />
         <TaskListBoard
           title="Finalizadas"
@@ -348,17 +348,17 @@ const Dashboard: React.FC = () => {
           error={errorCompleted}
           refetchTasks={handleTaskAdded}
           showAddButton={false}
-          originBoard="concluidas"
+          originBoard="completed"
         />
         <DashboardTaskList />
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
-            <ListTodo className="h-5 w-5 text-primary icon-glow" />
+            <ListTodo className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             {isLoadingAllTasks ? (
@@ -372,10 +372,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
-            <XCircle className="h-5 w-5 text-red-500 icon-glow" />
+            <XCircle className="h-5 w-5 text-red-500" />
           </CardHeader>
           <CardContent>
             {isLoadingOverdue ? (
@@ -389,10 +389,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
-            <Repeat className="h-5 w-5 text-orange-500 icon-glow" />
+            <Repeat className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
             {isLoadingRecurrent ? (
@@ -406,10 +406,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500 icon-glow" />
+            <CalendarCheck className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
             {isLoadingCompleted ? (
@@ -423,10 +423,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500 icon-glow" />
+            <CalendarCheck className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
             {isLoadingCompleted ? (

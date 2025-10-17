@@ -69,7 +69,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         </CardHeader>
@@ -82,7 +82,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   if (error) {
     return (
-      <Card className="w-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+      <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         </CardHeader>
@@ -94,7 +94,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   }
 
   return (
-    <Card className="w-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+    <Card className="w-full bg-card border border-border rounded-lg shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         {showAddButton && (
@@ -106,11 +106,11 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingTask(undefined)} size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+              <Button onClick={() => setEditingTask(undefined)} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+            <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

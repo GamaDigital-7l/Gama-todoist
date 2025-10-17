@@ -53,17 +53,17 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
       // Se uma dueDate for fornecida, use-a. Caso contrário, use a lógica existente.
       if (dueDate) {
         finalDueDate = format(dueDate, "yyyy-MM-dd");
-      } else if (originBoard === "hoje-prioridade") {
+      } else if (originBoard === "today_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-prioridade';
         tagColor = '#EF4444';
-      } else if (originBoard === "hoje-sem-prioridade") {
+      } else if (originBoard === "today_no_priority") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
         tagName = 'hoje-sem-prioridade';
         tagColor = '#3B82F6';
-      } else if (originBoard === "woe-hoje") {
+      } else if (originBoard === "jobs_woe_today") {
         finalDueDate = format(new Date(), "yyyy-MM-dd");
-        tagName = 'woe-hoje';
+        tagName = 'jobs-woe-hoje';
         tagColor = '#8B5CF6';
       }
 
@@ -101,12 +101,9 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         due_date: finalDueDate,
         time: null,
         recurrence_type: "none",
-        recurrence_rule: null,
+        recurrence_details: null,
         origin_board: originBoard,
         is_completed: false,
-        current_board: originBoard, // Initialize current_board
-        is_priority: false,
-        overdue: false,
       }).select("id").single();
 
       if (insertError) throw insertError;
@@ -144,10 +141,10 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-        className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+        className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
         disabled={isLoading}
       />
-      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (

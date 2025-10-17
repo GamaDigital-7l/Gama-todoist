@@ -45,19 +45,19 @@ const taskSchema = z.object({
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
-  recurrence_rule: z.string().optional().nullable(), // Renamed from recurrence_details
+  recurrence_details: z.string().optional().nullable(),
   selected_tag_ids: z.array(z.string()).optional(),
-  origin_board: z.enum(["general", "hoje-prioridade", "hoje-sem-prioridade", "woe-hoje", "atrasadas", "concluidas", "recorrentes"]).default("general"),
+  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"),
   parent_task_id: z.string().nullable().optional(),
 });
 
 export type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_rule'> & {
+  initialData?: Omit<TaskFormValues, 'due_date' | 'recurrence_details'> & {
     id: string;
     due_date?: string | Date | null;
-    recurrence_rule?: string | null; // Renamed from recurrence_details
+    recurrence_details?: string | null;
     tags?: { id: string; name: string; color: string }[];
   };
   onTaskSaved: () => void;
@@ -95,7 +95,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       ...initialData,
       due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
-      recurrence_rule: initialData.recurrence_rule || undefined, // Renamed from recurrence_details
+      recurrence_details: initialData.recurrence_details || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       origin_board: initialData.origin_board || initialOriginBoard,
       parent_task_id: initialData.parent_task_id || initialParentTaskId || null,
@@ -105,7 +105,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       due_date: undefined,
       time: undefined,
       recurrence_type: "none",
-      recurrence_rule: undefined,
+      recurrence_details: undefined,
       selected_tag_ids: [],
       origin_board: initialOriginBoard,
       parent_task_id: initialParentTaskId || null,
@@ -114,7 +114,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
   const recurrenceType = form.watch("recurrence_type");
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const watchedRecurrenceRule = form.watch("recurrence_rule"); // Renamed from watchedRecurrenceDetails
+  const watchedRecurrenceDetails = form.watch("recurrence_details");
   const watchedOriginBoard = form.watch("origin_board");
   const watchedParentTaskId = form.watch("parent_task_id");
 
@@ -127,29 +127,29 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   });
 
   useEffect(() => {
-    if (recurrenceType === "weekly" && watchedRecurrenceRule) {
-      setSelectedDays(watchedRecurrenceRule.split(','));
+    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
+      setSelectedDays(watchedRecurrenceDetails.split(','));
     } else {
       setSelectedDays([]);
     }
-  }, [recurrenceType, watchedRecurrenceRule]);
+  }, [recurrenceType, watchedRecurrenceDetails]);
 
   useEffect(() => {
     const setupInitialBoardDefaults = async () => {
-      if (!initialData && userId && (initialOriginBoard === "hoje-prioridade" || initialOriginBoard === "hoje-sem-prioridade" || initialOriginBoard === "woe-hoje")) {
+      if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
         form.setValue("due_date", new Date());
         
         let tagName: string;
         let tagColor: string;
 
-        if (initialOriginBoard === "hoje-prioridade") {
+        if (initialOriginBoard === "today_priority") {
           tagName = 'hoje-prioridade';
           tagColor = '#EF4444';
-        } else if (initialOriginBoard === "hoje-sem-prioridade") {
+        } else if (initialOriginBoard === "today_no_priority") {
           tagName = 'hoje-sem-prioridade';
           tagColor = '#3B82F6';
         } else {
-          tagName = 'woe-hoje';
+          tagName = 'jobs-woe-hoje';
           tagColor = '#8B5CF6';
         }
 
@@ -196,7 +196,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       const newDays = prev.includes(dayValue)
         ? prev.filter(d => d !== dayValue)
         : [...prev, dayValue];
-      form.setValue("recurrence_rule", newDays.join(','), { shouldDirty: true }); // Renamed
+      form.setValue("recurrence_details", newDays.join(','), { shouldDirty: true });
       return newDays;
     });
   };
@@ -220,13 +220,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         recurrence_type: values.recurrence_type,
-        recurrence_rule: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_rule || null, // Renamed
+        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
         updated_at: new Date().toISOString(),
         origin_board: values.origin_board,
         parent_task_id: values.parent_task_id || null,
-        current_board: values.origin_board, // Initialize current_board
-        is_priority: false, // Default value
-        overdue: false, // Default value
       };
 
       if (initialData) {
@@ -286,7 +283,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -300,7 +297,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       
@@ -311,7 +308,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("due_date") && "text-muted-foreground"
               )}
             >
@@ -323,7 +320,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("due_date") || undefined}
@@ -347,15 +344,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <Select
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
-            form.setValue("recurrence_rule", null); // Renamed
+            form.setValue("recurrence_details", null);
             setSelectedDays([]);
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily">Diário</SelectItem>
             <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem>
@@ -382,9 +379,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               </div>
             ))}
           </div>
-          {form.formState.errors.recurrence_rule && ( // Renamed
-            <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_rule.message}
+          {form.formState.errors.recurrence_details && (
+            <p className className="text-red-500 text-sm mt-1">
+              {form.formState.errors.recurrence_details.message}
             </p>
           )}
         </div>
@@ -392,19 +389,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
 
       {recurrenceType === "monthly" && (
         <div>
-          <Label htmlFor="recurrence_rule_monthly" className="text-foreground">Dia do Mês</Label> {/* Renamed */}
+          <Label htmlFor="recurrence_details_monthly" className="text-foreground">Dia do Mês</Label>
           <Input
-            id="recurrence_rule_monthly" // Renamed
+            id="recurrence_details_monthly"
             type="number"
             min="1"
             max="31"
-            {...form.register("recurrence_rule", { valueAsNumber: true })} // Renamed
+            {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
-            className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
           />
-          {form.formState.errors.recurrence_rule && ( // Renamed
+          {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.recurrence_rule.message}
+              {form.formState.errors.recurrence_details.message}
             </p>
           )}
         </div>
@@ -417,17 +414,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           value={watchedOriginBoard}
           disabled={!!initialData}
         >
-          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             <SelectValue placeholder="Selecionar quadro" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
             <SelectItem value="general">Geral</SelectItem>
-            <SelectItem value="hoje-prioridade">Hoje - Prioridade</SelectItem>
-            <SelectItem value="hoje-sem-prioridade">Hoje - Sem Prioridade</SelectItem>
-            <SelectItem value="woe-hoje">Jobs Woe hoje</SelectItem>
-            <SelectItem value="atrasadas">Atrasadas</SelectItem>
-            <SelectItem value="concluidas">Finalizadas</SelectItem>
-            <SelectItem value="recorrentes">Recorrentes</SelectItem>
+            <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
+            <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
+            <SelectItem value="jobs_woe_today">Jobs Woe hoje</SelectItem>
+            <SelectItem value="overdue">Atrasadas</SelectItem>
+            <SelectItem value="completed">Finalizadas</SelectItem>
+            <SelectItem value="recurrent">Recorrentes</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -440,10 +437,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             value={watchedParentTaskId || "none-selected"}
             disabled={isLoadingUserTasks}
           >
-            <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+            <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
               <SelectValue placeholder="Selecionar tarefa pai" />
             </SelectTrigger>
-            <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
               <SelectItem value="none-selected">Nenhuma</SelectItem>
               {userTasks?.map(task => (
                 <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
@@ -458,7 +455,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         onTagSelectionChange={handleTagSelectionChange}
       />
 
-      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
     </form>
   );
 };

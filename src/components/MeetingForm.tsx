@@ -31,7 +31,7 @@ const meetingSchema = z.object({
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  initialData?: (MeetingFormValues & { id?: string }); // Para edição, o ID é necessário, mas opcional para criação
+  initialData?: (MeetingFormValues & { id: string }); // Para edição, o ID é necessário
   onMeetingSaved: () => void;
   onClose: () => void;
 }
@@ -109,7 +109,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           id="title"
           {...form.register("title")}
           placeholder="Ex: Reunião de equipe"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -123,7 +123,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da reunião..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
@@ -133,7 +133,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("date") && "text-muted-foreground"
               )}
             >
@@ -145,7 +145,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("date") || undefined}
@@ -187,10 +187,10 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           id="location"
           {...form.register("location")}
           placeholder="Ex: Sala de conferência A"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
-      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {initialData ? "Atualizar Reunião" : "Adicionar Reunião"}
       </Button>
     </form>

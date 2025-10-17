@@ -124,7 +124,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">Configurações de Notificação</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -141,10 +141,10 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
               }
               value={notificationChannel}
             >
-              <SelectTrigger id="notification_channel" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+              <SelectTrigger id="notification_channel" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
                 <SelectValue placeholder="Selecionar canal" />
               </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+              <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
                 <SelectItem value="web_push">Notificação Web Push (Navegador/Celular)</SelectItem>
                 <SelectItem value="none">Nenhum</SelectItem>
               </SelectContent>
@@ -162,7 +162,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
                 type="button"
                 onClick={handleSendTestNotification}
                 disabled={isSendingTest}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-xl btn-glow"
+                className="w-full bg-blue-600 text-white hover:bg-blue-700"
               >
                 <BellRing className="mr-2 h-4 w-4" />
                 {isSendingTest ? "Enviando Teste..." : "Enviar Notificação de Teste"}
@@ -171,7 +171,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
                 type="button"
                 onClick={handleSendDailyBriefTest}
                 disabled={isSendingDailyBriefTest}
-                className="w-full bg-green-600 text-white hover:bg-green-700 rounded-xl btn-glow"
+                className="w-full bg-green-600 text-white hover:bg-green-700"
               >
                 <Sun className="mr-2 h-4 w-4" />
                 {isSendingDailyBriefTest ? "Enviando Brief..." : "Enviar Brief da Manhã (Teste)"}
@@ -180,7 +180,7 @@ const NotificationSettingsCard: React.FC<NotificationSettingsCardProps> = ({
                 type="button"
                 onClick={handleSendWeeklyBriefTest}
                 disabled={isSendingWeeklyBriefTest}
-                className="w-full bg-purple-600 text-white hover:bg-purple-700 rounded-xl btn-glow"
+                className="w-full bg-purple-600 text-white hover:bg-purple-700"
               >
                 <CalendarCheck className="mr-2 h-4 w-4" />
                 {isSendingWeeklyBriefTest ? "Enviando Resumo Semanal..." : "Enviar Resumo Semanal (Teste)"}

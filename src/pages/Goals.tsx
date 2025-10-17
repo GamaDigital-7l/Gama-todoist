@@ -76,11 +76,11 @@ const Goals: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending":
-        return <Hourglass className="h-4 w-4 text-muted-foreground icon-glow" />;
+        return <Hourglass className="h-4 w-4 text-gray-500" />;
       case "in_progress":
-        return <PlayCircle className="h-4 w-4 text-blue-500 icon-glow" />;
+        return <PlayCircle className="h-4 w-4 text-blue-500" />;
       case "completed":
-        return <CheckCircle2 className="h-4 w-4 text-green-500 icon-glow" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       default:
         return null;
     }
@@ -102,7 +102,7 @@ const Goals: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-extrabold text-foreground">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-muted-foreground">Carregando suas metas...</p>
       </div>
     );
@@ -112,7 +112,7 @@ const Goals: React.FC = () => {
     showError("Erro ao carregar metas: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-extrabold text-foreground">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas: {error.message}</p>
       </div>
     );
@@ -121,7 +121,7 @@ const Goals: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-extrabold text-foreground">Suas Metas</h1>
+        <h1 className="text-3xl font-bold text-foreground">Suas Metas</h1>
         <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">
           <Dialog
             open={isFormOpen}
@@ -131,11 +131,11 @@ const Goals: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -158,15 +158,15 @@ const Goals: React.FC = () => {
       {goals && goals.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {goals.map((goal) => (
-            <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+            <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xl font-semibold text-foreground break-words">{goal.title}</CardTitle>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Meta</span>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)} className="text-red-500 hover:bg-red-500/10">
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Deletar Meta</span>
                   </Button>
@@ -178,7 +178,7 @@ const Goals: React.FC = () => {
                 )}
                 {goal.target_date && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                    <CalendarIcon className="h-4 w-4 text-primary icon-glow" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1">

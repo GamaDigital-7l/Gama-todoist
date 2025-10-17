@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { showError, showSuccess } from "@/utils/toast"; // Importado showSuccess e showError
+import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm";
@@ -37,7 +37,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, user_id, title, description, date, start_time, end_time, location, created_at, updated_at") // Added user_id, updated_at
+    .select("id, title, description, date, start_time, end_time, location, created_at")
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -51,7 +51,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, user_id, title, description, date, start_time, end_time, location, created_at, updated_at") // Added user_id, created_at, updated_at
+    .select("id, title, description, date, start_time, end_time, location")
     .eq("user_id", userId)
     .gte("date", today) // Apenas reuniões a partir de hoje
     .order("date", { ascending: true })
@@ -70,7 +70,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
   const { data, error } = await supabase
     .from("tasks")
     .select(`
-      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_rule, 
+      id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
       last_successful_completion_date, origin_board, parent_task_id, created_at,
       task_tags(
         tags(id, name, color)
@@ -95,10 +95,10 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     if (task.recurrence_type !== "none") {
       if (task.recurrence_type === "daily") {
         isTaskRelevantForDate = true;
-      } else if (task.recurrence_type === "weekly" && task.recurrence_rule) {
-        isTaskRelevantForDate = isDayIncluded(task.recurrence_rule, currentDayOfWeek);
-      } else if (task.recurrence_type === "monthly" && task.recurrence_rule) {
-        isTaskRelevantForDate = parseInt(task.recurrence_rule) === date.getDate();
+      } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
+        isTaskRelevantForDate = isDayIncluded(task.recurrence_details, currentDayOfWeek);
+      } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
+        isTaskRelevantForDate = parseInt(task.recurrence_details) === date.getDate();
       }
     } else if (task.due_date) {
       isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;
@@ -326,8 +326,8 @@ const Planner: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6 bg-background text-foreground">
-      <h1 className="text-3xl font-extrabold flex items-center gap-3">
-        <CalendarDays className="h-8 w-8 text-primary icon-glow" /> Planner
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        <CalendarDays className="h-8 w-8 text-primary" /> Planner
       </h1>
       <p className="text-lg text-muted-foreground">
         Organize seu dia, visualize tarefas e eventos do calendário.
@@ -336,7 +336,7 @@ const Planner: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coluna Esquerda: Calendário e Próximas Reuniões */}
         <div className="flex flex-col gap-6">
-          <Card className="bg-card border border-border rounded-2xl shadow-xl frosted-glass p-4 flex flex-col items-center justify-center">
+          <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center">
             <CardHeader className="w-full text-center pb-2">
               <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
             </CardHeader>
@@ -347,15 +347,15 @@ const Planner: React.FC = () => {
                 onSelect={setSelectedDate}
                 initialFocus
                 locale={ptBR}
-                className="rounded-2xl border bg-popover text-popover-foreground shadow-md frosted-glass"
+                className="rounded-lg border bg-popover text-popover-foreground shadow-md"
               />
             </CardContent>
           </Card>
 
-          <Card className="bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <Card className="bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary icon-glow" /> Próximas Reuniões
+                <Briefcase className="h-5 w-5 text-primary" /> Próximas Reuniões
               </CardTitle>
               <CardDescription className="text-muted-foreground">
                 Um resumo das suas próximas reuniões.
@@ -366,17 +366,17 @@ const Planner: React.FC = () => {
                 <p className="text-center text-muted-foreground">Carregando próximas reuniões...</p>
               ) : futureMeetings && futureMeetings.length > 0 ? (
                 futureMeetings.map((meeting) => (
-                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-xl bg-secondary/20 shadow-sm">
-                    <p className="text-sm font-semibold text-foreground">{meeting.title}</p>
+                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                    <p className="text-sm font-medium text-foreground">{meeting.title}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <CalendarDays className="h-3 w-3 text-primary" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
+                      <CalendarDays className="h-3 w-3" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
                     </p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-primary" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
+                      <Clock className="h-3 w-3" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
                     </p>
                     {meeting.location && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-primary" /> {meeting.location}
+                        <MapPin className="h-3 w-3" /> {meeting.location}
                       </p>
                     )}
                   </div>
@@ -391,21 +391,21 @@ const Planner: React.FC = () => {
         {/* Colunas do Meio e Direita: Reuniões/Eventos do Dia e Tarefas do Dia */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card de Reuniões e Eventos do Dia */}
-          <Card className="flex flex-col bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary icon-glow" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
+                <Briefcase className="h-5 w-5 text-primary" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
                 setIsMeetingFormOpen(open);
                 if (!open) setEditingMeeting(undefined); // Resetar o estado de edição ao fechar
               }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow rounded-xl">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
@@ -413,7 +413,7 @@ const Planner: React.FC = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
-                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues & { id?: string } : undefined)} // Adjusted type
+                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined)}
                     onMeetingSaved={handleMeetingSaved}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />
@@ -425,20 +425,20 @@ const Planner: React.FC = () => {
                 <p className="text-center text-muted-foreground">Carregando eventos...</p>
               ) : combinedEvents && combinedEvents.length > 0 ? (
                 combinedEvents.map((event) => (
-                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-xl bg-secondary/20 shadow-sm">
-                    <p className="text-sm font-semibold text-foreground flex items-center gap-1">
-                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500 icon-glow" />}
+                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-md bg-background shadow-sm">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500" />}
                       {event.title}
                     </p>
                     {event.description && (
                       <p className="text-xs text-muted-foreground break-words">{event.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-primary" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
+                      <Clock className="h-3 w-3" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
                     </p>
                     {event.location && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-primary" /> {event.location}
+                        <MapPin className="h-3 w-3" /> {event.location}
                       </p>
                     )}
                     {event.html_link && (
@@ -448,11 +448,11 @@ const Planner: React.FC = () => {
                     )}
                     {event.type === 'meeting' && (
                       <div className="flex items-center gap-2 mt-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10 btn-glow">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Editar Reunião</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10 btn-glow">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Deletar Reunião</span>
                         </Button>
@@ -467,21 +467,21 @@ const Planner: React.FC = () => {
           </Card>
 
           {/* Card de Tarefas do Dia */}
-          <Card className="flex flex-col bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <ListTodo className="h-5 w-5 text-primary icon-glow" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
+                <ListTodo className="h-5 w-5 text-primary" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isTaskFormOpen} onOpenChange={(open) => {
                 setIsTaskFormOpen(open);
                 if (!open) setEditingTask(undefined); // Resetar o estado de edição ao fechar
               }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow rounded-xl">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">

@@ -112,7 +112,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           id="title"
           {...form.register("title")}
           placeholder="Ex: Perder 10kg"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -128,7 +128,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           step="0.1"
           {...form.register("initial_weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 80.5"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.initial_weight_kg && (
           <p className="text-red-500 text-sm mt-1">
@@ -144,7 +144,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           step="0.1"
           {...form.register("target_weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 70.0"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.target_weight_kg && (
           <p className="text-red-500 text-sm mt-1">
@@ -159,7 +159,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("start_date") && "text-muted-foreground"
               )}
             >
@@ -171,7 +171,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("start_date") || undefined}
@@ -188,7 +188,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("target_date") && "text-muted-foreground"
               )}
             >
@@ -200,7 +200,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("target_date") || undefined}
@@ -224,7 +224,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
         />
         <Label htmlFor="is_completed" className="text-foreground">Meta Concluída</Label>
       </div>
-      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {initialData ? "Atualizar Meta" : "Adicionar Meta"}
       </Button>
     </form>

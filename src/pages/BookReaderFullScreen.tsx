@@ -8,7 +8,8 @@ import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-import { Document, Page, pdfjs, PDFDocumentProxy } from "react-pdf"; // Adjusted import for PDFDocumentProxy
+import { Document, Page, pdfjs } from "react-pdf";
+import type { PDFDocumentProxy } from "react-pdf/dist/esm/shared/types";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -195,9 +196,9 @@ const BookReaderFullScreen: React.FC = () => {
   if (!id) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-extrabold">Livro Não Encontrado</h1>
+        <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do livro não foi fornecido.</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>
@@ -207,8 +208,8 @@ const BookReaderFullScreen: React.FC = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary icon-glow" />
-        <h1 className="text-3xl font-extrabold mt-4">Carregando Livro...</h1>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h1 className="text-3xl font-bold mt-4">Carregando Livro...</h1>
         <p className="text-lg text-muted-foreground">Preparando sua leitura.</p>
       </div>
     );
@@ -218,9 +219,9 @@ const BookReaderFullScreen: React.FC = () => {
     showError("Erro ao carregar livro: " + error.message);
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-extrabold">Erro ao Carregar Livro</h1>
+        <h1 className="text-3xl font-bold">Erro ao Carregar Livro</h1>
         <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
-        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
+        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Detalhes do Livro
         </Button>
       </div>
@@ -230,9 +231,9 @@ const BookReaderFullScreen: React.FC = () => {
   if (!book || !book.pdf_url) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-extrabold">PDF Não Encontrado</h1>
+        <h1 className="text-3xl font-bold">PDF Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O livro não possui um PDF ou não foi encontrado.</p>
-        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
+        <Button onClick={() => navigate(`/books/${id}`)} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Detalhes do Livro
         </Button>
       </div>
@@ -241,24 +242,24 @@ const BookReaderFullScreen: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
-      <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card border-b border-border shadow-sm frosted-glass">
+      <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card border-b border-border shadow-sm gap-2">
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
+          <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Detalhes</span>
           </Button>
-          <h1 className="text-xl font-semibold text-foreground truncate flex-1">{book.title}</h1>
+          <h1 className="text-xl font-bold text-foreground truncate flex-1">{book.title}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
-          <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
+          <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ZoomOut className="h-4 w-4" />
             <span className="sr-only">Diminuir Zoom</span>
           </Button>
-          <Button variant="outline" size="icon" onClick={zoomIn} disabled={scale >= 3.0} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
+          <Button variant="outline" size="icon" onClick={zoomIn} disabled={scale >= 3.0} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ZoomIn className="h-4 w-4" />
             <span className="sr-only">Aumentar Zoom</span>
           </Button>
-          <Button variant="outline" size="icon" onClick={resetZoom} disabled={scale === initialScale} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
+          <Button variant="outline" size="icon" onClick={resetZoom} disabled={scale === initialScale} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <RotateCcw className="h-4 w-4" />
             <span className="sr-only">Resetar Zoom</span>
           </Button>
@@ -270,14 +271,14 @@ const BookReaderFullScreen: React.FC = () => {
               onKeyPress={(e) => e.key === "Enter" && goToPage()}
               min="1"
               max={numPages || 1}
-              className="w-16 text-center bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+              className="w-16 text-center bg-input border-border text-foreground focus-visible:ring-ring"
             />
             {numPages && (
               <span className="text-sm text-muted-foreground">
                 / {numPages}
               </span>
             )}
-            <Button onClick={goToPage} size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">Ir</Button>
+            <Button onClick={goToPage} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Ir</Button>
           </div>
         </div>
       </div>
@@ -300,16 +301,16 @@ const BookReaderFullScreen: React.FC = () => {
             }}
             className="flex justify-center items-center h-full w-full"
             options={pdfOptions}
-            loading={<Loader2 className="h-12 w-12 animate-spin text-primary icon-glow" />}
+            loading={<Loader2 className="h-12 w-12 animate-spin text-primary" />}
           >
             {numPages && (
               <Page
                 pageNumber={pageNumber}
                 renderTextLayer={true}
                 renderAnnotationLayer={true}
-                className="shadow-lg border border-border rounded-xl"
+                className="shadow-lg border border-border"
                 scale={scale}
-                loading={<Loader2 className="h-8 w-8 animate-spin text-primary icon-glow" />}
+                loading={<Loader2 className="h-8 w-8 animate-spin text-primary" />}
               />
             )}
           </Document>
@@ -325,7 +326,7 @@ const BookReaderFullScreen: React.FC = () => {
               size="icon"
               onClick={previousPage}
               disabled={pageNumber <= 1}
-              className={`absolute left-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 rounded-xl ${
+              className={`absolute left-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
                 isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
             >
@@ -337,7 +338,7 @@ const BookReaderFullScreen: React.FC = () => {
               size="icon"
               onClick={nextPage}
               disabled={pageNumber >= (numPages || 1)}
-              className={`absolute right-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 rounded-xl ${
+              className={`absolute right-4 top-1/2 -translate-y-1/2 bg-background/50 hover:bg-background/70 text-foreground disabled:opacity-30 transition-opacity duration-200 ${
                 isHovering ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
             >

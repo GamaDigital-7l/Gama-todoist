@@ -131,9 +131,9 @@ const ClientDetails: React.FC = () => {
   if (!id) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-extrabold">Cliente Não Encontrado</h1>
+        <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do cliente não foi fornecido.</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
         </Button>
       </div>
@@ -143,8 +143,8 @@ const ClientDetails: React.FC = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary icon-glow" />
-        <h1 className="text-3xl font-extrabold mt-4">Carregando Cliente...</h1>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h1 className="text-3xl font-bold mt-4">Carregando Cliente...</h1>
         <p className="text-lg text-muted-foreground">Preparando o dashboard do cliente.</p>
       </div>
     );
@@ -154,9 +154,9 @@ const ClientDetails: React.FC = () => {
     showError("Erro ao carregar cliente: " + error.message);
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-extrabold">Erro ao Carregar Cliente</h1>
+        <h1 className="text-3xl font-bold">Erro ao Carregar Cliente</h1>
         <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
+        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
         </Button>
       </div>
@@ -166,9 +166,9 @@ const ClientDetails: React.FC = () => {
   if (!client) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-extrabold">Cliente Não Encontrado</h1>
+        <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O cliente que você está procurando não existe ou foi removido.</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
+        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
         </Button>
       </div>
@@ -180,7 +180,7 @@ const ClientDetails: React.FC = () => {
       {/* Área Superior: Nome do Cliente, Logo e Botões */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 mb-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
+          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Clientes</span>
           </Button>
@@ -191,16 +191,16 @@ const ClientDetails: React.FC = () => {
               {client.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <h1 className="text-3xl font-extrabold break-words">{client.name}</h1>
+          <h1 className="text-3xl font-bold break-words">{client.name}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Dialog open={isClientFormOpen} onOpenChange={setIsClientFormOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setIsClientFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10 rounded-xl btn-glow">
+              <Button onClick={() => setIsClientFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
                 <Edit className="mr-2 h-4 w-4" /> Editar Cliente
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Editar Cliente</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -214,7 +214,7 @@ const ClientDetails: React.FC = () => {
               />
             </DialogContent>
           </Dialog>
-          <Button onClick={handleDeleteClient} variant="destructive" className="rounded-xl">
+          <Button onClick={handleDeleteClient} variant="destructive">
             <Trash2 className="mr-2 h-4 w-4" /> Excluir Cliente
           </Button>
         </div>
@@ -222,17 +222,17 @@ const ClientDetails: React.FC = () => {
 
       {/* Tabs para Dashboard e Moodboards */}
       <Tabs defaultValue="moodboards" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-xl frosted-glass mb-4">
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="moodboards" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">
+          <TabsTrigger value="moodboards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <PlusCircle className="mr-2 h-4 w-4" /> Moodboards
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="flex-1">
-          <Card className="flex-1 flex flex-col bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+          <Card className="flex-1 flex flex-col bg-card border border-border rounded-lg shadow-sm">
             <CardHeader>
               <CardTitle className="text-foreground">Visão Geral do Cliente</CardTitle>
               <CardDescription className="text-muted-foreground">
@@ -254,11 +254,11 @@ const ClientDetails: React.FC = () => {
           <div className="flex justify-end mb-4">
             <Dialog open={isMoodboardFormOpen} onOpenChange={setIsMoodboardFormOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => setEditingMoodboard(undefined)} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+                <Button onClick={() => setEditingMoodboard(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <PlusCircle className="mr-2 h-4 w-4" /> Novo Moodboard
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+              <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">{editingMoodboard ? "Editar Moodboard" : "Criar Novo Moodboard"}</DialogTitle>
                   <DialogDescription className="text-muted-foreground">

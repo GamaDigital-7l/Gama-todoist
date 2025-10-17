@@ -5,8 +5,8 @@ export interface Tag {
 }
 
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
-export type OriginBoard = "general" | "hoje-prioridade" | "hoje-sem-prioridade" | "woe-hoje" | "atrasadas" | "concluidas" | "recorrentes";
-export type TemplateFormOriginBoard = "general" | "hoje-prioridade" | "hoje-sem-prioridade" | "woe-hoje";
+export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today";
+export type TemplateFormOriginBoard = "general" | "today_priority" | "today_no_priority" | "jobs_woe_today";
 
 export interface Task {
   id: string;
@@ -16,13 +16,9 @@ export interface Task {
   time?: string | null; // Formato "HH:mm"
   is_completed: boolean;
   recurrence_type: RecurrenceType;
-  recurrence_rule?: string | null; // Renamed from recurrence_details
-  recurrence_time?: string | null; // New field for specific time of recurrence
+  recurrence_details?: string | null;
   last_successful_completion_date?: string | null;
-  origin_board: OriginBoard; // Historical board
-  current_board: OriginBoard; // Current active board
-  is_priority: boolean; // New field
-  overdue: boolean; // New field
+  origin_board: OriginBoard; // Novo campo para o quadro de origem
   created_at: string;
   updated_at: string;
   completed_at?: string | null; // Adicionado para tarefas finalizadas
@@ -38,8 +34,7 @@ export interface TemplateTask {
   title: string;
   description?: string | null;
   recurrence_type: RecurrenceType;
-  recurrence_rule?: string | null; // Renamed from recurrence_details
-  recurrence_time?: string | null; // New field for specific time of recurrence
+  recurrence_details?: string | null;
   origin_board: TemplateFormOriginBoard; // Restringido para TemplateFormOriginBoard
   created_at: string;
   updated_at: string;

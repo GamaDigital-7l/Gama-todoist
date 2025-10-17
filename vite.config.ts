@@ -17,7 +17,6 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // O alias para 'lucide-react' foi removido para evitar dependência circular.
     },
   },
 }));

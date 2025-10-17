@@ -153,7 +153,7 @@ const Notes: React.FC = () => {
   if (isLoading || isLoadingTags) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-extrabold text-foreground">Segundo Cérebro (Notas)</h1>
+        <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-muted-foreground">Carregando suas notas...</p>
       </div>
     );
@@ -163,7 +163,7 @@ const Notes: React.FC = () => {
     showError("Erro ao carregar notas: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-extrabold text-foreground">Segundo Cérebro (Notas)</h1>
+        <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-red-500">Erro ao carregar notas: {error.message}</p>
       </div>
     );
@@ -173,7 +173,7 @@ const Notes: React.FC = () => {
     showError("Erro ao carregar rótulos: " + tagsError.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-extrabold text-foreground">Segundo Cérebro (Notas)</h1>
+        <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-red-500">Erro ao carregar rótulos: {tagsError.message}</p>
       </div>
     );
@@ -182,8 +182,8 @@ const Notes: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-extrabold text-foreground flex items-center gap-2">
-          <NotebookText className="h-7 w-7 text-primary icon-glow" /> Segundo Cérebro (Notas)
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+          <NotebookText className="h-7 w-7 text-primary" /> Segundo Cérebro (Notas)
         </h1>
       </div>
       <p className="text-lg text-muted-foreground">
@@ -200,7 +200,7 @@ const Notes: React.FC = () => {
             placeholder="Buscar notas por título ou conteúdo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+            className="w-full pl-9 bg-input border-border text-foreground focus-visible:ring-ring"
             disabled={!userId} // Desabilitar se não houver userId
           />
         </div>
@@ -208,7 +208,7 @@ const Notes: React.FC = () => {
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2 rounded-xl"
+              className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
               disabled={!userId} // Desabilitar se não houver userId
             >
               <TagIcon className="h-4 w-4" />
@@ -217,7 +217,7 @@ const Notes: React.FC = () => {
                   {selectedFilterTagIds.map(tagId => {
                     const tag = availableTags?.find(t => t.id === tagId);
                     return tag ? (
-                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
+                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
                         {tag.name}
                       </Badge>
                     ) : null;
@@ -228,7 +228,7 @@ const Notes: React.FC = () => {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
             <Command className="bg-popover text-popover-foreground">
               <CommandInput placeholder="Buscar rótulo..." className="h-9" />
               <CommandList>
@@ -242,7 +242,7 @@ const Notes: React.FC = () => {
                       className="flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
+                        <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
                           {tag.name}
                         </Badge>
                       </div>
@@ -265,7 +265,7 @@ const Notes: React.FC = () => {
                         <PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Rótulo
                       </CommandItem>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+                    <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
                       <DialogHeader>
                         <DialogTitle className="text-foreground">Criar Novo Rótulo</DialogTitle>
                         <DialogDescription className="text-muted-foreground">
@@ -284,7 +284,7 @@ const Notes: React.FC = () => {
 
       {pinnedActiveNotes.length > 0 && (
         <>
-          <h2 className="text-xl font-semibold text-muted-foreground mb-3">FIXADAS</h2>
+          <h2 className="text-xl font-bold text-muted-foreground mb-3">FIXADAS</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {pinnedActiveNotes.map((note) => (
               <NoteItem key={note.id} note={note} refetchNotes={refetch} />
@@ -293,7 +293,7 @@ const Notes: React.FC = () => {
         </>
       )}
 
-      <h2 className="text-xl font-semibold text-muted-foreground mb-3">OUTRAS</h2>
+      <h2 className="text-xl font-bold text-muted-foreground mb-3">OUTRAS</h2>
       {unpinnedActiveNotes.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {unpinnedActiveNotes.map((note) => (

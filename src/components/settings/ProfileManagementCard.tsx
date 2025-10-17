@@ -62,7 +62,7 @@ const ProfileManagementCard: React.FC<ProfileManagementCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">Gerenciamento de Perfil</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -80,7 +80,7 @@ const ProfileManagementCard: React.FC<ProfileManagementCardProps> = ({
               type="button"
               onClick={handleUpdateProfileEmail}
               disabled={isUpdatingProfileEmail || !userEmail}
-              className="w-full bg-blue-500 text-white hover:bg-blue-600 rounded-xl btn-glow"
+              className="w-full bg-blue-500 text-white hover:bg-blue-600"
             >
               {isUpdatingProfileEmail ? "Sincronizando..." : "Sincronizar E-mail do Perfil"}
             </Button>

@@ -106,7 +106,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           id="title"
           {...form.register("title")}
           placeholder="Ex: Revisar React Hooks"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -121,7 +121,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           type="number"
           {...form.register("duration_minutes", { valueAsNumber: true })}
           placeholder="Ex: 60"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.duration_minutes && (
           <p className="text-red-500 text-sm mt-1">
@@ -135,7 +135,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           id="notes"
           {...form.register("notes")}
           placeholder="O que você estudou ou aprendeu..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
       <div>
@@ -145,7 +145,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                 !form.watch("session_date") && "text-muted-foreground"
               )}
             >
@@ -157,7 +157,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch("session_date") || undefined}
@@ -176,7 +176,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
         />
         <Label htmlFor="is_completed" className="text-foreground">Sessão Concluída</Label>
       </div>
-      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {initialData ? "Atualizar Sessão" : "Adicionar Sessão"}
       </Button>
     </form>

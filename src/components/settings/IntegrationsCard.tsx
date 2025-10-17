@@ -179,7 +179,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl frosted-glass">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">Integrações</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -199,7 +199,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                     value={selectedCalendarId || ""}
                     disabled={isLoadingCalendars || isSavingCalendar}
                   >
-                    <SelectTrigger id="google-calendar-select" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
+                    <SelectTrigger id="google-calendar-select" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
                       {isLoadingCalendars ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" /> Carregando calendários...
@@ -208,7 +208,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                         <SelectValue placeholder="Selecione um calendário" />
                       )}
                     </SelectTrigger>
-                    <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
+                    <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
                       {googleCalendars?.map((calendar) => (
                         <SelectItem key={calendar.id} value={calendar.id}>
                           {calendar.summary} {calendar.primary && "(Principal)"}
@@ -224,7 +224,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                   type="button"
                   onClick={handleSaveCalendarSelection}
                   disabled={!selectedCalendarId || isSavingCalendar}
-                  className="w-full bg-blue-500 text-white hover:bg-blue-600 rounded-xl btn-glow"
+                  className="w-full bg-blue-500 text-white hover:bg-blue-600"
                 >
                   {isSavingCalendar ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -237,7 +237,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                   type="button"
                   onClick={handleDisconnectGoogleCalendar}
                   variant="destructive"
-                  className="w-full rounded-xl"
+                  className="w-full"
                 >
                   <Unlink className="mr-2 h-4 w-4" />
                   Desconectar Google Calendar
@@ -248,7 +248,7 @@ const IntegrationsCard: React.FC<IntegrationsCardProps> = ({
                 type="button"
                 onClick={handleConnectGoogleCalendar}
                 disabled={isConnectingGoogle}
-                className="w-full bg-blue-500 text-white hover:bg-blue-600 rounded-xl btn-glow"
+                className="w-full bg-blue-500 text-white hover:bg-blue-600"
               >
                 <LinkIcon className="mr-2 h-4 w-4" />
                 {isConnectingGoogle ? "Conectando..." : "Conectar Google Calendar"}
