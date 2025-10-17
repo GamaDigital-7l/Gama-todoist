@@ -88,11 +88,11 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
   });
 
   const addElementMutation = useMutation({
-    mutationFn: async (newElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (newElement: Omit<VisualReferenceElement, "id" | "created_at">) => { // Removido 'updated_at' do Omit
       if (!userId) throw new Error("Usuário não autenticado.");
       const { data, error } = await supabase
         .from("client_visual_references")
-        .insert({ ...newElement, user_id: userId, moodboard_id: moodboardId }) // Alterado client_id para moodboard_id
+        .insert({ ...newElement, user_id: userId, moodboard_id: moodboardId, updated_at: new Date().toISOString() }) // Adicionado updated_at
         .select()
         .single();
       if (error) throw error;
@@ -140,7 +140,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
   };
 
   const handleAddText = () => {
-    const newTextElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
+    const newTextElement: Omit<VisualReferenceElement, "id" | "created_at"> = { // Removido 'updated_at' do Omit
       moodboard_id: moodboardId, // Alterado de client_id
       user_id: userId!,
       element_type: "text",
@@ -155,6 +155,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         fontColor: "hsl(var(--foreground))",
         fontSize: "1rem",
       },
+      updated_at: new Date().toISOString(), // Adicionado updated_at
     };
     addElementMutation.mutate(newTextElement);
   };
@@ -195,7 +196,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
+      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at"> = { // Removido 'updated_at' do Omit
         moodboard_id: moodboardId, // Alterado de client_id
         user_id: userId,
         element_type: "image",
@@ -205,6 +206,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         width: 200,
         height: 200,
         z_index: (elements?.length || 0) + 1,
+        updated_at: new Date().toISOString(), // Adicionado updated_at
       };
       await addElementMutation.mutateAsync(newImageElement);
       setImageUrlInput("");
@@ -244,7 +246,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
+      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at"> = { // Removido 'updated_at' do Omit
         moodboard_id: moodboardId, // Alterado de client_id
         user_id: userId,
         element_type: "image",
@@ -254,6 +256,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         width: 200,
         height: 200,
         z_index: (elements?.length || 0) + 1,
+        updated_at: new Date().toISOString(), // Adicionado updated_at
       };
       await addElementMutation.mutateAsync(newImageElement);
       showSuccess("Imagem adicionada com sucesso!");
