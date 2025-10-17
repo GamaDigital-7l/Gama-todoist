@@ -42,7 +42,7 @@ const noteSchema = z.object({
 export type NoteFormValues = z.infer<typeof noteSchema>;
 
 interface NoteFormProps {
-  initialData?: Note;
+  initialData?: Partial<Note> & { id?: string }; // Ajustado para aceitar id opcional
   onNoteSaved: () => void;
   onClose: () => void;
   userId: string | undefined; // Adicionado userId como prop
@@ -68,7 +68,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
       ...initialData,
-      content: initialData.content,
+      content: initialData.content || "", // Garante que content não seja undefined
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
@@ -92,7 +92,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   useEffect(() => {
     if (noteType === "checklist" && initialData?.type === "checklist") {
       try {
-        setChecklistItems(JSON.parse(initialData.content) as { text: string; completed: boolean }[]);
+        setChecklistItems(JSON.parse(initialData.content || "[]") as { text: string; completed: boolean }[]);
       } catch (e) {
         console.error("Erro ao parsear conteúdo da checklist inicial:", e);
         setChecklistItems([]);
@@ -246,13 +246,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         updated_at: new Date().toISOString(),
       };
 
-      if (initialData) {
-        // Verificação explícita para garantir que initialData.id não seja undefined
-        if (!initialData.id) {
-          showError("Erro: ID da nota não encontrado para atualização.");
-          console.error("NoteForm.tsx - onSubmit Error: initialData.id é undefined para uma operação de atualização.", initialData);
-          return; // Impede a chamada da API com ID inválido
-        }
+      if (initialData?.id) { // Agora verifica se initialData E initialData.id existem
         const { data, error } = await supabase
           .from("notes")
           .update(dataToSave)
@@ -263,7 +257,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         if (error) throw error;
         noteId = data.id;
         showSuccess("Nota atualizada com sucesso!");
-      } else {
+      } else { // Se initialData.id não existe, é uma nova nota
         const { data, error } = await supabase
           .from("notes")
           .insert({ ...dataToSave, user_id: userId })
