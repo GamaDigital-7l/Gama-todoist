@@ -175,10 +175,13 @@
   }
 
   .nav-link-active {
-    @apply bg-sidebar-accent text-sidebar-primary shadow-sm;
+    @apply shadow-sm;
+    background-color: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-primary));
   }
 
   .nav-link-inactive {
-    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+    @apply hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+    color: hsl(var(--sidebar-foreground));
   }
 }
