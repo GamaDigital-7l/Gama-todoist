@@ -27,14 +27,14 @@ const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ isOpen, o
           <X className="h-6 w-6" />
           <span className="sr-only">Fechar</span>
         </Button>
-        <div className="relative flex flex-col items-center justify-center h-full w-full">
+        <div className="relative flex flex-col items-center justify-center h-full w-full p-2"> {/* Adicionado p-2 para padding interno */}
           <img
             src={imageUrl}
             alt={description || "Imagem da tarefa"}
-            className="max-w-full max-h-[80vh] object-contain"
+            className="max-w-full max-h-[80vh] object-contain" // max-h para evitar que a imagem ocupe toda a altura e esconda a descrição
           />
           {description && (
-            <div className="mt-4 p-3 bg-gray-800 bg-opacity-70 rounded-md text-white text-center max-w-full overflow-auto">
+            <div className="mt-4 p-3 bg-gray-800 bg-opacity-70 rounded-md text-white text-center max-w-full overflow-auto break-words"> {/* Adicionado break-words */}
               <p className="text-sm">{description}</p>
             </div>
           )}

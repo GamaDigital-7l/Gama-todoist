@@ -36,7 +36,7 @@ const Layout: React.FC = () => {
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto"> {/* Adicionado overflow-auto aqui */}
           <Outlet />
         </main>
       </div>
