@@ -44,11 +44,12 @@ const clientTaskGenerationTemplateSchema = z.object({
     z.number().int().min(0, "A meta deve ser um número positivo.").default(0),
   ),
   generation_pattern: z.array(generationPatternSchema).min(1, "Deve haver pelo menos um padrão de geração."),
-  is_active: z.boolean().default(true), // Novo campo
-  default_due_days: z.preprocess( // Novo campo
+  is_active: z.boolean().default(true),
+  default_due_days: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(0, "O prazo deve ser um número positivo.").nullable().optional(),
   ),
+  is_standard_task: z.boolean().default(false), // Novo campo
 });
 
 export type ClientTaskGenerationTemplateFormValues = z.infer<typeof clientTaskGenerationTemplateSchema>;
@@ -71,12 +72,14 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
       generation_pattern: initialData.generation_pattern || [{ week: 1, day_of_week: "Monday", count: 1 }],
       is_active: initialData.is_active,
       default_due_days: initialData.default_due_days || undefined,
+      is_standard_task: initialData.is_standard_task || false, // Novo campo
     } : {
       template_name: "",
       delivery_count: 0,
       generation_pattern: [{ week: 1, day_of_week: "Monday", count: 1 }],
       is_active: true,
       default_due_days: undefined,
+      is_standard_task: false, // Novo campo
     },
   });
 
@@ -96,8 +99,9 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
         template_name: values.template_name,
         delivery_count: values.delivery_count,
         generation_pattern: values.generation_pattern,
-        is_active: values.is_active, // Novo campo
-        default_due_days: values.default_due_days || null, // Novo campo
+        is_active: values.is_active,
+        default_due_days: values.default_due_days || null,
+        is_standard_task: values.is_standard_task, // Novo campo
         updated_at: new Date().toISOString(),
       };
 
@@ -170,6 +174,16 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
           className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
         />
         <Label htmlFor="is_active" className="text-foreground">Template Ativo</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_standard_task"
+          checked={form.watch("is_standard_task")}
+          onCheckedChange={(checked) => form.setValue("is_standard_task", checked as boolean)}
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+        />
+        <Label htmlFor="is_standard_task" className="text-foreground">Gerar como Tarefa Padrão (aparece no Dashboard Principal)</Label>
       </div>
 
       <div>

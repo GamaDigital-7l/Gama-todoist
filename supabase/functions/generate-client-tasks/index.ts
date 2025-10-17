@@ -105,8 +105,10 @@ serve(async (req) => {
       );
     }
 
-    const tasksToInsert = [];
-    const taskTagsToInsert = [];
+    const clientTasksToInsert = [];
+    const clientTaskTagsToInsert = [];
+    const mainTasksToInsert = [];
+    const mainTaskTagsToInsert = [];
     const nowUtc = new Date();
 
     // Calcular o início e fim do mês de referência no fuso horário do usuário
@@ -135,7 +137,7 @@ serve(async (req) => {
               : null;
 
             // Verificar se já existe uma tarefa com o mesmo título e data para evitar duplicatas
-            const { data: existingTask, error: checkExistingError } = await supabaseServiceRole
+            const { data: existingClientTask, error: checkExistingClientTaskError } = await supabaseServiceRole
               .from('client_tasks')
               .select('id')
               .eq('client_id', clientId)
@@ -144,40 +146,75 @@ serve(async (req) => {
               .eq('due_date', taskDueDate) // Comparar com a data de vencimento calculada
               .limit(1);
 
-            if (checkExistingError) {
-              console.error(`Erro ao verificar tarefa existente para o cliente ${clientId}:`, checkExistingError);
+            if (checkExistingClientTaskError) {
+              console.error(`Erro ao verificar tarefa existente para o cliente ${clientId}:`, checkExistingClientTaskError);
               continue;
             }
 
-            if (existingTask && existingTask.length > 0) {
+            if (existingClientTask && existingClientTask.length > 0) {
               console.log(`Tarefa "${template.template_name}" já existe para ${taskDueDate}. Pulando.`);
               tasksGeneratedForPattern++; // Contar como gerada para não exceder o limite
               currentDay = addDays(currentDay, 1); // Avançar para o próximo dia
               continue;
             }
 
-            const newTaskId = crypto.randomUUID(); // Gerar um UUID para a nova tarefa
-            tasksToInsert.push({
-              id: newTaskId,
+            const newClientTaskId = crypto.randomUUID(); // Gerar um UUID para a nova tarefa do cliente
+            let newMainTaskId: string | null = null;
+
+            // Se for uma tarefa padrão, criar também no dashboard principal
+            if (template.is_standard_task) { // Assumindo que template.is_standard_task existe
+              newMainTaskId = crypto.randomUUID();
+              mainTasksToInsert.push({
+                id: newMainTaskId,
+                user_id: userId,
+                title: template.template_name,
+                description: `Tarefa de cliente: ${client.name} - ${template.template_name}`,
+                due_date: taskDueDate,
+                time: null,
+                recurrence_type: "none",
+                recurrence_details: null,
+                recurrence_time: null,
+                origin_board: "general", // Ou o board padrão definido no template
+                current_board: "general",
+                is_completed: false,
+                is_priority: false,
+                overdue: false,
+                created_at: nowUtc.toISOString(),
+                updated_at: nowUtc.toISOString(),
+              });
+              templateTags.forEach((tagId: string) => {
+                mainTaskTagsToInsert.push({
+                  task_id: newMainTaskId!,
+                  tag_id: tagId,
+                });
+              });
+            }
+
+            clientTasksToInsert.push({
+              id: newClientTaskId,
               client_id: clientId,
               user_id: userId,
               title: template.template_name,
               description: `Gerado a partir do template: ${template.template_name}`,
               month_year_reference: monthYearRef,
               status: 'backlog', // Status inicial
-              due_date: taskDueDate, // Usar o prazo padrão do template
-              time: null, // Responsável e hora não são definidos por template por enquanto
+              due_date: taskDueDate,
+              time: null,
               responsible_id: null,
               is_completed: false,
               completed_at: null,
-              order_index: 0, // Será reordenado no frontend se necessário
+              order_index: 0,
               created_at: nowUtc.toISOString(),
               updated_at: nowUtc.toISOString(),
+              image_urls: null,
+              edit_reason: null,
+              is_standard_task: template.is_standard_task, // Usar o valor do template
+              main_task_id: newMainTaskId, // Vincular ao ID da tarefa principal
             });
 
             templateTags.forEach((tagId: string) => {
-              taskTagsToInsert.push({
-                client_task_id: newTaskId,
+              clientTaskTagsToInsert.push({
+                client_task_id: newClientTaskId,
                 tag_id: tagId,
               });
             });
@@ -188,24 +225,41 @@ serve(async (req) => {
       }
     }
 
-    if (tasksToInsert.length > 0) {
-      const { error: insertTasksError } = await supabaseServiceRole
+    if (clientTasksToInsert.length > 0) {
+      const { error: insertClientTasksError } = await supabaseServiceRole
         .from('client_tasks')
-        .insert(tasksToInsert);
-      if (insertTasksError) throw insertTasksError;
+        .insert(clientTasksToInsert);
+      if (insertClientTasksError) throw insertClientTasksError;
 
-      if (taskTagsToInsert.length > 0) {
-        const { error: insertTaskTagsError } = await supabaseServiceRole
+      if (clientTaskTagsToInsert.length > 0) {
+        const { error: insertClientTaskTagsError } = await supabaseServiceRole
           .from('client_task_tags')
-          .insert(taskTagsToInsert);
-        if (insertTaskTagsError) throw insertTaskTagsError;
+          .insert(clientTaskTagsToInsert);
+        if (insertClientTaskTagsError) throw insertClientTaskTagsError;
       }
-      console.log(`[User ${userId}, Client ${clientId}] Geradas ${tasksToInsert.length} tarefas para ${monthYearRef}.`);
+      console.log(`[User ${userId}, Client ${clientId}] Geradas ${clientTasksToInsert.length} tarefas de cliente para ${monthYearRef}.`);
     } else {
-      console.log(`[User ${userId}, Client ${clientId}] Nenhuma tarefa gerada para ${monthYearRef}.`);
+      console.log(`[User ${userId}, Client ${clientId}] Nenhuma tarefa de cliente gerada para ${monthYearRef}.`);
     }
 
-    return new Response(JSON.stringify({ message: `Generated ${tasksToInsert.length} tasks for ${monthYearRef}.` }), {
+    if (mainTasksToInsert.length > 0) {
+      const { error: insertMainTasksError } = await supabaseServiceRole
+        .from('tasks')
+        .insert(mainTasksToInsert);
+      if (insertMainTasksError) throw insertMainTasksError;
+
+      if (mainTaskTagsToInsert.length > 0) {
+        const { error: insertMainTaskTagsError } = await supabaseServiceRole
+          .from('task_tags')
+          .insert(mainTaskTagsToInsert);
+        if (insertMainTaskTagsError) throw insertMainTaskTagsError;
+      }
+      console.log(`[User ${userId}, Client ${clientId}] Geradas ${mainTasksToInsert.length} tarefas principais para ${monthYearRef}.`);
+    } else {
+      console.log(`[User ${userId}, Client ${clientId}] Nenhuma tarefa principal gerada para ${monthYearRef}.`);
+    }
+
+    return new Response(JSON.stringify({ message: `Generated ${clientTasksToInsert.length} client tasks and ${mainTasksToInsert.length} main tasks for ${monthYearRef}.` }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

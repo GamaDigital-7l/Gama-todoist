@@ -35,6 +35,7 @@ export interface ClientTask {
   image_urls?: string[] | null; // Novo campo: URLs das imagens anexadas
   edit_reason?: string | null; // Novo campo: Motivo da solicitação de edição
   is_standard_task: boolean; // Novo campo: Indica se a tarefa é padrão e deve ir para o dashboard principal
+  main_task_id?: string | null; // Novo campo: ID da tarefa correspondente no dashboard principal
 }
 
 export interface ClientTaskGenerationPattern {

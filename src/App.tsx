@@ -19,8 +19,8 @@ import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
-// import ClientMoodboardPage from "./pages/ClientMoodboardPage"; // Removido o import
 import ClientKanbanPage from "./pages/ClientKanbanPage";
+import PublicApprovalPage from "./pages/PublicApprovalPage"; // Importar a nova página
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -77,6 +77,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/books/:id/read" element={<ProtectedRoute><BookReaderFullScreen /></ProtectedRoute>} />
+              <Route path="/approval/:uniqueId" element={<PublicApprovalPage />} /> {/* Nova rota pública */}
               <Route
                 path="/"
                 element={
@@ -97,7 +98,6 @@ const App = () => (
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetails />} />
-                {/* Rota ClientMoodboardPage removida */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/results" element={<Results />} />

@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Repeat, CheckCircle2, PauseCircle } from "lucide-react"; // Adicionado CheckCircle2, PauseCircle
+import { Edit, Trash2, Repeat, CheckCircle2, PauseCircle, LayoutDashboard } from "lucide-react";
 import { ClientTaskGenerationTemplate, ClientTaskGenerationPattern } from "@/types/client";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge"; // Adicionado Badge
+import { Badge } from "@/components/ui/badge";
 
 interface ClientTaskGenerationTemplateItemProps {
   template: ClientTaskGenerationTemplate;
@@ -45,7 +45,7 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
             </p>
           )}
           {renderPattern(template.generation_pattern)}
-          <div className="mt-1">
+          <div className="mt-1 flex flex-wrap gap-1">
             {template.is_active ? (
               <Badge variant="secondary" className="bg-green-500/20 text-green-500 border-green-500/50 w-fit">
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Ativo
@@ -53,6 +53,11 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
             ) : (
               <Badge variant="secondary" className="bg-red-500/20 text-red-500 border-red-500/50 w-fit">
                 <PauseCircle className="h-3 w-3 mr-1" /> Pausado
+              </Badge>
+            )}
+            {template.is_standard_task && (
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-500 border-blue-500/50 w-fit">
+                <LayoutDashboard className="h-3 w-3 mr-1" /> Tarefa Padrão
               </Badge>
             )}
           </div>

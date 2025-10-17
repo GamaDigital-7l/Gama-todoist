@@ -6,11 +6,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, User, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Share2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client";
+import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate, PublicApprovalLink } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays, getWeek, getDay } from "date-fns";
+import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays, getWeek, getDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -19,11 +19,14 @@ import ClientTaskForm from "@/components/client/ClientTaskForm";
 import ClientTaskItem from "@/components/client/ClientTaskItem";
 import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
 import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "backlog", title: "Backlog", color: "bg-gray-700" },
   { status: "in_production", title: "Em Produção", color: "bg-blue-700" },
   { status: "in_approval", title: "Em Aprovação", color: "bg-yellow-700" },
+  { status: "edit_requested", title: "Edição Solicitada", color: "bg-orange-700" }, // Novo status
   { status: "approved", title: "Aprovado", color: "bg-green-700" },
   { status: "scheduled", title: "Agendado", color: "bg-purple-700" },
   { status: "published", title: "Publicado", color: "bg-indigo-700" },
@@ -72,18 +75,42 @@ const fetchClientTasks = async (clientId: string, userId: string, monthYearRef: 
 const fetchClientTaskTemplates = async (clientId: string, userId: string): Promise<ClientTaskGenerationTemplate[]> => {
   const { data, error } = await supabase
     .from("client_task_generation_templates")
-    .select("*")
+    .select(`
+      *,
+      client_task_tags(
+        tags(id, name, color)
+      )
+    `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
     .order("template_name", { ascending: true });
   if (error) {
     throw error;
   }
-  return data || [];
+  const mappedData = data?.map((template: any) => ({
+    ...template,
+    client_task_tags: template.client_task_tags.map((ttt: any) => ttt.tags),
+  })) || [];
+  return mappedData;
+};
+
+const fetchPublicApprovalLink = async (clientId: string, userId: string, monthYearRef: string): Promise<PublicApprovalLink | null> => {
+  const { data, error } = await supabase
+    .from("public_approval_links")
+    .select("*")
+    .eq("client_id", clientId)
+    .eq("user_id", userId)
+    .eq("month_year_reference", monthYearRef)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    return null;
+  }
+  return data || null;
 };
 
 const ClientKanbanPage: React.FC = () => {
-  const { id: clientId } = useParams<{ id: string }>(); // Renomeado para clientId
+  const { id: clientId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -110,10 +137,18 @@ const ClientKanbanPage: React.FC = () => {
     enabled: !!clientId && !!userId,
   });
 
+  const { data: publicApprovalLink, isLoading: isLoadingPublicLink, error: publicLinkError, refetch: refetchPublicApprovalLink } = useQuery<PublicApprovalLink | null, Error>({
+    queryKey: ["publicApprovalLink", clientId, userId, monthYearRef],
+    queryFn: () => fetchPublicApprovalLink(clientId!, userId!, monthYearRef),
+    enabled: !!clientId && !!userId,
+  });
+
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ClientTask | undefined>(undefined);
   const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<ClientTaskGenerationTemplate | undefined>(undefined);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
   // Estados para Drag and Drop
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -131,7 +166,7 @@ const ClientKanbanPage: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      refetchClientTasks(); // Refetch para atualizar a lista após o drop
+      refetchClientTasks();
       queryClient.invalidateQueries({ queryKey: ["clientTasks", clientId, userId, monthYearRef] });
       showSuccess("Status da tarefa atualizado com sucesso!");
     },
@@ -145,11 +180,11 @@ const ClientKanbanPage: React.FC = () => {
     setDraggedTaskId(taskId);
     setDraggedFromStatus(currentStatus);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", taskId); // Necessário para Firefox
+    e.dataTransfer.setData("text/plain", taskId);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Permite o drop
+    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -163,7 +198,7 @@ const ClientKanbanPage: React.FC = () => {
 
     const droppedTaskId = draggedTaskId;
     const tasksInTargetColumn = clientTasks?.filter(task => task.status === targetStatus) || [];
-    const newOrderIndex = tasksInTargetColumn.length; // Adiciona ao final da coluna
+    const newOrderIndex = tasksInTargetColumn.length;
 
     await updateTaskStatusMutation.mutateAsync({
       taskId: droppedTaskId,
@@ -177,7 +212,7 @@ const ClientKanbanPage: React.FC = () => {
 
   const handleAddTask = (status: ClientTaskStatus) => {
     setEditingTask({
-      id: "", // Será gerado no form
+      id: "",
       client_id: clientId!,
       user_id: userId!,
       title: "",
@@ -185,8 +220,8 @@ const ClientKanbanPage: React.FC = () => {
       month_year_reference: monthYearRef,
       status: status,
       due_date: null,
-      time: null, // Novo campo
-      responsible_id: null, // Novo campo
+      time: null,
+      responsible_id: null,
       is_completed: false,
       completed_at: null,
       order_index: clientTasks?.filter(t => t.status === status).length || 0,
@@ -194,6 +229,10 @@ const ClientKanbanPage: React.FC = () => {
       updated_at: new Date().toISOString(),
       tags: [],
       responsible: null,
+      image_urls: [],
+      edit_reason: null,
+      is_standard_task: false,
+      main_task_id: null,
     });
     setIsTaskFormOpen(true);
   };
@@ -266,10 +305,54 @@ const ClientKanbanPage: React.FC = () => {
         throw error;
       }
       showSuccess(data.message || "Tarefas geradas com sucesso!");
-      refetchClientTasks(); // Refetch para ver as novas tarefas
+      refetchClientTasks();
     } catch (err: any) {
       showError("Erro ao gerar tarefas: " + err.message);
       console.error("Erro ao gerar tarefas:", err);
+    }
+  };
+
+  const handleGenerateApprovalLink = async () => {
+    if (!userId || !clientId) {
+      showError("Usuário não autenticado ou cliente não encontrado.");
+      return;
+    }
+
+    const tasksInApproval = clientTasks?.filter(task => task.status === 'in_approval') || [];
+    if (tasksInApproval.length === 0) {
+      showError("Não há tarefas na coluna 'Em Aprovação' para gerar um link.");
+      return;
+    }
+
+    setIsGeneratingLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-approval-link', {
+        body: { clientId, monthYearRef },
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+      const uniqueId = data.uniqueId;
+      const publicLink = `${window.location.origin}/approval/${uniqueId}`;
+      setGeneratedLink(publicLink);
+      refetchPublicApprovalLink(); // Atualiza o status do link no UI
+      showSuccess("Link de aprovação gerado com sucesso!");
+    } catch (err: any) {
+      showError("Erro ao gerar link de aprovação: " + err.message);
+      console.error("Erro ao gerar link de aprovação:", err);
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyLinkToClipboard = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      showSuccess("Link copiado para a área de transferência!");
     }
   };
 
@@ -277,17 +360,12 @@ const ClientKanbanPage: React.FC = () => {
   const totalTasksForMonth = clientTasks?.length || 0;
   const progressPercentage = totalTasksForMonth > 0 ? (completedTasksCount / totalTasksForMonth) * 100 : 0;
 
-  // Lógica para alerta de "Mês atual" e "Próximo mês"
   const today = new Date();
   const isCurrentMonth = isSameMonth(currentMonth, today);
-  const isNextMonth = isSameMonth(currentMonth, addMonths(today, 1));
-
-  // Lógica para alerta de "Faltam X/Y até DD/MM"
   const remainingTasks = (client?.monthly_delivery_goal || 0) - completedTasksCount;
   const daysUntilEndOfMonth = differenceInDays(endOfMonth(currentMonth), today);
-  const showAlert = isCurrentMonth && remainingTasks > 0 && daysUntilEndOfMonth <= 7; // Alerta se faltam 7 dias ou menos
+  const showAlert = isCurrentMonth && remainingTasks > 0 && daysUntilEndOfMonth <= 7;
 
-  // Disparar notificação de 100% de conclusão
   useEffect(() => {
     if (userId && clientId && client && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && progressPercentage >= 100) {
       const sendCompletionNotification = async () => {
@@ -313,6 +391,14 @@ const ClientKanbanPage: React.FC = () => {
       sendCompletionNotification();
     }
   }, [completedTasksCount, client?.monthly_delivery_goal, progressPercentage, userId, clientId, monthYearRef, client?.name, session?.access_token]);
+
+  useEffect(() => {
+    if (publicApprovalLink) {
+      setGeneratedLink(`${window.location.origin}/approval/${publicApprovalLink.unique_id}`);
+    } else {
+      setGeneratedLink(null);
+    }
+  }, [publicApprovalLink]);
 
 
   if (!clientId) {
@@ -448,7 +534,7 @@ const ClientKanbanPage: React.FC = () => {
               </SelectTrigger>
               <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
                 {Array.from({ length: 12 }).map((_, i) => {
-                  const date = addMonths(new Date(), i - 6); // Exibe 6 meses para trás e 5 para frente
+                  const date = addMonths(new Date(), i - 6);
                   const value = format(date, "yyyy-MM");
                   const label = format(date, "MMMM yyyy", { locale: ptBR });
                   return <SelectItem key={value} value={value}>{label}</SelectItem>;
@@ -481,6 +567,36 @@ const ClientKanbanPage: React.FC = () => {
             <Progress value={progressPercentage} className="w-full" />
           </div>
         </div>
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2">
+          {generatedLink ? (
+            <div className="flex-1 w-full flex items-center gap-2">
+              <Label htmlFor="approval-link" className="sr-only">Link de Aprovação</Label>
+              <Input
+                id="approval-link"
+                type="text"
+                value={generatedLink}
+                readOnly
+                className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
+              />
+              <Button onClick={copyLinkToClipboard} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                Copiar Link
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleGenerateApprovalLink}
+              disabled={isGeneratingLink || (clientTasks?.filter(task => task.status === 'in_approval').length || 0) === 0}
+              className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700"
+            >
+              {isGeneratingLink ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="mr-2 h-4 w-4" />
+              )}
+              Enviar para Aprovação
+            </Button>
+          )}
+        </div>
       </Card>
 
       {/* Kanban Board */}
@@ -512,6 +628,8 @@ const ClientKanbanPage: React.FC = () => {
                       refetchTasks={refetchClientTasks}
                       onEdit={handleEditTask}
                       onDragStart={handleDragStart}
+                      clientId={clientId!}
+                      monthYearRef={monthYearRef}
                     />
                   ))
                 )}
