@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, ClientTask, ClientTaskStatus } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -15,10 +15,10 @@ import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import ClientTaskForm from "@/components/client/ClientTaskForm"; // Será criado em breve
-import ClientTaskItem from "@/components/client/ClientTaskItem"; // Será criado em breve
-import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm"; // Será criado em breve
-import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem"; // Será criado em breve
+import ClientTaskForm from "@/components/client/ClientTaskForm";
+import ClientTaskItem from "@/components/client/ClientTaskItem";
+import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
+import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem";
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "backlog", title: "Backlog", color: "bg-gray-700" },
