@@ -42,7 +42,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete }) => 
         {client.description && (
           <CardDescription className="text-muted-foreground mb-3">{client.description}</CardDescription>
         )}
-        <Link to={`/clients/${client.id}`} className="w-full">
+        <Link to={`/clients/${client.id}`} className="w-full"> {/* Link atualizado para a página de detalhes */}
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
             <Eye className="mr-2 h-4 w-4" /> Ver Dashboard
           </Button>

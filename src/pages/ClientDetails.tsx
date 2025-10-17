@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Edit, Trash2, PlusCircle, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Loader2, Edit, Trash2, PlusCircle, LayoutDashboard, KanbanSquare } from "lucide-react"; // Adicionado KanbanSquare
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, Moodboard } from "@/types/client";
 import { useSession } from "@/integrations/supabase/auth";
@@ -15,6 +15,7 @@ import ClientForm from "@/components/ClientForm";
 import MoodboardForm from "@/components/MoodboardForm";
 import MoodboardCard from "@/components/MoodboardCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ClientKanbanPage from "./ClientKanbanPage"; // Importar ClientKanbanPage
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
   const { data, error } = await supabase
@@ -220,14 +221,17 @@ const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs para Dashboard e Moodboards */}
-      <Tabs defaultValue="moodboards" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
+      {/* Tabs para Dashboard, Moodboards e Kanban */}
+      <Tabs defaultValue="dashboard" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 border border-border rounded-md mb-4"> {/* Alterado grid-cols-2 para grid-cols-3 */}
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
           </TabsTrigger>
           <TabsTrigger value="moodboards" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
             <PlusCircle className="mr-2 h-4 w-4" /> Moodboards
+          </TabsTrigger>
+          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md"> {/* Nova aba Kanban */}
+            <KanbanSquare className="mr-2 h-4 w-4" /> Kanban
           </TabsTrigger>
         </TabsList>
 
@@ -246,6 +250,11 @@ const ClientDetails: React.FC = () => {
                 <p className="text-muted-foreground">Nenhuma descrição fornecida para este cliente.</p>
               )}
               {/* Adicionar mais informações do dashboard aqui, se necessário */}
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">Tipo de Cliente: <span className="font-semibold text-foreground">{client.type}</span></p>
+                <p className="text-sm text-muted-foreground">Meta de Entregas Mensais: <span className="font-semibold text-foreground">{client.monthly_delivery_goal}</span></p>
+                <p className="text-sm text-muted-foreground">Criado em: <span className="font-semibold text-foreground">{format(parseISO(client.created_at), "PPP", { locale: ptBR })}</span></p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -293,6 +302,11 @@ const ClientDetails: React.FC = () => {
           ) : (
             <p className="text-muted-foreground">Nenhum moodboard encontrado para este cliente. Crie um novo para começar!</p>
           )}
+        </TabsContent>
+
+        <TabsContent value="kanban" className="flex-1 flex flex-col"> {/* Conteúdo da nova aba Kanban */}
+          {/* Reutiliza o ClientKanbanPage, passando o clientId */}
+          {id && <ClientKanbanPage />}
         </TabsContent>
       </Tabs>
     </div>
