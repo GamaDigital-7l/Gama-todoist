@@ -496,7 +496,7 @@ const ClientKanbanPage: React.FC = () => {
             <DialogDescription className="text-muted-foreground">
               {editingTask?.id ? "Atualize os detalhes da tarefa." : "Crie uma nova tarefa para este cliente."}
             </DialogDescription>
-          </DialogDescription>
+          </DialogHeader>
           <ClientTaskForm
             clientId={clientId!}
             monthYearRef={monthYearRef}
