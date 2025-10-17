@@ -1,5 +1,5 @@
 export type ClientType = 'fixed' | 'freela' | 'agency';
-export type ClientTaskStatus = 'backlog' | 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published';
+export type ClientTaskStatus = 'backlog' | 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published' | 'edit_requested';
 
 export interface Client {
   id: string;
@@ -32,6 +32,9 @@ export interface ClientTask {
   updated_at: string;
   tags?: { id: string; name: string; color: string }[]; // Para carregar tags associadas
   responsible?: { id: string; first_name: string; last_name: string; avatar_url: string } | null; // Para carregar dados do responsável
+  image_urls?: string[] | null; // Novo campo: URLs das imagens anexadas
+  edit_reason?: string | null; // Novo campo: Motivo da solicitação de edição
+  is_standard_task: boolean; // Novo campo: Indica se a tarefa é padrão e deve ir para o dashboard principal
 }
 
 export interface ClientTaskGenerationPattern {
@@ -51,4 +54,14 @@ export interface ClientTaskGenerationTemplate {
   default_due_days?: number | null; // Novo campo
   created_at: string;
   updated_at: string;
+}
+
+export interface PublicApprovalLink {
+  id: string;
+  client_id: string;
+  user_id: string;
+  month_year_reference: string;
+  unique_id: string;
+  expires_at: string;
+  created_at: string;
 }
