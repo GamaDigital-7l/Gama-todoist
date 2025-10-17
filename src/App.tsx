@@ -19,8 +19,8 @@ import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
-import ClientMoodboardPage from "./pages/ClientMoodboardPage";
-import ClientKanbanPage from "./pages/ClientKanbanPage"; // Descomentado o import
+// import ClientMoodboardPage from "./pages/ClientMoodboardPage"; // Removido o import
+import ClientKanbanPage from "./pages/ClientKanbanPage";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -97,9 +97,7 @@ const App = () => (
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetails />} />
-                <Route path="/clients/:clientId/moodboards/:moodboardId" element={<ClientMoodboardPage />} />
-                {/* A rota ClientKanbanPage agora é renderizada dentro de ClientDetails via Tabs,
-                    então não precisamos de uma rota de nível superior aqui para ela. */}
+                {/* Rota ClientMoodboardPage removida */}
                 <Route path="/ai-chat" element={<AIChat />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/results" element={<Results />} />

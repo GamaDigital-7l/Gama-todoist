@@ -14,39 +14,7 @@ export interface Client {
   updated_at: string;
 }
 
-export interface Moodboard {
-  id: string;
-  user_id: string;
-  client_id: string;
-  title: string;
-  description?: string | null;
-  thumbnail_url?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface VisualReferenceElement {
-  id: string;
-  moodboard_id: string;
-  user_id: string;
-  element_type: 'image' | 'text';
-  content: string;
-  x: number;
-  y: number;
-  width?: number | null;
-  height?: number | null;
-  rotation?: number | null;
-  opacity?: number | null;
-  z_index?: number | null;
-  metadata?: {
-    fontSize?: string;
-    fontColor?: string;
-    backgroundColor?: string;
-    [key: string]: any;
-  } | null;
-  created_at: string;
-  updated_at: string;
-}
+// Moodboard e VisualReferenceElement foram removidos
 
 export interface ClientTask {
   id: string;

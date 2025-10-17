@@ -54,7 +54,7 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const BUCKET_NAME = "client-visual-references";
+const BUCKET_NAME = "client-logos"; // Alterado para um novo bucket dedicado a logos de clientes
 
 const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onClose }) => {
   const { session } = useSession();
@@ -89,10 +89,11 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
       if (values.logo_file) {
         const file = values.logo_file;
         const sanitizedFilename = sanitizeFilename(file.name);
-        const filePath = `client_logos/${userId}/${Date.now()}-${sanitizedFilename}`;
+        // Caminho de armazenamento atualizado para usar 'client-avatars'
+        const filePath = `client-avatars/${userId}/${Date.now()}-${sanitizedFilename}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(BUCKET_NAME)
+          .from(BUCKET_NAME) // Usando o novo BUCKET_NAME
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false,
