@@ -41,7 +41,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
 
-  const buildTaskTree = (allTasks: Task[]): Task[] => {
+  const buildTaskTree = React.useCallback((allTasks: Task[]): Task[] => {
     const taskMap = new Map<string, Task>();
     allTasks.forEach(task => {
       taskMap.set(task.id, { ...task, subtasks: [] });
@@ -63,9 +63,9 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
     });
 
     return rootTasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  };
+  }, []);
 
-  const taskTree = buildTaskTree(tasks);
+  const taskTree = React.useMemo(() => buildTaskTree(tasks), [tasks, buildTaskTree]);
 
   if (isLoading) {
     return (

@@ -271,7 +271,7 @@ const Planner: React.FC = () => {
     }
   };
 
-  const buildTaskTree = (allTasks: Task[]): Task[] => {
+  const buildTaskTree = React.useCallback((allTasks: Task[]): Task[] => {
     const taskMap = new Map<string, Task>();
     allTasks.forEach(task => {
       taskMap.set(task.id, { ...task, subtasks: [] });
@@ -293,9 +293,9 @@ const Planner: React.FC = () => {
     });
 
     return rootTasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  };
+  }, []);
 
-  const taskTree = buildTaskTree(tasks || []);
+  const taskTree = React.useMemo(() => buildTaskTree(tasks || []), [tasks, buildTaskTree]);
 
   // Combinar reuniões e eventos do Google Calendar e ordenar por hora
   const combinedEvents = [
