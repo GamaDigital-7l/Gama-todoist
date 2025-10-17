@@ -87,7 +87,7 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
       .gte("completed_at", `${formattedDate}T00:00:00Z`)
       .lte("completed_at", `${formattedDate}T23:59:59Z`);
   } else if (board === "recurrent") {
-    // Para 'recurrent', queremos tarefas recorrentes que são devidas na data selecionada
+    // Para 'recurrent', queremos todas as tarefas recorrentes não concluídas, independentemente da data selecionada
     query = query
       .neq("recurrence_type", "none")
       .eq("is_completed", false); // Apenas tarefas recorrentes não concluídas para o ciclo atual
@@ -115,15 +115,9 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
       return true; // A filtragem já foi feita na query Supabase
     }
     if (board === "recurrent") {
-      // Para tarefas recorrentes, verificar se a recorrência se aplica à data selecionada
-      if (task.recurrence_type === "daily") return true;
-      if (task.recurrence_type === "weekly" && task.recurrence_details) {
-        return isDayIncluded(task.recurrence_details, currentDayOfWeek);
-      }
-      if (task.recurrence_type === "monthly" && task.recurrence_details) {
-        return parseInt(task.recurrence_details) === selectedDate.getDate();
-      }
-      return false;
+      // Para tarefas recorrentes, a filtragem já foi feita na query Supabase.
+      // Não precisamos de filtragem adicional por data aqui, pois queremos todas as recorrentes ativas.
+      return true; 
     }
     // Para boards de 'hoje', filtrar por due_date ou recorrência
     if (task.due_date && isSameDay(parseISO(task.due_date), selectedDate)) {
@@ -294,8 +288,8 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: recurrentTasks, isLoading: isLoadingRecurrent, error: errorRecurrent, refetch: refetchRecurrent } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "recurrent", userId, selectedDate.toISOString()],
-    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "recurrent"),
+    queryKey: ["dashboardTasks", "recurrent", userId], // Removido selectedDate.toISOString()
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "recurrent"), // selectedDate ainda é passado, mas a função o ignora para 'recurrent'
     enabled: !!userId,
   });
 
