@@ -35,6 +35,8 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isEditReasonDialogOpen, setIsEditReasonDialogOpen] = useState(false);
+  const [taskToEditId, setTaskToEditId] = useState<string | null>(null);
+  const [initialEditReason, setInitialEditReason] = useState<string | null>(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false); // Para o formulário de edição da tarefa
 
   const updateTaskStatusMutation = useMutation({
@@ -193,7 +195,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       )}
       <div className="p-3 flex flex-col flex-grow">
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Checkbox
               id={`client-task-${task.id}`}
               checked={task.is_completed}
@@ -204,7 +206,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             <label
               htmlFor={`client-task-${task.id}`}
               className={cn(
-                "text-sm font-medium leading-none text-foreground",
+                "text-sm font-medium leading-none text-foreground break-words min-w-0",
                 task.is_completed && "line-through text-muted-foreground"
               )}
             >
@@ -212,7 +214,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
               {task.title}
             </label>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => onEdit(task)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
@@ -261,7 +263,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
           </p>
         )}
         {isEditRequested && task.edit_reason && (
-          <Badge variant="secondary" className="bg-orange-500/20 text-orange-500 border-orange-500/50 mb-2 w-fit">
+          <Badge variant="secondary" className="bg-orange-500/20 text-orange-500 border-orange-500/50 mb-2 w-fit break-words">
             Edição Solicitada: {task.edit_reason}
           </Badge>
         )}

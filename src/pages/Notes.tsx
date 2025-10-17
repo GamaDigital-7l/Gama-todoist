@@ -183,7 +183,7 @@ const Notes: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-          <NotebookText className="h-7 w-7 text-primary" /> Segundo Cérebro (Notas)
+          <NotebookText className="h-7 w-7 text-primary flex-shrink-0" /> Segundo Cérebro (Notas)
         </h1>
       </div>
       <p className="text-lg text-muted-foreground">
@@ -193,7 +193,7 @@ const Notes: React.FC = () => {
       <QuickNoteCreator onNoteCreated={refetch} userId={userId} /> {/* Passando userId */}
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <div className="relative flex-grow">
+        <div className="relative flex-grow min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
@@ -208,16 +208,16 @@ const Notes: React.FC = () => {
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+              className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2 flex-shrink-0"
               disabled={!userId} // Desabilitar se não houver userId
             >
-              <TagIcon className="h-4 w-4" />
+              <TagIcon className="h-4 w-4 flex-shrink-0" />
               {selectedFilterTagIds.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 min-w-0">
                   {selectedFilterTagIds.map(tagId => {
                     const tag = availableTags?.find(t => t.id === tagId);
                     return tag ? (
-                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                         {tag.name}
                       </Badge>
                     ) : null;
@@ -241,14 +241,14 @@ const Notes: React.FC = () => {
                       onSelect={() => handleTagFilterToggle(tag.id)}
                       className="flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-2">
-                        <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                           {tag.name}
                         </Badge>
                       </div>
                       <Check
                         className={cn(
-                          "h-4 w-4",
+                          "h-4 w-4 flex-shrink-0",
                           selectedFilterTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
                         )}
                       />
@@ -265,7 +265,7 @@ const Notes: React.FC = () => {
                         <PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Rótulo
                       </CommandItem>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                    <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="text-foreground">Criar Novo Rótulo</DialogTitle>
                         <DialogDescription className="text-muted-foreground">

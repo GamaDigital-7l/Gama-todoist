@@ -159,7 +159,7 @@ const Books: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -190,8 +190,8 @@ const Books: React.FC = () => {
                 />
               </Link>
               <CardHeader>
-                <CardTitle className="text-lg line-clamp-2 text-foreground">{book.title}</CardTitle>
-                <CardDescription className="line-clamp-1 text-muted-foreground">{book.author}</CardDescription>
+                <CardTitle className="text-lg line-clamp-2 text-foreground break-words">{book.title}</CardTitle>
+                <CardDescription className="line-clamp-1 text-muted-foreground break-words">{book.author}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-between">
                 <div>
@@ -208,13 +208,13 @@ const Books: React.FC = () => {
                   </span>
                   {book.total_pages && (
                     <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
-                      <BookOpen className="h-4 w-4 text-primary" />
+                      <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
                       Páginas: {book.current_page || 0} / {book.total_pages}
                     </p>
                   )}
                   {book.daily_reading_target_pages && (
                     <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                      <Target className="h-4 w-4 text-primary" />
+                      <Target className="h-4 w-4 text-primary flex-shrink-0" />
                       Meta Diária: {book.daily_reading_target_pages} páginas
                     </p>
                   )}

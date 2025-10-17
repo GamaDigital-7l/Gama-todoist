@@ -149,7 +149,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
                 !form.watch("session_date") && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("session_date") ? (
                 format(form.watch("session_date")!, "PPP")
               ) : (
@@ -172,7 +172,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
           id="is_completed"
           checked={form.watch("is_completed")}
           onCheckedChange={(checked) => form.setValue("is_completed", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_completed" className="text-foreground">Sessão Concluída</Label>
       </div>

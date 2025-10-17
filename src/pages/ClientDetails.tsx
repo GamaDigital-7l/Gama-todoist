@@ -55,7 +55,7 @@ const ClientDetails: React.FC = () => {
       showError("Usuário não autenticado ou cliente não encontrado.");
       return;
     }
-    if (window.confirm(`Tem certeza que deseja deletar o cliente "${client.name}" e todas as suas tarefas?`)) {
+    if (window.confirm(`Tem certeza que deseja deletar o cliente "${client.name}" e todas as suas referências visuais e tarefas?`)) {
       try {
         // Deletar tarefas do cliente
         const { error: deleteTasksError } = await supabase
@@ -73,7 +73,15 @@ const ClientDetails: React.FC = () => {
           .eq("user_id", userId);
         if (deleteTemplatesError) console.error("Erro ao deletar templates de tarefas do cliente:", deleteTemplatesError);
 
-        // Deletar o cliente
+        // Deletar moodboards do cliente
+        const { error: deleteMoodboardsError } = await supabase
+          .from("moodboards")
+          .delete()
+          .eq("client_id", client.id)
+          .eq("user_id", userId);
+        if (deleteMoodboardsError) console.error("Erro ao deletar moodboards do cliente:", deleteMoodboardsError);
+
+        // Finalmente, deletar o cliente
         const { error } = await supabase
           .from("clients")
           .delete()
@@ -141,28 +149,28 @@ const ClientDetails: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       {/* Área Superior: Nome do Cliente, Logo e Botões */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 mb-4">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <div className="flex items-center gap-4 min-w-0">
+          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Clientes</span>
           </Button>
           {client.logo_url ? (
-            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-full object-cover" />
+            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-semibold">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-semibold flex-shrink-0">
               {client.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <h1 className="text-3xl font-bold break-words">{client.name}</h1>
+          <h1 className="text-3xl font-bold break-words min-w-0">{client.name}</h1>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
           <Dialog open={isClientFormOpen} onOpenChange={setIsClientFormOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setIsClientFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
+              <Button onClick={() => setIsClientFormOpen(true)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10 w-full sm:w-auto">
                 <Edit className="mr-2 h-4 w-4" /> Editar Cliente
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Editar Cliente</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -176,7 +184,7 @@ const ClientDetails: React.FC = () => {
               />
             </DialogContent>
           </Dialog>
-          <Button onClick={handleDeleteClient} variant="destructive">
+          <Button onClick={handleDeleteClient} variant="destructive" className="w-full sm:w-auto">
             <Trash2 className="mr-2 h-4 w-4" /> Excluir Cliente
           </Button>
         </div>
@@ -203,7 +211,7 @@ const ClientDetails: React.FC = () => {
             </CardHeader>
             <CardContent className="flex-1 p-4">
               {client.description ? (
-                <p className="text-muted-foreground">{client.description}</p>
+                <p className="text-muted-foreground break-words">{client.description}</p>
               ) : (
                 <p className="text-muted-foreground">Nenhuma descrição fornecida para este cliente.</p>
               )}

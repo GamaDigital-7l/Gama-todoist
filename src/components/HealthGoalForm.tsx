@@ -163,7 +163,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
                 !form.watch("start_date") && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("start_date") ? (
                 format(form.watch("start_date")!, "PPP")
               ) : (
@@ -192,7 +192,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
                 !form.watch("target_date") && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("target_date") ? (
                 format(form.watch("target_date")!, "PPP")
               ) : (
@@ -220,7 +220,7 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
           id="is_completed"
           checked={form.watch("is_completed")}
           onCheckedChange={(checked) => form.setValue("is_completed", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_completed" className="text-foreground">Meta Concluída</Label>
       </div>

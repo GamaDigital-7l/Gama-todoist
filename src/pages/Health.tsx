@@ -182,7 +182,7 @@ const Health: React.FC = () => {
                 <Target className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -213,7 +213,7 @@ const Health: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Métrica
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -262,29 +262,28 @@ const Health: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-2">
+                  {goal.description && (
+                    <CardDescription className="mb-2 text-muted-foreground break-words">{goal.description}</CardDescription>
+                  )}
+                  {goal.target_date && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
+                      <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Scale className="h-4 w-4 text-primary" /> Peso Inicial: {goal.initial_weight_kg} kg
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Target className="h-4 w-4 text-primary" /> Peso Alvo: {goal.target_weight_kg} kg
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Dias Restantes: {daysRemaining > 0 ? daysRemaining : 0}
+                    {/* getStatusIcon(goal.status) */} Status: {goal.status}
                   </p>
 
                   {latestWeight !== null && (
                     <>
                       <p className="text-sm text-foreground flex items-center gap-1 font-semibold mt-3">
-                        <TrendingDown className="h-4 w-4 text-green-500" /> Peso Atual: {latestWeight} kg
+                        <TrendingDown className="h-4 w-4 text-green-500 flex-shrink-0" /> Peso Atual: {latestWeight} kg
                       </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <TrendingUp className="h-4 w-4 text-green-500" /> Perdido até agora: {currentWeightLost.toFixed(2)} kg
+                        <TrendingUp className="h-4 w-4 text-green-500 flex-shrink-0" /> Perdido até agora: {currentWeightLost.toFixed(2)} kg
                       </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <TrendingDown className="h-4 w-4 text-red-500" /> Restante para perder: {remainingToLose.toFixed(2)} kg
+                        <TrendingDown className="h-4 w-4 text-red-500 flex-shrink-0" /> Restante para perder: {remainingToLose.toFixed(2)} kg
                       </p>
                       <div className="mt-3">
                         <Label className="text-foreground">Progresso</Label>
@@ -329,7 +328,7 @@ const Health: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <CalendarIcon className="h-4 w-4 text-primary" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
+                  <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
                   <p className="text-sm text-muted-foreground flex items-start gap-1 break-words">

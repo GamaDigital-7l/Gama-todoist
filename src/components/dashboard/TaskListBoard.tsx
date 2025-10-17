@@ -97,11 +97,11 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
 
   return (
     <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-wrap gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <CardTitle className="text-lg font-semibold text-foreground break-words">{title}</CardTitle>
           {overdueCount > 0 && (
-            <span className="flex items-center gap-1 text-sm text-red-500">
+            <span className="flex items-center gap-1 text-sm text-red-500 flex-shrink-0">
               <AlertCircle className="h-4 w-4" /> {overdueCount}
             </span>
           )}
@@ -115,11 +115,11 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingTask(undefined)} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={() => setEditingTask(undefined)} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

@@ -86,22 +86,22 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-medium leading-none text-foreground">
+          <label className="text-sm font-medium leading-none text-foreground break-words">
             {templateTask.title}
           </label>
           {templateTask.description && (
             <p className="text-sm text-muted-foreground break-words">{templateTask.description}</p>
           )}
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Repeat className="h-3 w-3" /> Recorrência: {getRecurrenceText(templateTask)}
+          <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
+            <Repeat className="h-3 w-3 flex-shrink-0" /> Recorrência: {getRecurrenceText(templateTask)}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground break-words">
             Quadro de Origem: {getOriginBoardText(templateTask.origin_board)}
           </p>
           {templateTask.tags && templateTask.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {templateTask.tags.map((tag) => (
-                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                   {tag.name}
                 </Badge>
               ))}
@@ -128,7 +128,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
             if (!open) setEditingTemplateTask(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

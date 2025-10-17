@@ -321,14 +321,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   onCheckedChange={(checked) => {
                     setChecklistItems(prev => prev.map((i, idx) => idx === index ? { ...i, completed: checked as boolean } : i));
                   }}
-                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                   disabled={!userId} // Desabilitar se não houver userId
                 />
                 <Input
                   value={item.text}
                   onChange={(e) => updateChecklistItem(index, e.target.value)}
                   placeholder={`Item ${index + 1}`}
-                  className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0"
+                  className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0 break-words"
                   disabled={!userId} // Desabilitar se não houver userId
                 />
                 <Button
@@ -336,7 +336,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   variant="ghost"
                   size="icon"
                   onClick={() => removeChecklistItem(index)}
-                  className="text-red-500 hover:bg-red-500/10"
+                  className="text-red-500 hover:bg-red-500/10 flex-shrink-0"
                   disabled={!userId} // Desabilitar se não houver userId
                 >
                   <XCircle className="h-4 w-4" />
@@ -363,8 +363,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         </Button>
       </div>
 
-      <div className="flex items-center justify-between p-2 border-t border-border bg-card">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between p-2 border-t border-border bg-card flex-wrap gap-2">
+        <div className="flex items-center gap-1 flex-wrap">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
@@ -399,7 +399,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                 <span className="sr-only">Adicionar Rótulo</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
               <TagSelector
                 selectedTagIds={selectedTagIds}
                 onTagSelectionChange={handleTagSelectionChange}

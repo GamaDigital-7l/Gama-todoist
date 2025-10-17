@@ -452,27 +452,27 @@ const ClientKanbanPage: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       {/* Header do Kanban */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 mb-4">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <div className="flex items-center gap-4 min-w-0">
+          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Clientes</span>
           </Button>
           {client.logo_url ? (
-            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-full object-cover" />
+            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-semibold">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-semibold flex-shrink-0">
               {client.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <h1 className="text-3xl font-bold break-words">{client.name}</h1>
+          <h1 className="text-3xl font-bold break-words min-w-0">{client.name}</h1>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button onClick={() => navigate(`/clients/${clientId}`)} variant="secondary">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+          <Button onClick={() => navigate(`/clients/${clientId}`)} variant="secondary" className="w-full sm:w-auto">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Ver Dashboard do Cliente
           </Button>
           <Dialog open={isTemplateFormOpen} onOpenChange={setIsTemplateFormOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingTemplate(undefined)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10">
+              <Button onClick={() => setEditingTemplate(undefined)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10 w-full sm:w-auto">
                 <Settings className="mr-2 h-4 w-4" /> Gerenciar Templates
               </Button>
             </DialogTrigger>
@@ -518,7 +518,7 @@ const ClientKanbanPage: React.FC = () => {
       {/* Seletor de Mês e Progresso */}
       <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect p-4 mb-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -529,7 +529,7 @@ const ClientKanbanPage: React.FC = () => {
                 setCurrentMonth(new Date(year, month - 1, 1));
               }}
             >
-              <SelectTrigger className="w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
+              <SelectTrigger className="w-full sm:w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
                 <SelectValue placeholder="Selecionar Mês" />
               </SelectTrigger>
               <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
@@ -546,21 +546,21 @@ const ClientKanbanPage: React.FC = () => {
             </Button>
           </div>
           <div className="flex-1 w-full sm:w-auto">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-1 gap-2 sm:gap-0">
+              <span className="text-sm font-medium text-foreground text-center sm:text-left">
                 Meta do Mês: {client.monthly_delivery_goal} | Concluídas: {completedTasksCount}/{totalTasksForMonth} ({progressPercentage.toFixed(0)}%)
               </span>
               {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount < client.monthly_delivery_goal && showAlert && (
-                <span className="flex items-center gap-1 text-sm text-orange-500">
-                  <AlertCircle className="h-4 w-4" /> Faltam {remainingTasks}/{client.monthly_delivery_goal} até {format(endOfMonth(currentMonth), "dd/MM", { locale: ptBR })}
+                <span className="flex items-center gap-1 text-sm text-orange-500 text-center sm:text-right">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" /> Faltam {remainingTasks}/{client.monthly_delivery_goal} até {format(endOfMonth(currentMonth), "dd/MM", { locale: ptBR })}
                 </span>
               )}
               {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && (
-                <span className="flex items-center gap-1 text-sm text-green-500">
-                  <CheckCircle2 className="h-4 w-4" /> Meta Batida!
+                <span className="flex items-center gap-1 text-sm text-green-500 text-center sm:text-right">
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" /> Meta Batida!
                 </span>
               )}
-              <Button onClick={handleGenerateTasksForMonth} size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+              <Button onClick={handleGenerateTasksForMonth} size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 w-full sm:w-auto">
                 <CalendarDays className="mr-2 h-4 w-4" /> Gerar Tarefas do Mês
               </Button>
             </div>
@@ -569,16 +569,16 @@ const ClientKanbanPage: React.FC = () => {
         </div>
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-2">
           {generatedLink ? (
-            <div className="flex-1 w-full flex items-center gap-2">
+            <div className="flex-1 w-full flex flex-col sm:flex-row items-center gap-2">
               <Label htmlFor="approval-link" className="sr-only">Link de Aprovação</Label>
               <Input
                 id="approval-link"
                 type="text"
                 value={generatedLink}
                 readOnly
-                className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
+                className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring w-full"
               />
-              <Button onClick={copyLinkToClipboard} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={copyLinkToClipboard} className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
                 Copiar Link
               </Button>
             </div>
@@ -644,7 +644,7 @@ const ClientKanbanPage: React.FC = () => {
 
       {/* Formulário de Tarefa do Cliente */}
       <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTask?.id ? "Editar Tarefa do Cliente" : "Adicionar Nova Tarefa do Cliente"}</DialogTitle>
             <DialogDescription className="text-muted-foreground">

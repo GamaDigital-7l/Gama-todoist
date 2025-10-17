@@ -279,7 +279,7 @@ const Dashboard: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
               <DialogDescription className="text-muted-foreground">

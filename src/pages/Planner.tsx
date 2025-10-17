@@ -328,7 +328,7 @@ const Planner: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold flex items-center gap-3">
-        <CalendarDays className="h-8 w-8 text-primary" /> Planner
+        <CalendarDays className="h-8 w-8 text-primary flex-shrink-0" /> Planner
       </h1>
       <p className="text-lg text-muted-foreground">
         Organize seu dia, visualize tarefas e eventos do calendário.
@@ -356,7 +356,7 @@ const Planner: React.FC = () => {
           <Card className="bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" /> Próximas Reuniões
+                <Briefcase className="h-5 w-5 text-primary flex-shrink-0" /> Próximas Reuniões
               </CardTitle>
               <CardDescription className="text-muted-foreground">
                 Um resumo das suas próximas reuniões.
@@ -368,21 +368,21 @@ const Planner: React.FC = () => {
               ) : futureMeetings && futureMeetings.length > 0 ? (
                 futureMeetings.map((meeting) => (
                   <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
-                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1 break-words">
                       {meeting.title}
                     </p>
                     {meeting.description && (
                       <p className="text-xs text-muted-foreground break-words">{meeting.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <CalendarDays className="h-3 w-3" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
+                      <CalendarDays className="h-3 w-3 flex-shrink-0" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
                     </p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
+                      <Clock className="h-3 w-3 flex-shrink-0" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
                     </p>
                     {meeting.location && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {meeting.location}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
+                        <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
                       </p>
                     )}
                   </div>
@@ -398,20 +398,20 @@ const Planner: React.FC = () => {
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card de Reuniões e Eventos do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
-            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
+            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
+                <Briefcase className="h-5 w-5 text-primary flex-shrink-0" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
                 setIsMeetingFormOpen(open);
                 if (!open) setEditingMeeting(undefined); // Resetar o estado de edição ao fechar
               }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
@@ -432,28 +432,28 @@ const Planner: React.FC = () => {
               ) : combinedEvents && combinedEvents.length > 0 ? (
                 combinedEvents.map((event) => (
                   <div key={event.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
-                    <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500" />}
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1 break-words">
+                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500 flex-shrink-0" />}
                       {event.title}
                     </p>
                     {event.description && (
                       <p className="text-xs text-muted-foreground break-words">{event.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
+                      <Clock className="h-3 w-3 flex-shrink-0" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
                     </p>
                     {event.location && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {event.location}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
+                        <MapPin className="h-3 w-3 flex-shrink-0" /> {event.location}
                       </p>
                     )}
                     {event.html_link && (
                       <a href={event.html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
-                        Ver no Google Calendar <LinkIcon className="h-3 w-3" />
+                        Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
                       </a>
                     )}
                     {event.type === 'meeting' && (
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Editar Reunião</span>
@@ -474,20 +474,20 @@ const Planner: React.FC = () => {
 
           {/* Card de Tarefas do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
-            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <ListTodo className="h-5 w-5 text-primary" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
+            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
+                <ListTodo className="h-5 w-5 text-primary flex-shrink-0" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
               <Dialog open={isTaskFormOpen} onOpenChange={(open) => {
                 setIsTaskFormOpen(open);
                 if (!open) setEditingTask(undefined); // Resetar o estado de edição ao fechar
               }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">

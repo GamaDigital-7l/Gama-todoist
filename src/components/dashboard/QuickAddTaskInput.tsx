@@ -149,7 +149,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
         disabled={isLoading}
       />
-      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (

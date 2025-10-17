@@ -327,7 +327,7 @@ const Tasks: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -388,7 +388,7 @@ const Tasks: React.FC = () => {
                           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
                           <DialogDescription className="text-muted-foreground">

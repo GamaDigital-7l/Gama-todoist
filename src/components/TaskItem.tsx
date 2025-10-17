@@ -184,22 +184,22 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             id={`task-${task.id}`}
             checked={isTaskCompletedForPeriod}
             onCheckedChange={() => updateTaskMutation.mutate({ taskId: task.id, currentStatus: isTaskCompletedForPeriod })}
-            className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+            className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
           />
           <div className="grid gap-1.5 flex-grow min-w-0">
             <label
               htmlFor={`task-${task.id}`}
               className={cn(
-                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 break-words",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
                 level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
               )}
             >
               {task.overdue && ( // Exibir alerta de atraso
-                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />
+                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 flex-shrink-0" />
               )}
               {task.is_priority && ( // Exibir indicador de prioridade
-                <Star className="h-4 w-4 text-yellow-500 inline-block mr-1" fill="currentColor" />
+                <Star className="h-4 w-4 text-yellow-500 inline-block mr-1 flex-shrink-0" fill="currentColor" />
               )}
               {task.title}
             </label>
@@ -222,7 +222,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Clock className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {task.time}
+                <Clock className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {task.time}
               </p>
             )}
             {task.recurrence_type !== "none" && (
@@ -230,14 +230,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Repeat className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
+                <Repeat className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
                 {task.recurrence_time && ` às ${task.recurrence_time}`}
               </p>
             )}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (
-                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                     {tag.name}
                   </Badge>
                 ))}
@@ -258,7 +258,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 <span className="sr-only">Adicionar Subtarefa</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

@@ -23,7 +23,7 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
   const renderPattern = (pattern: ClientTaskGenerationPattern[]) => {
     if (!pattern || pattern.length === 0) return "Nenhum padrão definido.";
     return pattern.map((p, index) => (
-      <span key={index} className="block text-xs text-muted-foreground">
+      <span key={index} className="block text-xs text-muted-foreground break-words">
         Semana {p.week}, {DAYS_OF_WEEK_LABELS[p.day_of_week]}: {p.count} tarefas
       </span>
     ));
@@ -33,14 +33,14 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-medium leading-none text-foreground">
+          <label className="text-sm font-medium leading-none text-foreground break-words">
             {template.template_name}
           </label>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Repeat className="h-3 w-3" /> Meta Mensal: {template.delivery_count} entregas
+          <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
+            <Repeat className="h-3 w-3 flex-shrink-0" /> Meta Mensal: {template.delivery_count} entregas
           </p>
           {template.default_due_days !== null && template.default_due_days !== undefined && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
               Prazo Padrão: {template.default_due_days} dias
             </p>
           )}

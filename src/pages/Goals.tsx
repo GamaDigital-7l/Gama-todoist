@@ -76,11 +76,11 @@ const Goals: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending":
-        return <Hourglass className="h-4 w-4 text-gray-500" />;
+        return <Hourglass className="h-4 w-4 text-gray-500 flex-shrink-0" />;
       case "in_progress":
-        return <PlayCircle className="h-4 w-4 text-blue-500" />;
+        return <PlayCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />;
       case "completed":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />;
       default:
         return null;
     }
@@ -135,7 +135,7 @@ const Goals: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -178,7 +178,7 @@ const Goals: React.FC = () => {
                 )}
                 {goal.target_date && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1">

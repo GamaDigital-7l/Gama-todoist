@@ -123,12 +123,12 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                     onSelect={() => handleSelectTag(tag.id)}
                     className="flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-2">
-                      <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                         {tag.name}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -162,7 +162,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                       <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Tag
                     </CommandItem>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="text-foreground">{editingTag ? "Editar Tag" : "Criar Nova Tag"}</DialogTitle>
                       <DialogDescription className="text-muted-foreground">

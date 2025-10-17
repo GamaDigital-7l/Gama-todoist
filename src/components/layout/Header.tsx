@@ -152,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
         )
       )}
 
-      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left">Nexus Flow</h1>
+      <h1 className="text-base sm:text-xl font-semibold truncate flex-1 text-center sm:text-left min-w-0">Nexus Flow</h1>
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
       </div>

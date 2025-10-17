@@ -244,7 +244,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialDa
                   id={`day-${day.value}`}
                   checked={selectedDays.includes(day.value)}
                   onCheckedChange={() => handleDayToggle(day.value)}
-                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                 />
                 <Label htmlFor={`day-${day.value}`} className="text-foreground">
                   {day.label}

@@ -52,7 +52,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     },
     onError: (err: any) => {
       showError("Erro ao atualizar nota: " + err.message);
-      // console.error("Erro ao atualizar nota:", err); // Removido console.error
+      console.error("Erro ao atualizar nota:", err);
     },
   });
 
@@ -77,7 +77,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
     },
     onError: (err: any) => {
       showError("Erro ao excluir nota permanentemente: " + err.message);
-      // console.error("Erro ao excluir nota permanentemente:", err); // Removido console.error
+      console.error("Erro ao excluir nota permanentemente:", err);
     },
   });
 
@@ -130,9 +130,9 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
                 <Checkbox
                   checked={item.completed}
                   onCheckedChange={(checked) => handleChecklistItemToggle(index, checked as boolean)}
-                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                 />
-                <span className={cn(item.completed ? "line-through text-muted-foreground" : "")}>
+                <span className={cn(item.completed ? "line-through text-muted-foreground" : "", "break-words")}>
                   {item.text}
                 </span>
               </li>
@@ -144,13 +144,13 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
       }
     }
-    return <div className="prose dark:prose-invert max-w-none text-sm text-gray-800 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: note.content }} />;
+    return <div className="prose dark:prose-invert max-w-none text-sm text-gray-800 dark:text-gray-100 break-words" dangerouslySetInnerHTML={{ __html: note.content }} />;
   };
 
   return (
     <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card">
       {/* note.image_url removido */}
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 z-10">
         {note.trashed ? (
           <>
             <Button variant="ghost" size="icon" onClick={handleRestoreFromTrash} className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
@@ -207,7 +207,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         )}
         {note.reminder_date && note.reminder_time && (
           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-            <Bell className="h-3 w-3 text-blue-500" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
+            <Bell className="h-3 w-3 text-blue-500 flex-shrink-0" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
           </p>
         )}
       </CardContent>

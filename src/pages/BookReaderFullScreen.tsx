@@ -243,14 +243,14 @@ const BookReaderFullScreen: React.FC = () => {
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground z-50">
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card border-b border-border shadow-sm gap-2">
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
+          <Button variant="outline" size="icon" onClick={() => navigate(`/books/${id}`)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Voltar para Detalhes</span>
           </Button>
-          <h1 className="text-xl font-bold text-foreground truncate flex-1">{book.title}</h1>
+          <h1 className="text-xl font-bold text-foreground truncate flex-1 min-w-0">{book.title}</h1>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto flex-shrink-0">
           <Button variant="outline" size="icon" onClick={zoomOut} disabled={scale <= (initialScale ? initialScale * 0.5 : 0.5)} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ZoomOut className="h-4 w-4" />
             <span className="sr-only">Diminuir Zoom</span>

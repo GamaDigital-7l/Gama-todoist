@@ -137,7 +137,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
                 !form.watch("date") && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("date") ? (
                 format(form.watch("date")!, "PPP")
               ) : (

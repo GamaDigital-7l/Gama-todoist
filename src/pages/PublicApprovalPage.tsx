@@ -194,8 +194,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
         {client.logo_url && (
           <img src={client.logo_url} alt={client.name} className="h-20 w-20 rounded-full object-cover mt-4 mb-2" />
         )}
-        <h2 className="text-3xl font-semibold text-primary mb-2">{client.name}</h2>
-        <p className="text-lg text-muted-foreground max-w-2xl">
+        <h2 className="text-3xl font-semibold text-primary mb-2 break-words">{client.name}</h2>
+        <p className="text-lg text-muted-foreground max-w-2xl break-words">
           Revise e aprove os materiais abaixo para o mês de {format(parseISO(`${approvalLink.month_year_reference}-01`), "MMMM yyyy", { locale: ptBR })}.
         </p>
         {isLinkExpired && (
@@ -235,7 +235,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                 <CardTitle className="text-xl font-semibold text-foreground break-words">{task.title}</CardTitle>
                 {task.responsible && (
                   <CardDescription className="text-sm text-muted-foreground flex items-center gap-1">
-                    <User className="h-4 w-4" /> Responsável: {task.responsible.first_name} {task.responsible.last_name}
+                    <User className="h-4 w-4 flex-shrink-0" /> Responsável: {task.responsible.first_name} {task.responsible.last_name}
                   </CardDescription>
                 )}
               </CardHeader>
@@ -245,12 +245,12 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                 )}
                 {task.due_date && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                    <CalendarDays className="h-3 w-3" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
+                    <CalendarDays className="h-3 w-3 flex-shrink-0" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 {task.time && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
-                    <Clock className="h-3 w-3" /> Horário: {task.time}
+                    <Clock className="h-3 w-3 flex-shrink-0" /> Horário: {task.time}
                   </p>
                 )}
                 {task.tags && task.tags.length > 0 && (

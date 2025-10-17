@@ -65,7 +65,7 @@ const AIChat: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold flex items-center gap-2">
-        <MessageSquare className="h-7 w-7 text-primary" /> Assistente de IA
+        <MessageSquare className="h-7 w-7 text-primary flex-shrink-0" /> Assistente de IA
       </h1>
       <p className="text-lg text-muted-foreground">
         Converse com seu assistente de IA para obter ajuda e insights.
@@ -125,7 +125,7 @@ const AIChat: React.FC = () => {
             className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
             disabled={isLoading}
           />
-          <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

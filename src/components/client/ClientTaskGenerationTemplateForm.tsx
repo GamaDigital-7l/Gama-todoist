@@ -171,7 +171,7 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
           id="is_active"
           checked={form.watch("is_active")}
           onCheckedChange={(checked) => form.setValue("is_active", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_active" className="text-foreground">Template Ativo</Label>
       </div>
@@ -181,7 +181,7 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
           id="is_standard_task"
           checked={form.watch("is_standard_task")}
           onCheckedChange={(checked) => form.setValue("is_standard_task", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_standard_task" className="text-foreground">Gerar como Tarefa Padrão (aparece no Dashboard Principal)</Label>
       </div>
@@ -260,7 +260,7 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
                 )}
               </div>
             </div>
-            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-red-500 hover:bg-red-500/10">
+            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-red-500 hover:bg-red-500/10 flex-shrink-0">
               <XCircle className="h-4 w-4" />
               <span className="sr-only">Remover Padrão</span>
             </Button>

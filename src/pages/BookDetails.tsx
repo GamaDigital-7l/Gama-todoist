@@ -92,7 +92,7 @@ const BookDetails: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
@@ -128,7 +128,7 @@ const BookDetails: React.FC = () => {
           {book.content && !book.pdf_url && (
             <div>
               <h3 className="text-lg font-semibold text-foreground">Conteúdo:</h3>
-              <div className="prose dark:prose-invert max-w-none text-foreground">
+              <div className="prose dark:prose-invert max-w-none text-foreground break-words">
                 <div dangerouslySetInnerHTML={{ __html: book.content.replace(/\n/g, '<br />') }} />
               </div>
             </div>

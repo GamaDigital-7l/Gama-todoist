@@ -220,7 +220,7 @@ const Clients: React.FC = () => {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-          <Users className="h-7 w-7 text-primary" /> Seus Clientes
+          <Users className="h-7 w-7 text-primary flex-shrink-0" /> Seus Clientes
         </h1>
         <Dialog
           open={isFormOpen}
@@ -234,7 +234,7 @@ const Clients: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingClient ? "Editar Cliente" : "Adicionar Novo Cliente"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -286,7 +286,7 @@ const Clients: React.FC = () => {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{mostAdvancedClientName}</div>
+            <div className="text-2xl font-bold text-foreground break-words">{mostAdvancedClientName}</div>
             <p className="text-xs text-muted-foreground">
               ({mostAdvancedClientProgress.toFixed(0)}% concluído)
             </p>
@@ -298,7 +298,7 @@ const Clients: React.FC = () => {
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{mostDelayedClientName}</div>
+            <div className="text-2xl font-bold text-foreground break-words">{mostDelayedClientName}</div>
             <p className="text-xs text-muted-foreground">
               ({mostDelayedClientProgress.toFixed(0)}% concluído)
             </p>

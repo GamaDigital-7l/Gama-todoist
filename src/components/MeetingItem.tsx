@@ -70,18 +70,18 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-medium leading-none text-foreground">
+          <label className="text-sm font-medium leading-none text-foreground break-words">
             {meeting.title}
           </label>
           {meeting.description && (
             <p className="text-sm text-muted-foreground break-words">{meeting.description}</p>
           )}
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
+            <Clock className="h-3 w-3 flex-shrink-0" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
           </p>
           {meeting.location && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {meeting.location}
+            <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
+              <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
             </p>
           )}
         </div>
@@ -105,7 +105,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
             if (!open) setEditingMeeting(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

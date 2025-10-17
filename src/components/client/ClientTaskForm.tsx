@@ -334,7 +334,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
                 !form.watch("due_date") && "text-muted-foreground"
               )}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("due_date") ? (
                 format(form.watch("due_date")!, "PPP")
               ) : (
@@ -371,7 +371,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           <SelectTrigger id="responsible_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
             {isLoadingProfiles ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+                <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" /> Carregando...
               </div>
             ) : (
               <SelectValue placeholder="Selecionar responsável" />
@@ -414,7 +414,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           id="is_completed"
           checked={form.watch("is_completed")}
           onCheckedChange={(checked) => form.setValue("is_completed", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_completed" className="text-foreground">Concluída</Label>
       </div>
@@ -424,7 +424,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           id="is_standard_task"
           checked={form.watch("is_standard_task")}
           onCheckedChange={(checked) => form.setValue("is_standard_task", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
         <Label htmlFor="is_standard_task" className="text-foreground">Tarefa Padrão (aparece no Dashboard Principal)</Label>
       </div>

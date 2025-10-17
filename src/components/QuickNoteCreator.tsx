@@ -54,7 +54,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
             readOnly
             disabled={!userId} // Desabilitar se não houver userId
           />
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("checklist")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>

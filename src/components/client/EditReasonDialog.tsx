@@ -38,7 +38,7 @@ const EditReasonDialog: React.FC<EditReasonDialogProps> = ({ isOpen, onClose, on
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">Solicitar Edição</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -60,11 +60,11 @@ const EditReasonDialog: React.FC<EditReasonDialogProps> = ({ isOpen, onClose, on
               </p>
             )}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
               Confirmar Edição
             </Button>
           </DialogFooter>

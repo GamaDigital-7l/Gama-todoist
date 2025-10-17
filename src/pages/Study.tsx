@@ -131,7 +131,7 @@ const Study: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Sessão
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -160,9 +160,9 @@ const Study: React.FC = () => {
                     id={`study-session-${session.id}`}
                     checked={session.is_completed}
                     onCheckedChange={() => handleToggleComplete(session.id, session.is_completed)}
-                    className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                    className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                   />
-                  <CardTitle className={`text-xl font-semibold break-words ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <CardTitle className={`text-xl font-semibold break-words min-w-0 ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {session.title}
                   </CardTitle>
                 </div>
@@ -182,11 +182,11 @@ const Study: React.FC = () => {
                   <CardDescription className="mb-2 text-muted-foreground break-words">{session.notes}</CardDescription>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <BookOpen className="h-4 w-4 text-primary" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
+                  <BookOpen className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
                 </p>
                 {session.duration_minutes && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-primary" /> Duração: {session.duration_minutes} minutos
+                    <Clock className="h-4 w-4 text-primary flex-shrink-0" /> Duração: {session.duration_minutes} minutos
                   </p>
                 )}
               </CardContent>
