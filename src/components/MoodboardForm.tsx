@@ -96,7 +96,7 @@ const MoodboardForm: React.FC<MoodboardFormProps> = ({ clientId, initialData, on
           id="title"
           {...form.register("title")}
           placeholder="Ex: Campanha Matrículas 2025"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -110,7 +110,7 @@ const MoodboardForm: React.FC<MoodboardFormProps> = ({ clientId, initialData, on
           id="description"
           {...form.register("description")}
           placeholder="Detalhes sobre o moodboard..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
       </div>
       <div>
@@ -119,7 +119,7 @@ const MoodboardForm: React.FC<MoodboardFormProps> = ({ clientId, initialData, on
           id="thumbnail_url"
           {...form.register("thumbnail_url")}
           placeholder="Ex: https://exemplo.com/thumbnail.jpg"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.thumbnail_url && (
           <p className="text-red-500 text-sm mt-1">
@@ -127,7 +127,7 @@ const MoodboardForm: React.FC<MoodboardFormProps> = ({ clientId, initialData, on
           </p>
         )}
       </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
         {initialData ? "Atualizar Moodboard" : "Adicionar Moodboard"}
       </Button>
     </form>

@@ -83,17 +83,17 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-card frosted-glass shadow-sm">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-medium leading-none text-foreground">
+          <label className="text-sm font-semibold leading-none text-foreground">
             {templateTask.title}
           </label>
           {templateTask.description && (
             <p className="text-sm text-muted-foreground break-words">{templateTask.description}</p>
           )}
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Repeat className="h-3 w-3" /> Recorrência: {getRecurrenceText(templateTask)}
+            <Repeat className="h-3 w-3 text-primary" /> Recorrência: {getRecurrenceText(templateTask)}
           </p>
           <p className="text-xs text-muted-foreground">
             Quadro de Origem: {getOriginBoardText(templateTask.origin_board)}
@@ -101,7 +101,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
           {templateTask.tags && templateTask.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {templateTask.tags.map((tag) => (
-                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
                   {tag.name}
                 </Badge>
               ))}
@@ -110,11 +110,11 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => handleEditTemplateTask(templateTask)} className="text-blue-500 hover:bg-blue-500/10">
+        <Button variant="ghost" size="icon" onClick={() => handleEditTemplateTask(templateTask)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
           <Edit className="h-4 w-4" />
           <span className="sr-only">Editar Tarefa Padrão</span>
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplateTask.mutate(templateTask.id)} className="text-red-500 hover:bg-red-500/10">
+        <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplateTask.mutate(templateTask.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Deletar Tarefa Padrão</span>
         </Button>
@@ -128,7 +128,7 @@ const TemplateTaskItem: React.FC<TemplateTaskItemProps> = ({ templateTask, refet
             if (!open) setEditingTemplateTask(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

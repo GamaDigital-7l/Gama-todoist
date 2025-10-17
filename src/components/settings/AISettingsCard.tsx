@@ -28,7 +28,7 @@ interface AISettingsCardProps {
 
 const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
   return (
-    <Card className="w-full max-w-lg bg-card border border-border rounded-lg shadow-sm">
+    <Card className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl frosted-glass">
       <CardHeader>
         <CardTitle className="text-foreground">Chaves de API e Preferências de IA</CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -43,7 +43,7 @@ const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
               id="groq_api_key"
               {...form.register("groq_api_key")}
               placeholder="Sua chave da Groq API"
-              className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+              className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
             />
             {form.formState.errors.groq_api_key && (
               <p className="text-red-500 text-sm mt-1">
@@ -57,7 +57,7 @@ const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
               id="openai_api_key"
               {...form.register("openai_api_key")}
               placeholder="Sua chave da OpenAI API"
-              className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+              className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
             />
             {form.formState.errors.openai_api_key && (
               <p className="text-red-500 text-sm mt-1">
@@ -73,10 +73,10 @@ const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
               }
               value={form.watch("ai_provider_preference")}
             >
-              <SelectTrigger id="ai_provider_preference" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+              <SelectTrigger id="ai_provider_preference" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
                 <SelectValue placeholder="Selecionar provedor de IA" />
               </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+              <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
                 <SelectItem value="groq">Groq (Grátis)</SelectItem>
                 <SelectItem value="openai">OpenAI (ChatGPT - Pago)</SelectItem>
               </SelectContent>
@@ -87,7 +87,7 @@ const AISettingsCard: React.FC<AISettingsCardProps> = ({ form, onSubmit }) => {
               </p>
             )}
           </div>
-          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Salvar Configurações</Button>
+          <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">Salvar Configurações</Button>
         </form>
       </CardContent>
     </Card>

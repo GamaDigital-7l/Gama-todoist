@@ -45,11 +45,11 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
 
   return (
     <div className="w-full flex justify-center mb-6">
-      <Card className="w-full max-w-2xl bg-card border border-border rounded-lg shadow-md">
+      <Card className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-xl frosted-glass">
         <CardContent className="p-3 flex items-center gap-2">
           <Input
             placeholder="Criar uma nota..."
-            className="flex-grow bg-input border-none text-foreground focus-visible:ring-0"
+            className="flex-grow bg-input border-none text-foreground focus-visible:ring-0 rounded-xl"
             onClick={() => handleOpenFormWithDefaults("text")}
             readOnly
             disabled={!userId} // Desabilitar se não houver userId
@@ -64,7 +64,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {initialNoteData?.title ? "Editar Nota" : "Criar Nova Nota"}

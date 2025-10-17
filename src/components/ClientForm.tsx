@@ -138,7 +138,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           id="name"
           {...form.register("name")}
           placeholder="Ex: Rutherford"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.name && (
           <p className="text-red-500 text-sm mt-1">
@@ -153,7 +153,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           type="file"
           accept="image/*"
           onChange={(e) => form.setValue("logo_file", e.target.files?.[0])}
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.logo_file && (
           <p className="text-red-500 text-sm mt-1">
@@ -167,7 +167,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           id="logo_url"
           {...form.register("logo_url")}
           placeholder="Ex: https://exemplo.com/logo.png"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.logo_url && (
           <p className="text-red-500 text-sm mt-1">
@@ -181,7 +181,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           id="description"
           {...form.register("description")}
           placeholder="Breve descrição do cliente..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
       </div>
       <div>
@@ -190,7 +190,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           id="color"
           type="color"
           {...form.register("color")}
-          className="w-full h-12 p-1 border-border rounded-md cursor-pointer"
+          className="w-full h-12 p-1 border-border rounded-xl cursor-pointer"
         />
         {form.formState.errors.color && (
           <p className="text-red-500 text-sm mt-1">
@@ -198,7 +198,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
           </p>
         )}
       </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
         {initialData ? "Atualizar Cliente" : "Adicionar Cliente"}
       </Button>
     </form>

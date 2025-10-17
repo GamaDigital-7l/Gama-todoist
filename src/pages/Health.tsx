@@ -139,7 +139,7 @@ const Health: React.FC = () => {
   if (isLoadingMetrics || isLoadingGoals) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-muted-foreground">Carregando suas métricas e metas de saúde...</p>
       </div>
     );
@@ -149,7 +149,7 @@ const Health: React.FC = () => {
     showError("Erro ao carregar métricas de saúde: " + metricsError.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar métricas de saúde: {metricsError.message}</p>
       </div>
     );
@@ -159,7 +159,7 @@ const Health: React.FC = () => {
     showError("Erro ao carregar metas de saúde: " + goalsError.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas de saúde: {goalsError.message}</p>
       </div>
     );
@@ -168,7 +168,7 @@ const Health: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Minha Saúde</h1>
         <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">
           <Dialog
             open={isGoalFormOpen}
@@ -178,11 +178,11 @@ const Health: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={() => setEditingGoal(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
                 <Target className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -209,11 +209,11 @@ const Health: React.FC = () => {
             }}
           >
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingMetric(undefined)} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+              <Button onClick={() => setEditingMetric(undefined)} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 rounded-xl btn-glow">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Métrica
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -233,7 +233,7 @@ const Health: React.FC = () => {
         Registre e acompanhe seu peso, outras métricas e suas metas de saúde.
       </p>
 
-      <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Metas de Saúde</h2>
+      <h2 className="text-2xl font-extrabold text-foreground mt-6">Minhas Metas de Saúde</h2>
       {healthGoals && healthGoals.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {healthGoals.map((goal) => {
@@ -244,18 +244,18 @@ const Health: React.FC = () => {
             const daysRemaining = differenceInDays(parseISO(goal.target_date), new Date());
 
             return (
-              <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+              <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <CardTitle className={`text-xl font-semibold break-words ${goal.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {goal.title}
                   </CardTitle>
                   <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
-                    {goal.is_completed && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-                    <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
+                    {goal.is_completed && <CheckCircle2 className="h-5 w-5 text-green-500 icon-glow" />}
+                    <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Editar Meta</span>
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)} className="text-red-500 hover:bg-red-500/10">
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Deletar Meta</span>
                     </Button>
@@ -263,28 +263,28 @@ const Health: React.FC = () => {
                 </CardHeader>
                 <CardContent className="flex-grow space-y-2">
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Scale className="h-4 w-4 text-primary" /> Peso Inicial: {goal.initial_weight_kg} kg
+                    <Scale className="h-4 w-4 text-primary icon-glow" /> Peso Inicial: {goal.initial_weight_kg} kg
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Target className="h-4 w-4 text-primary" /> Peso Alvo: {goal.target_weight_kg} kg
+                    <Target className="h-4 w-4 text-primary icon-glow" /> Peso Alvo: {goal.target_weight_kg} kg
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
+                    <CalendarIcon className="h-4 w-4 text-primary icon-glow" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-primary" /> Dias Restantes: {daysRemaining > 0 ? daysRemaining : 0}
+                    <CalendarIcon className="h-4 w-4 text-primary icon-glow" /> Dias Restantes: {daysRemaining > 0 ? daysRemaining : 0}
                   </p>
 
                   {latestWeight !== null && (
                     <>
                       <p className="text-sm text-foreground flex items-center gap-1 font-semibold mt-3">
-                        <TrendingDown className="h-4 w-4 text-green-500" /> Peso Atual: {latestWeight} kg
+                        <TrendingDown className="h-4 w-4 text-green-500 icon-glow" /> Peso Atual: {latestWeight} kg
                       </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <TrendingUp className="h-4 w-4 text-green-500" /> Perdido até agora: {currentWeightLost.toFixed(2)} kg
+                        <TrendingUp className="h-4 w-4 text-green-500 icon-glow" /> Perdido até agora: {currentWeightLost.toFixed(2)} kg
                       </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <TrendingDown className="h-4 w-4 text-red-500" /> Restante para perder: {remainingToLose.toFixed(2)} kg
+                        <TrendingDown className="h-4 w-4 text-red-500 icon-glow" /> Restante para perder: {remainingToLose.toFixed(2)} kg
                       </p>
                       <div className="mt-3">
                         <Label className="text-foreground">Progresso</Label>
@@ -307,21 +307,21 @@ const Health: React.FC = () => {
         <p className="text-muted-foreground">Nenhuma meta de saúde encontrada. Adicione uma nova meta para começar a acompanhar seu progresso!</p>
       )}
 
-      <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Métricas de Saúde</h2>
+      <h2 className="text-2xl font-extrabold text-foreground mt-6">Minhas Métricas de Saúde</h2>
       {healthMetrics && healthMetrics.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {healthMetrics.map((metric) => (
-            <Card key={metric.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={metric.id} className="flex flex-col h-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xl font-semibold text-foreground break-words">
                   {metric.weight_kg ? `${metric.weight_kg} kg` : "Métrica de Saúde"}
                 </CardTitle>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditMetric(metric)} className="text-blue-500 hover:bg-blue-500/10">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditMetric(metric)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Métrica</span>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteMetric(metric.id)} className="text-red-500 hover:bg-red-500/10">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteMetric(metric.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Deletar Métrica</span>
                   </Button>
@@ -329,11 +329,11 @@ const Health: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <CalendarIcon className="h-4 w-4 text-primary" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
+                  <CalendarIcon className="h-4 w-4 text-primary icon-glow" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
                   <p className="text-sm text-muted-foreground flex items-start gap-1 break-words">
-                    <NotebookText className="h-4 w-4 text-primary flex-shrink-0 mt-1" /> Notas: {metric.notes}
+                    <NotebookText className="h-4 w-4 text-primary icon-glow flex-shrink-0 mt-1" /> Notas: {metric.notes}
                   </p>
                 )}
               </CardContent>

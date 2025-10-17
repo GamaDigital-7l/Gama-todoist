@@ -45,9 +45,9 @@ const BookDetails: React.FC = () => {
   if (!id) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-        <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
+        <h1 className="text-3xl font-extrabold">Livro Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do livro não foi fornecido.</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>
@@ -57,8 +57,8 @@ const BookDetails: React.FC = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-3xl font-bold mt-4">Carregando Livro...</h1>
+        <Loader2 className="h-12 w-12 animate-spin text-primary icon-glow" />
+        <h1 className="text-3xl font-extrabold mt-4">Carregando Livro...</h1>
         <p className="text-lg text-muted-foreground">Preparando os detalhes do livro.</p>
       </div>
     );
@@ -68,9 +68,9 @@ const BookDetails: React.FC = () => {
     showError("Erro ao carregar livro: " + error.message);
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-bold">Erro ao Carregar Livro</h1>
+        <h1 className="text-3xl font-extrabold">Erro ao Carregar Livro</h1>
         <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>
@@ -80,9 +80,9 @@ const BookDetails: React.FC = () => {
   if (!book) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
+        <h1 className="text-3xl font-extrabold">Livro Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O livro que você está procurando não existe ou foi removido.</p>
-        <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
+        <Button onClick={() => navigate("/books")} className="w-fit bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow mt-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a Biblioteca
         </Button>
       </div>
@@ -92,23 +92,23 @@ const BookDetails: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl">
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold break-words">{book.title}</h1>
+          <h1 className="text-3xl font-extrabold break-words">{book.title}</h1>
           {book.author && <p className="text-lg text-muted-foreground break-words">Por {book.author}</p>}
         </div>
       </div>
 
-      <Card className="bg-card border border-border rounded-lg shadow-sm">
+      <Card className="bg-card border border-border rounded-2xl shadow-xl frosted-glass">
         <CardHeader>
           <CardTitle className="text-foreground">Detalhes do Livro</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {book.cover_image_url && (
-            <img src={book.cover_image_url} alt={book.title} className="w-48 h-auto rounded-md object-cover mx-auto" />
+            <img src={book.cover_image_url} alt={book.title} className="w-48 h-auto rounded-xl object-cover mx-auto" />
           )}
           {book.description && (
             <div>
@@ -119,7 +119,7 @@ const BookDetails: React.FC = () => {
 
           {book.pdf_url && (
             <Link to={`/books/${book.id}/read`}>
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
                 <BookOpen className="mr-2 h-4 w-4" /> Ler PDF em Tela Cheia
               </Button>
             </Link>

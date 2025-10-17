@@ -172,8 +172,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   return (
     <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
       <div className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-md shadow-sm",
-        level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
+        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl shadow-sm transition-all duration-300",
+        level === 0 ? "p-3 border border-border bg-card frosted-glass" : "p-2 bg-secondary/20"
       )}>
         <div className="flex items-center gap-3 flex-grow min-w-0">
           <Checkbox
@@ -186,13 +186,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             <label
               htmlFor={`task-${task.id}`}
               className={cn(
-                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                "font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
+                level === 0 ? "text-base" : "text-sm" // Texto menor para subtarefas
               )}
             >
               {task.origin_board === 'overdue' && (
-                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1" />
+                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 icon-glow" />
               )}
               {task.title}
             </label>
@@ -215,7 +215,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Clock className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {task.time}
+                <Clock className={cn("h-3 w-3 text-primary", level > 0 && "h-2.5 w-2.5")} /> {task.time}
               </p>
             )}
             {task.recurrence_type !== "none" && (
@@ -223,13 +223,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 "text-xs text-muted-foreground flex items-center gap-1",
                 level > 0 && "text-[0.65rem]"
               )}>
-                <Repeat className={cn("h-3 w-3", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
+                <Repeat className={cn("h-3 w-3 text-primary", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
               </p>
             )}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (
-                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
                     {tag.name}
                   </Badge>
                 ))}
@@ -245,12 +245,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             }}
           >
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10">
+              <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10 btn-glow">
                 <PlusCircle className="h-4 w-4" />
                 <span className="sr-only">Adicionar Subtarefa</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -266,11 +266,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             </DialogContent>
           </Dialog>
 
-          <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
+          <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Editar Tarefa</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
+          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Deletar Tarefa</span>
           </Button>

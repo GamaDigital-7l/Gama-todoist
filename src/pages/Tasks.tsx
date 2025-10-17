@@ -230,7 +230,7 @@ const Tasks: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Suas Tarefas</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
@@ -239,11 +239,11 @@ const Tasks: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -263,24 +263,24 @@ const Tasks: React.FC = () => {
       </p>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader>
             <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="current_tasks" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md">
-                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Minhas Tarefas</TabsTrigger>
-                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Tarefas Padrão</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-xl frosted-glass">
+                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Minhas Tarefas</TabsTrigger>
+                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Tarefas Padrão</TabsTrigger>
               </TabsList>
               <div className="mt-4">
                 <TabsContent value="current_tasks">
                   <Tabs defaultValue="daily" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
-                      <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
-                      <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
-                      <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
-                      <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-xl frosted-glass">
+                      <TabsTrigger value="daily" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Diárias</TabsTrigger>
+                      <TabsTrigger value="weekly" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Semanais</TabsTrigger>
+                      <TabsTrigger value="monthly" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Mensais</TabsTrigger>
+                      <TabsTrigger value="all" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-lg">Todas</TabsTrigger>
                     </TabsList>
                     <div className="mt-4">
                       <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
@@ -300,11 +300,11 @@ const Tasks: React.FC = () => {
                       }}
                     >
                       <DialogTrigger asChild>
-                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
                           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
                         <DialogHeader>
                           <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
                           <DialogDescription className="text-muted-foreground">

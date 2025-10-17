@@ -272,14 +272,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">DASHBOARD</h1> {/* Título atualizado */}
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -355,10 +355,10 @@ const Dashboard: React.FC = () => {
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
-            <ListTodo className="h-5 w-5 text-primary" />
+            <ListTodo className="h-5 w-5 text-primary icon-glow" />
           </CardHeader>
           <CardContent>
             {isLoadingAllTasks ? (
@@ -372,10 +372,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
-            <XCircle className="h-5 w-5 text-red-500" />
+            <XCircle className="h-5 w-5 text-red-500 icon-glow" />
           </CardHeader>
           <CardContent>
             {isLoadingOverdue ? (
@@ -389,10 +389,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
-            <Repeat className="h-5 w-5 text-orange-500" />
+            <Repeat className="h-5 w-5 text-orange-500 icon-glow" />
           </CardHeader>
           <CardContent>
             {isLoadingRecurrent ? (
@@ -406,10 +406,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500" />
+            <CalendarCheck className="h-5 w-5 text-green-500 icon-glow" />
           </CardHeader>
           <CardContent>
             {isLoadingCompleted ? (
@@ -423,10 +423,10 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-lg">
+        <Card className="hover:shadow-lg transition-shadow duration-300 bg-card border border-border rounded-2xl shadow-xl frosted-glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500" />
+            <CalendarCheck className="h-5 w-5 text-green-500 icon-glow" />
           </CardHeader>
           <CardContent>
             {isLoadingCompleted ? (

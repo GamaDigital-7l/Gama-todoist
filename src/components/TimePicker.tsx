@@ -46,7 +46,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
         <Button
           variant={"outline"}
           className={cn(
-            "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+            "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
             !value && "text-muted-foreground"
           )}
         >
@@ -54,7 +54,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
           {value ? value : <span>Escolha um horário</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2 bg-popover border-border rounded-md shadow-lg">
+      <PopoverContent className="w-auto p-2 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
         <div className="flex items-center space-x-2">
           <input
             type="number"
@@ -63,7 +63,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
             value={hour}
             onChange={handleHourChange}
             placeholder="HH"
-            className="w-12 text-center border border-border rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-ring bg-input text-foreground"
+            className="w-12 text-center border border-border rounded-xl p-1 focus:outline-none focus:ring-2 focus:ring-ring bg-input text-foreground"
           />
           <span className="text-foreground">:</span>
           <input
@@ -73,7 +73,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
             value={minute}
             onChange={handleMinuteChange}
             placeholder="MM"
-            className="w-12 text-center border border-border rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-ring bg-input text-foreground"
+            className="w-12 text-center border border-border rounded-xl p-1 focus:outline-none focus:ring-2 focus:ring-ring bg-input text-foreground"
           />
         </div>
       </PopoverContent>

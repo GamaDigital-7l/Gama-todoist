@@ -283,7 +283,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -297,7 +297,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
       </div>
       
@@ -308,7 +308,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
                 !form.watch("due_date") && "text-muted-foreground"
               )}
             >
@@ -320,7 +320,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
             <Calendar
               mode="single"
               selected={form.watch("due_date") || undefined}
@@ -349,10 +349,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily">Diário</SelectItem>
             <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem>
@@ -397,7 +397,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             max="31"
             {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
-            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
           />
           {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
@@ -414,10 +414,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
           value={watchedOriginBoard}
           disabled={!!initialData}
         >
-          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
             <SelectValue placeholder="Selecionar quadro" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
             <SelectItem value="general">Geral</SelectItem>
             <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
             <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
@@ -437,10 +437,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             value={watchedParentTaskId || "none-selected"}
             disabled={isLoadingUserTasks}
           >
-            <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectTrigger id="parent_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
               <SelectValue placeholder="Selecionar tarefa pai" />
             </SelectTrigger>
-            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
               <SelectItem value="none-selected">Nenhuma</SelectItem>
               {userTasks?.map(task => (
                 <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
@@ -455,7 +455,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         onTagSelectionChange={handleTagSelectionChange}
       />
 
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
+      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
     </form>
   );
 };

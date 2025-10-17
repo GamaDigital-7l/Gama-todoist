@@ -148,38 +148,38 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   };
 
   return (
-    <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card">
+    <Card className="relative flex flex-col h-full rounded-2xl shadow-xl frosted-glass group bg-card">
       {/* note.image_url removido */}
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
         {note.trashed ? (
           <>
-            <Button variant="ghost" size="icon" onClick={handleRestoreFromTrash} className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700">
+            <Button variant="ghost" size="icon" onClick={handleRestoreFromTrash} className="h-7 w-7 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700 btn-glow">
               <Undo2 className="h-4 w-4" />
               <span className="sr-only">Restaurar</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleDeletePermanently.mutate(note.id)} className="h-7 w-7 text-red-600 hover:bg-red-200 dark:text-red-400 dark:hover:bg-red-800">
+            <Button variant="ghost" size="icon" onClick={() => handleDeletePermanently.mutate(note.id)} className="h-7 w-7 text-red-600 hover:bg-red-200 dark:text-red-400 dark:hover:bg-red-800 btn-glow">
               <Trash2 className="h-4 w-4" />
               <span className="sr-only">Excluir Permanentemente</span>
             </Button>
           </>
         ) : (
           <>
-            <Button variant="ghost" size="icon" onClick={handlePinToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button variant="ghost" size="icon" onClick={handlePinToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground btn-glow">
               {note.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
               <span className="sr-only">{note.pinned ? "Desafixar" : "Fixar"}</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleArchiveToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Button variant="ghost" size="icon" onClick={handleArchiveToggle} className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground btn-glow">
               {note.archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
               <span className="sr-only">{note.archived ? "Desarquivar" : "Arquivar"}</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground btn-glow">
                   <MoreVertical className="h-4 w-4" />
                   <span className="sr-only">Mais Ações</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover border-border rounded-md shadow-lg">
+              <DropdownMenuContent align="end" className="bg-popover border-border rounded-2xl shadow-xl frosted-glass">
                 <DropdownMenuItem onClick={() => handleEditNote(note)} className="cursor-pointer">
                   <Edit className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
@@ -199,7 +199,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {note.tags.map((tag) => (
-              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
                 {tag.name}
               </Badge>
             ))}
@@ -207,37 +207,10 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         )}
         {note.reminder_date && note.reminder_time && (
           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-            <Bell className="h-3 w-3 text-blue-500" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
+            <Bell className="h-3 w-3 text-blue-500 icon-glow" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
           </p>
         )}
       </CardContent>
-
-      {isFormOpen && (
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) setEditingNote(undefined);
-          }}
-        >
-          <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">
-                {editingNote?.title ? "Editar Nota" : "Criar Nova Nota"}
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                {editingNote?.title ? "Atualize o conteúdo da sua nota." : "Escreva uma nova nota para o seu segundo cérebro."}
-              </DialogDescription>
-            </DialogHeader>
-            <NoteForm
-              initialData={editingNote}
-              onNoteSaved={refetchNotes}
-              onClose={() => setIsFormOpen(false)}
-              userId={session?.user?.id} // Passando userId
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </Card>
   );
 };

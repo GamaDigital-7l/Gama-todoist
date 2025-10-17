@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users } from "lucide-react"; // Importar Users
+import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSidebar }) => {
   return (
     <div className={cn(
-      "fixed inset-y-0 left-0 z-40 flex flex-col h-full border-r border-sidebar-border bg-sidebar-background transition-all duration-300 ease-in-out",
+      "fixed inset-y-0 left-0 z-40 flex flex-col h-full border-r border-sidebar-border bg-sidebar-background transition-all duration-300 ease-in-out frosted-glass",
       "md:relative",
       isSidebarOpen ? "w-[220px] lg:w-[280px]" : "w-0 overflow-hidden",
       className

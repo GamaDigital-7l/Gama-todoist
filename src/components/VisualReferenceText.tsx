@@ -78,14 +78,14 @@ const VisualReferenceText: React.FC<VisualReferenceTextProps> = ({
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
       bounds="parent"
-      style={{ zIndex: z_index || 1, border: isSelected ? "2px solid hsl(var(--primary))" : "none" }}
+      style={{ zIndex: z_index || 1, border: isSelected ? "2px solid hsl(var(--primary))" : "none", borderRadius: "1.25rem" }} // Aplicar border-radius
       minWidth={50}
       minHeight={50}
       onClick={() => onSelect(id)}
       onDoubleClick={handleDoubleClick}
     >
       <div
-        className="relative w-full h-full p-2 rounded-md shadow-md flex items-center justify-center group"
+        className="relative w-full h-full p-2 rounded-2xl shadow-md flex items-center justify-center group" // Aplicar border-radius
         style={{
           backgroundColor: metadata?.backgroundColor || (isSelected ? "hsl(var(--accent))" : "hsl(var(--secondary))"),
           color: metadata?.fontColor || "hsl(var(--foreground))",
@@ -99,7 +99,7 @@ const VisualReferenceText: React.FC<VisualReferenceTextProps> = ({
             value={text}
             onChange={handleTextChange}
             onBlur={handleBlur}
-            className="w-full h-full bg-transparent border-none resize-none focus-visible:ring-0 text-center p-0"
+            className="w-full h-full bg-transparent border-none resize-none focus-visible:ring-0 text-center p-0 rounded-xl" // Aplicar border-radius
             style={{ color: metadata?.fontColor || "inherit", fontSize: metadata?.fontSize || "inherit" }}
           />
         ) : (
@@ -112,7 +112,7 @@ const VisualReferenceText: React.FC<VisualReferenceTextProps> = ({
             e.stopPropagation();
             onDelete(id);
           }}
-          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity btn-glow"
         >
           <XCircle className="h-4 w-4" />
           <span className="sr-only">Remover Nota</span>

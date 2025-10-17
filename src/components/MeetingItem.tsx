@@ -67,31 +67,31 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-md bg-background shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-xl bg-card frosted-glass shadow-sm">
       <div className="flex items-center gap-3 flex-grow min-w-0">
         <div className="grid gap-1.5 flex-grow min-w-0">
-          <label className="text-sm font-medium leading-none text-foreground">
+          <label className="text-sm font-semibold leading-none text-foreground">
             {meeting.title}
           </label>
           {meeting.description && (
             <p className="text-sm text-muted-foreground break-words">{meeting.description}</p>
           )}
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
+            <Clock className="h-3 w-3 text-primary" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
           </p>
           {meeting.location && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {meeting.location}
+              <MapPin className="h-3 w-3 text-primary" /> {meeting.location}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(meeting)} className="text-blue-500 hover:bg-blue-500/10">
+        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(meeting)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
           <Edit className="h-4 w-4" />
           <span className="sr-only">Editar Reunião</span>
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting.mutate(meeting.id)} className="text-red-500 hover:bg-red-500/10">
+        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting.mutate(meeting.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Deletar Reunião</span>
         </Button>
@@ -105,7 +105,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
             if (!open) setEditingMeeting(undefined);
           }}
         >
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

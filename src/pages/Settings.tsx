@@ -124,7 +124,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-      <h1 className="text-3xl font-bold">Configurações</h1>
+      <h1 className="text-3xl font-extrabold">Configurações</h1>
       <p className="text-lg text-muted-foreground">
         Gerencie as configurações do seu aplicativo, incluindo chaves de API.
       </p>

@@ -127,7 +127,7 @@ const Books: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-muted-foreground">Carregando seus livros...</p>
       </div>
     );
@@ -137,7 +137,7 @@ const Books: React.FC = () => {
     showError("Erro ao carregar livros: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-red-500">Erro ao carregar livros: {error.message}</p>
       </div>
     );
@@ -146,7 +146,7 @@ const Books: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Sua Biblioteca de Livros</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
@@ -155,11 +155,11 @@ const Books: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingBook(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingBook(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -181,16 +181,16 @@ const Books: React.FC = () => {
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {books.map((book) => (
-            <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={book.id} className="flex flex-col overflow-hidden h-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <Link to={`/books/${book.id}`} className="block">
                 <img
                   src={book.cover_image_url || "/placeholder.svg"}
                   alt={book.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover rounded-t-2xl"
                 />
               </Link>
               <CardHeader>
-                <CardTitle className="text-lg line-clamp-2 text-foreground">{book.title}</CardTitle>
+                <CardTitle className="text-lg line-clamp-2 font-semibold text-foreground">{book.title}</CardTitle>
                 <CardDescription className="line-clamp-1 text-muted-foreground">{book.author}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-between">
@@ -208,13 +208,13 @@ const Books: React.FC = () => {
                   </span>
                   {book.total_pages && (
                     <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
-                      <BookOpen className="h-4 w-4 text-primary" />
+                      <BookOpen className="h-4 w-4 text-primary icon-glow" />
                       Páginas: {book.current_page || 0} / {book.total_pages}
                     </p>
                   )}
                   {book.daily_reading_target_pages && (
                     <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                      <Target className="h-4 w-4 text-primary" />
+                      <Target className="h-4 w-4 text-primary icon-glow" />
                       Meta Diária: {book.daily_reading_target_pages} páginas
                     </p>
                   )}
@@ -230,12 +230,12 @@ const Books: React.FC = () => {
                         max={book.total_pages}
                         value={currentPageInput[book.id] ?? 0} 
                         onChange={(e) => setCurrentPageInput({ ...currentPageInput, [book.id]: parseInt(e.target.value) })}
-                        className="w-full sm:w-24 bg-input border-border text-foreground focus-visible:ring-ring"
+                        className="w-full sm:w-24 bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
                       />
                       <Button
                         onClick={() => handleUpdatePage(book.id)}
                         size="sm"
-                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow"
                         disabled={updateBookPageMutation.isPending}
                       >
                         Atualizar
@@ -243,11 +243,11 @@ const Books: React.FC = () => {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => handleEditBook(book)} className="text-blue-500 hover:bg-blue-500/10">
+                    <Button variant="outline" size="icon" onClick={() => handleEditBook(book)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Editar Livro</span>
                     </Button>
-                    <Button variant="outline" size="icon" onClick={() => handleDeleteBook.mutate(book.id)} className="text-red-500 hover:bg-red-500/10">
+                    <Button variant="outline" size="icon" onClick={() => handleDeleteBook.mutate(book.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Deletar Livro</span>
                     </Button>

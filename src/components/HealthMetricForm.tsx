@@ -100,7 +100,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl",
                 !form.watch("date") && "text-muted-foreground"
               )}
             >
@@ -112,7 +112,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
+          <PopoverContent className="w-auto p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
             <Calendar
               mode="single"
               selected={form.watch("date") || undefined}
@@ -130,7 +130,7 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
           step="0.1"
           {...form.register("weight_kg", { valueAsNumber: true })}
           placeholder="Ex: 75.5"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.weight_kg && (
           <p className="text-red-500 text-sm mt-1">
@@ -144,10 +144,10 @@ const HealthMetricForm: React.FC<HealthMetricFormProps> = ({ initialData, onMetr
           id="notes"
           {...form.register("notes")}
           placeholder="Observações sobre sua saúde..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
       </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
         {initialData ? "Atualizar Métrica" : "Adicionar Métrica"}
       </Button>
     </form>

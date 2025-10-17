@@ -69,7 +69,7 @@ const Clients: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Seus Clientes</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Seus Clientes</h1>
         <p className="text-lg text-muted-foreground">Carregando seus clientes...</p>
       </div>
     );
@@ -79,7 +79,7 @@ const Clients: React.FC = () => {
     showError("Erro ao carregar clientes: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Seus Clientes</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Seus Clientes</h1>
         <p className="text-lg text-red-500">Erro ao carregar clientes: {error.message}</p>
       </div>
     );
@@ -88,8 +88,8 @@ const Clients: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-          <Users className="h-7 w-7 text-primary" /> Seus Clientes
+        <h1 className="text-3xl font-extrabold text-foreground flex items-center gap-2">
+          <Users className="h-7 w-7 text-primary icon-glow" /> Seus Clientes
         </h1>
         <Dialog
           open={isFormOpen}
@@ -99,11 +99,11 @@ const Clients: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingClient(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingClient(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingClient ? "Editar Cliente" : "Adicionar Novo Cliente"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">

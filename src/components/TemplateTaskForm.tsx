@@ -174,7 +174,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           id="title"
           {...form.register("title")}
           placeholder="Ex: Fazer exercícios matinais"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
         {form.formState.errors.title && (
           <p className="text-red-500 text-sm mt-1">
@@ -188,7 +188,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           id="description"
           {...form.register("description")}
           placeholder="Detalhes da tarefa padrão (ex: 30 minutos de leitura, 10 páginas, 1h de estudo)..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
         />
       </div>
       
@@ -202,10 +202,10 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           }}
           value={recurrenceType}
         >
-          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="recurrence_type" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
             <SelectValue placeholder="Selecionar tipo de recorrência" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
             <SelectItem value="none">Nenhuma</SelectItem>
             <SelectItem value="daily">Diário</SelectItem>
             <SelectItem value="weekly">Semanal (selecionar dias)</SelectItem>
@@ -250,7 +250,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
             max="31"
             {...form.register("recurrence_details", { valueAsNumber: true })}
             placeholder="Ex: 15"
-            className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+            className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
           />
           {form.formState.errors.recurrence_details && (
             <p className="text-red-500 text-sm mt-1">
@@ -266,10 +266,10 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           onValueChange={(value: TemplateFormOriginBoard) => form.setValue("origin_board", value)}
           value={form.watch("origin_board")}
         >
-          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+          <SelectTrigger id="origin_board" className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl">
             <SelectValue placeholder="Selecionar quadro" />
           </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-2xl shadow-xl frosted-glass">
             <SelectItem value="general">Geral</SelectItem>
             <SelectItem value="today_priority">Hoje - Prioridade</SelectItem>
             <SelectItem value="today_no_priority">Hoje - Sem Prioridade</SelectItem>
@@ -283,7 +283,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
         onTagSelectionChange={handleTagSelectionChange}
       />
 
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa Padrão" : "Adicionar Tarefa Padrão"}</Button>
+      <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">{initialData ? "Atualizar Tarefa Padrão" : "Adicionar Tarefa Padrão"}</Button>
     </form>
   );
 };

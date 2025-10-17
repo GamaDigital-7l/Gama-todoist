@@ -244,7 +244,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "updated_at"> = {
+      const newImageElement: Omit<VisualReferenceElement, "id" | "created_at" | "id"> = {
         moodboard_id: moodboardId, // Alterado de client_id
         user_id: userId,
         element_type: "image",
@@ -355,7 +355,7 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
 
   return (
     <div
-      className="relative flex-grow w-full h-full overflow-hidden rounded-lg bg-[#2b2b2b] dark:bg-gray-900"
+      className="relative flex-grow w-full h-full overflow-hidden rounded-2xl bg-[#2b2b2b] dark:bg-gray-900"
       onMouseEnter={() => setIsToolbarVisible(true)}
       onMouseLeave={() => setIsToolbarVisible(false)}
       onDragOver={handleDragOver}
@@ -365,20 +365,20 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
     >
       {/* Toolbar */}
       <div
-        className={`absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-card border border-border rounded-md shadow-lg z-50 transition-opacity duration-300 ${
+        className={`absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-card border border-border rounded-xl shadow-lg z-50 transition-opacity duration-300 frosted-glass ${
           isToolbarVisible ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
-        <Button size="sm" onClick={handleAddText} className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button size="sm" onClick={handleAddText} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
           <Type className="h-4 w-4 mr-1" /> Texto
         </Button>
         <Dialog open={isAddImageUrlModalOpen} onOpenChange={setIsAddImageUrlModalOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <Link className="h-4 w-4 mr-1" /> URL Imagem
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">Adicionar Imagem por URL</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -393,16 +393,16 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
                   value={imageUrlInput}
                   onChange={(e) => setImageUrlInput(e.target.value)}
                   placeholder="https://exemplo.com/imagem.jpg"
-                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring rounded-xl"
                 />
               </div>
-              <Button onClick={handleAddImageFromUrl} disabled={isUploading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={handleAddImageFromUrl} disabled={isUploading} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
                 {isUploading ? "Adicionando..." : "Adicionar Imagem"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
-        <Button size="sm" onClick={() => document.getElementById('file-upload-input')?.click()} className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button size="sm" onClick={() => document.getElementById('file-upload-input')?.click()} className="bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
           <Upload className="h-4 w-4 mr-1" /> Upload
         </Button>
         <input
@@ -418,10 +418,10 @@ const VisualReferencesCanvas: React.FC<VisualReferencesCanvasProps> = ({ moodboa
             }
           }}
         />
-        <Button size="sm" onClick={() => showSuccess("Funcionalidade de salvar manual em desenvolvimento!")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+        <Button size="sm" onClick={() => showSuccess("Funcionalidade de salvar manual em desenvolvimento!")} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-xl">
           <Save className="h-4 w-4 mr-1" /> Salvar Cena
         </Button>
-        <Button size="sm" onClick={handleResetView} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+        <Button size="sm" onClick={handleResetView} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-xl">
           <RefreshCcw className="h-4 w-4 mr-1" /> Reset View
         </Button>
       </div>

@@ -32,8 +32,8 @@ export default {
           light: "hsl(var(--primary-light))", // Roxo mais claro para gradientes
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))", // Azul neon suave
-          foreground: "hsl(var(--secondary-foreground))", // Texto para o azul neon
+          DEFAULT: "hsl(var(--secondary))", // Cinza escuro para elementos secundários
+          foreground: "hsl(var(--secondary-foreground))", // Texto para o cinza
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))", // Vermelho para ações perigosas
@@ -57,11 +57,11 @@ export default {
         },
         // Cores de status para cards de tarefas (exemplo)
         status: {
-          overdue: "var(--status-overdue)", // Roxo forte
-          urgent: "var(--status-urgent)",   // Azul vibrante
-          today: "var(--status-today)",     // Verde suave
-          completed: "var(--status-completed)", // Cinza translúcido
-          recurring: "var(--status-recurring)", // Lilás
+          overdue: "var(--status-overdue)",
+          urgent: "var(--status-urgent)",
+          today: "var(--status-today)",
+          completed: "var(--status-completed)",
+          recurring: "var(--status-recurring)",
         },
         // Adicionando as cores da sidebar diretamente para que @apply possa encontrá-las
         'sidebar-background': "hsl(var(--sidebar-background))",
@@ -75,10 +75,10 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)", // Padrão para componentes maiores
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        // Adicionando um radius maior para cards e botões, conforme solicitado (16px a 24px)
-        "xl": "1rem", // 16px
+        md: "calc(var(--radius) - 8px)", // Ajustado para ser menor que lg
+        sm: "calc(var(--radius) - 12px)", // Ajustado para ser menor que md
+        // Adicionando um radius maior para cards e botões, conforme solicitado (20px a 24px)
+        "xl": "1.25rem", // 20px
         "2xl": "1.5rem", // 24px
         "3xl": "2rem", // 32px (para elementos maiores ou mais arredondados)
       },
@@ -96,8 +96,8 @@ export default {
         },
         // Keyframes para o efeito de glow
         glow: {
-          "0%, 100%": { boxShadow: "0 0 5px rgba(95, 119, 255, 0.4), 0 0 10px rgba(76, 46, 255, 0.3)" },
-          "50%": { boxShadow: "0 0 10px rgba(95, 119, 255, 0.6), 0 0 20px rgba(76, 46, 255, 0.5)" },
+          "0%, 100%": { boxShadow: "0 0 5px hsla(var(--primary), 0.4), 0 0 10px hsla(var(--primary-light), 0.3)" },
+          "50%": { boxShadow: "0 0 10px hsla(var(--primary), 0.6), 0 0 20px hsla(var(--primary-light), 0.5)" },
         },
         // Keyframes para fade + slide
         "fade-in-slide-up": {
@@ -121,9 +121,9 @@ export default {
         "light-sm": "0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)",
         "light-md": "0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)",
         "light-lg": "0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)",
-        "glow-sm": "0 0 8px rgba(95, 119, 255, 0.5)", // Pequeno glow
-        "glow-md": "0 0 15px rgba(95, 119, 255, 0.7)", // Médio glow
-        "glow-lg": "0 0 25px rgba(95, 119, 255, 0.9)", // Grande glow
+        "glow-sm": "0 0 8px hsla(var(--primary), 0.5)", // Pequeno glow
+        "glow-md": "0 0 15px hsla(var(--primary), 0.7)", // Médio glow
+        "glow-lg": "0 0 25px hsla(var(--primary), 0.9)", // Grande glow
       },
     },
   },

@@ -94,12 +94,12 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+            className="w-full justify-between bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl"
           >
             {selectedTags.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {selectedTags.map((tag) => (
-                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
                     {tag.name}
                   </Badge>
                 ))}
@@ -110,7 +110,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
             <PlusCircle className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-md shadow-lg">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-popover border-border rounded-2xl shadow-xl frosted-glass">
           <Command className="bg-popover text-popover-foreground">
             <CommandInput placeholder="Buscar tag..." className="h-9" />
             <CommandList>
@@ -124,7 +124,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
-                      <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+                      <Badge style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs rounded-md">
                         {tag.name}
                       </Badge>
                     </div>
@@ -162,7 +162,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({ selectedTagIds, onTagSelectio
                       <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Tag
                     </CommandItem>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+                  <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
                     <DialogHeader>
                       <DialogTitle className="text-foreground">{editingTag ? "Editar Tag" : "Criar Nova Tag"}</DialogTitle>
                       <DialogDescription className="text-muted-foreground">

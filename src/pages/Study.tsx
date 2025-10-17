@@ -99,7 +99,7 @@ const Study: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Evolução de Estudos</h1>
         <p className="text-lg text-muted-foreground">Carregando suas sessões de estudo...</p>
       </div>
     );
@@ -109,7 +109,7 @@ const Study: React.FC = () => {
     showError("Erro ao carregar sessões de estudo: " + error.message);
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Evolução de Estudos</h1>
         <p className="text-lg text-red-500">Erro ao carregar sessões de estudo: {error.message}</p>
       </div>
     );
@@ -118,7 +118,7 @@ const Study: React.FC = () => {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
+        <h1 className="text-3xl font-extrabold text-foreground">Evolução de Estudos</h1>
         <Dialog
           open={isFormOpen}
           onOpenChange={(open) => {
@@ -127,11 +127,11 @@ const Study: React.FC = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingSession(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={() => setEditingSession(undefined)} className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 btn-glow">
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Sessão
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg">
+          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-2xl shadow-xl frosted-glass">
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -153,7 +153,7 @@ const Study: React.FC = () => {
       {studySessions && studySessions.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {studySessions.map((session) => (
-            <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-2xl shadow-xl frosted-glass">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2 flex-grow min-w-0">
                   <Checkbox
@@ -167,11 +167,11 @@ const Study: React.FC = () => {
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditSession(session)} className="text-blue-500 hover:bg-blue-500/10">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditSession(session)} className="text-blue-500 hover:bg-blue-500/10 btn-glow">
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Editar Sessão</span>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteSession(session.id)} className="text-red-500 hover:bg-red-500/10">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteSession(session.id)} className="text-red-500 hover:bg-red-500/10 btn-glow">
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Deletar Sessão</span>
                   </Button>
@@ -182,11 +182,11 @@ const Study: React.FC = () => {
                   <CardDescription className="mb-2 text-muted-foreground break-words">{session.notes}</CardDescription>
                 )}
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
-                  <BookOpen className="h-4 w-4 text-primary" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
+                  <BookOpen className="h-4 w-4 text-primary icon-glow" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
                 </p>
                 {session.duration_minutes && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-primary" /> Duração: {session.duration_minutes} minutos
+                    <Clock className="h-4 w-4 text-primary icon-glow" /> Duração: {session.duration_minutes} minutos
                   </p>
                 )}
               </CardContent>
