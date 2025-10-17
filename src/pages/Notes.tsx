@@ -84,8 +84,6 @@ const Notes: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
-  console.log("Notes.tsx userId:", userId); // Log de depuração
-
   const { data: allNotes, isLoading, error, refetch } = useQuery<Note[], Error>({
     queryKey: ["notes", userId],
     queryFn: () => fetchNotes(userId!),
@@ -106,6 +104,7 @@ const Notes: React.FC = () => {
   const [isTagFormOpen, setIsTagFormOpen] = useState(false);
 
   const handleEditNote = (note: Note) => {
+    console.log("Notes.tsx - handleEditNote: Editing note with ID:", note.id, "and object:", note);
     setEditingNote(note);
     setIsFormOpen(true);
   };

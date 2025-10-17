@@ -62,6 +62,8 @@ const sanitizeFilename = (filename: string) => {
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
   const quillRef = useRef<ReactQuill>(null);
 
+  console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Log de depuração
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
@@ -86,8 +88,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const isPinned = form.watch("pinned");
-
-  console.log("NoteForm.tsx userId (inside component):", userId); // Log de depuração
 
   useEffect(() => {
     if (noteType === "checklist" && initialData?.type === "checklist") {
@@ -205,7 +205,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
-    console.log("NoteForm userId before Supabase call (onSubmit):", userId); // Log de depuração
+    console.log("NoteForm.tsx - onSubmit: userId:", userId); // Log de depuração
+    console.log("NoteForm.tsx - onSubmit: initialData:", initialData); // Log de depuração
 
     if (!userId) {
       showError("Usuário não autenticado.");
@@ -246,6 +247,12 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       };
 
       if (initialData) {
+        // Verificação explícita para garantir que initialData.id não seja undefined
+        if (!initialData.id) {
+          showError("Erro: ID da nota não encontrado para atualização.");
+          console.error("NoteForm.tsx - onSubmit Error: initialData.id é undefined para uma operação de atualização.", initialData);
+          return; // Impede a chamada da API com ID inválido
+        }
         const { data, error } = await supabase
           .from("notes")
           .update(dataToSave)
