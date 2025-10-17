@@ -288,8 +288,8 @@ const Dashboard: React.FC = () => {
   });
 
   const { data: overdueTasks, isLoading: isLoadingOverdue, error: errorOverdue, refetch: refetchOverdue } = useQuery<Task[], Error>({
-    queryKey: ["dashboardTasks", "overdue", userId, selectedDate.toISOString()],
-    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "overdue"),
+    queryKey: ["dashboardTasks", "overdue", userId], // Removido selectedDate.toISOString()
+    queryFn: () => fetchTasksForSelectedDateBoard(userId!, selectedDate, "overdue"), // selectedDate ainda é passado, mas a função o ignora para 'overdue'
     enabled: !!userId,
   });
 
@@ -318,7 +318,7 @@ const Dashboard: React.FC = () => {
     refetchTodayPriority();
     refetchTodayNoPriority();
     refetchJobsWoeToday();
-    refetchOverdue();
+    refetchOverdue(); // Refetch para o quadro de atrasadas
     refetchRecurrent();
     refetchCompleted();
     refetchClientDashboardTasks(); // Refetch as tarefas de clientes também
@@ -475,7 +475,7 @@ const Dashboard: React.FC = () => {
           originBoard="completed"
           selectedDate={selectedDate}
         />
-        <DashboardTaskList />
+        {/* <DashboardTaskList /> REMOVIDO */}
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
