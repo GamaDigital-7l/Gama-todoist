@@ -1,209 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 240 10% 98%; /* Light background, slightly off-white */
-    --foreground: 240 10% 3.9%; /* Dark text */
+    --background: 220 15% 8%; /* Um preto fosco muito escuro */
+    --foreground: 210 20% 98%; /* Branco quase puro para texto principal */
 
-    --card: 0 0% 100%; /* White card background */
-    --card-foreground: 240 10% 3.9%;
+    --card: 220 15% 12%; /* Fundo de cards, um pouco mais claro que o background */
+    --card-foreground: 210 20% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 220 15% 12%; /* Fundo de popovers, igual ao card */
+    --popover-foreground: 210 20% 98%;
 
-    --primary: 339 100% 50%; /* Vibrant pink (#FF0054) */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --primary: 260 70% 20%; /* Roxo profundo: #2A1A4A */
+    --primary-light: 260 70% 30%; /* Roxo mais claro: #4C2EFF (para gradientes) */
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 240 10% 90%; /* Light gray/purple for secondary elements */
-    --secondary-foreground: 240 10% 3.9%;
+    --secondary: 228 100% 67%; /* Azul neon suave: #5F77FF */
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 240 10% 90%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 215 14% 30%; /* Cinza para elementos secundários */
+    --muted-foreground: 215 14% 60%; /* Texto para o cinza */
 
-    --accent: 339 100% 50%; /* Accent color same as primary for consistency */
-    --accent-foreground: 0 0% 100%;
+    --accent: 215 14% 20%; /* Cinza para hover/active */
+    --accent-foreground: 210 20% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 80% 50%; /* Vermelho para ações perigosas */
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 240 10% 80%; /* Lighter border */
-    --input: 240 10% 95%; /* Light input background */
-    --ring: 339 100% 50%; /* Ring color same as primary */
+    --border: 220 15% 20%; /* Borda sutil */
+    --input: 220 15% 15%; /* Fundo de inputs */
+    --ring: 228 100% 67%; /* Cor do ring de foco, azul neon */
 
-    --radius: 0.75rem; /* Increased border radius */
+    --radius: 0.75rem; /* 12px - Padrão para componentes menores */
 
-    --sidebar-background: 240 10% 98%; /* Sidebar matches background */
-    --sidebar-foreground: 240 10% 3.9%;
-    --sidebar-primary: 339 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 10% 90%;
-    --sidebar-accent-foreground: 240 10% 3.9%;
-    --sidebar-border: 240 10% 80%;
-    --sidebar-ring: 339 100% 50%;
+    /* Cores de status para cards de tarefas */
+    --status-overdue: #4C2EFF; /* Roxo vibrante */
+    --status-urgent: #5F77FF;   /* Azul neon */
+    --status-today: #4CAF50;     /* Verde para hoje */
+    --status-completed: rgba(169, 169, 184, 0.2); /* Cinza translúcido */
+    --status-recurring: #9370DB; /* Lilás */
   }
 
   .dark {
-    --background: 240 10% 3.9%; /* Dark background */
-    --foreground: 240 10% 98%; /* Light text */
-
-    --card: 240 10% 10%; /* Darker card background */
-    --card-foreground: 240 10% 98%;
-
-    --popover: 240 10% 10%;
-    --popover-foreground: 240 10% 98%;
-
-    --primary: 339 100% 50%; /* Same vibrant pink */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 10% 20%; /* Darker gray for secondary */
-    --secondary-foreground: 240 10% 98%;
-
-    --muted: 240 10% 20%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 339 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 240 10% 25%; /* Darker border */
-    --input: 240 10% 15%; /* Dark input background */
-    --ring: 339 100% 50%;
-
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 10% 98%;
-    --sidebar-primary: 339 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 10% 20%;
-    --sidebar-accent-foreground: 240 10% 98%;
-    --sidebar-border: 240 10% 25%;
-    --sidebar-ring: 339 100% 50%;
+    /* No tema dark, as variáveis já estão definidas acima */
+    /* Se houvesse um tema light, as variáveis seriam redefinidas aqui */
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    box-sizing: border-box; /* Garante que padding e border sejam incluídos na largura/altura */
   }
-
   body {
-    @apply bg-background text-foreground min-h-screen; /* min-h-screen para garantir que o body ocupe a altura total */
-    font-family: "Inter", sans-serif; 
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Estilos globais para tipografia Inter */
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
+    @apply font-extrabold text-foreground;
   }
 
-  p {
-    @apply leading-relaxed;
+  h1 {
+    @apply text-4xl lg:text-5xl uppercase tracking-tight; /* Ajuste de espaçamento para maiúsculas */
+    letter-spacing: -1px;
+  }
+
+  h2 {
+    @apply text-3xl lg:text-4xl uppercase tracking-tight;
+    letter-spacing: -1px;
+  }
+
+  /* Subtítulos / seções */
+  .subtitle {
+    @apply font-semibold text-[--muted-foreground]; /* Usando a cor definida para subtítulos */
+  }
+
+  /* Texto padrão / corpo */
+  p, span, div {
+    @apply font-normal text-[--foreground]; /* Usando a cor definida para texto padrão */
+  }
+
+  /* Pequenos labels / legendas */
+  .label-sm {
+    @apply font-medium text-[--muted-foreground] opacity-80 text-sm;
+  }
+
+  /* Efeito de Frosted Glass (vidro fosco) */
+  .frosted-glass {
+    background-color: rgba(var(--card-rgb), 0.6); /* Fundo do card com transparência */
+    backdrop-filter: blur(10px) saturate(180%); /* Efeito de blur e saturação */
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(var(--border-rgb), 0.3); /* Borda sutil */
   }
 }
 
-.transition-colors-shadow {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+/* Utilitário para gradientes sutis */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
 }
 
-.nav-link-base {
-  @apply flex items-center gap-3 rounded-lg px-3 py-2 transition-colors-shadow;
+/* Estilo para ícones monocromáticos */
+.icon-mono {
+  @apply text-foreground; /* Cor padrão branca */
 }
 
-.nav-link-active {
-  @apply bg-sidebar-primary text-sidebar-primary-foreground shadow-sm;
+/* Estilo para ícones com glow */
+.icon-glow {
+  @apply text-secondary; /* Cor azul neon */
+  filter: drop-shadow(0 0 3px rgba(95, 119, 255, 0.7));
 }
 
-.nav-link-inactive {
-  @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+/* Estilo para botões com glow */
+.btn-glow {
+  @apply relative overflow-hidden;
 }
 
-/* Estilos para o Quill Editor */
-.ql-editor {
-  padding: 8px 12px;
-  min-height: 80px;
-  background-color: hsl(var(--background)); /* Fundo explícito */
-  z-index: 10;
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(95, 119, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 0;
+}
+
+.btn-glow:hover::before {
+  opacity: 1;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 10px rgba(95, 119, 255, 0.6), 0 0 20px rgba(76, 46, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-glow > * {
   position: relative;
-  overflow-y: auto;
-  border: 1px solid var(--border); /* Borda sólida para visibilidade */
-  border-radius: 0.375rem; /* Arredondamento para combinar com outros inputs */
-  cursor: text;
-  pointer-events: auto;
+  z-index: 1;
 }
 
-.ql-editor.ql-blank::before {
-  left: 12px;
-  font-style: normal;
-  color: hsl(var(--muted-foreground));
+/* Estilo para o efeito de elevação no hover de cards */
+.card-hover-effect {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-/* Estilos para imagens dentro do Quill */
-.ql-editor img {
-  max-width: 100%; /* Garante que a imagem não exceda a largura do contêiner */
-  height: auto; /* Mantém a proporção da imagem */
-  display: block; /* Remove espaço extra abaixo da imagem */
-  margin: 10px auto; /* Centraliza a imagem e adiciona margem */
-  border-radius: 0.5rem; /* Bordas arredondadas para as imagens */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  object-fit: contain; /* Garante que a imagem inteira seja visível */
-}
-
-/* Estilos para a barra de ferramentas do Quill (tema snow) */
-.ql-toolbar.ql-snow {
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-top-left-radius: 0.375rem;
-  border-top-right-radius: 0.375rem;
-  background-color: hsl(var(--secondary)); /* Fundo para a barra de ferramentas */
-}
-
-.ql-container.ql-snow {
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 0.375rem;
-  border-bottom-right-radius: 0.375rem;
-}
-
-.ql-snow .ql-stroke {
-  stroke: hsl(var(--foreground));
-}
-
-.ql-snow .ql-fill {
-  fill: hsl(var(--foreground));
-}
-
-.ql-snow .ql-picker {
-  color: hsl(var(--foreground));
-}
-
-.ql-snow .ql-picker.ql-expanded .ql-picker-options {
-  background-color: hsl(var(--popover));
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.ql-snow .ql-picker-item.ql-selected,
-.ql-snow .ql-picker-item:hover {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-.ql-snow .ql-tooltip {
-  background-color: hsl(var(--popover));
-  border: 1px solid var(--border);
-  color: hsl(var(--foreground));
-}
-
-.ql-snow .ql-tooltip a {
-  color: hsl(var(--primary));
-}
-
-.ql-snow .ql-tooltip input {
-  background-color: hsl(var(--input));
-  border: 1px solid var(--border);
-  color: hsl(var(--foreground));
+.card-hover-effect:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 15px rgba(95, 119, 255, 0.2);
 }
