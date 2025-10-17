@@ -45,6 +45,7 @@ interface NoteFormProps {
   initialData?: Note;
   onNoteSaved: () => void;
   onClose: () => void;
+  userId: string | undefined; // Adicionado userId como prop
 }
 
 // Função para sanitizar o nome do arquivo
@@ -58,9 +59,7 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }) => {
-  const { session } = useSession();
-  const userId = session?.user?.id;
+const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
   const quillRef = useRef<ReactQuill>(null);
 
   const form = useForm<NoteFormValues>({
@@ -121,25 +120,90 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     form.setValue("pinned", !isPinned, { shouldDirty: true });
   };
 
-  // Removendo o custom image handler temporariamente para isolar o problema de digitação
+  // Custom image handler for Quill
+  const imageHandler = useCallback(() => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para fazer upload de imagens.");
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file) {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
+        quill.setSelection(range.index + 1);
+
+        try {
+          const sanitizedFilename = sanitizeFilename(file.name);
+          const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("note-assets")
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
+          }
+
+          const { data: publicUrlData } = supabase.storage
+            .from("note-assets")
+            .getPublicUrl(filePath);
+          
+          const imageUrl = publicUrlData.publicUrl;
+
+          // Replace placeholder with actual image
+          const index = range.index;
+          quill.deleteText(index, 1);
+          quill.insertEmbed(index, 'image', imageUrl);
+          showSuccess("Imagem adicionada com sucesso!");
+
+        } catch (err: any) {
+          console.error("Erro ao fazer upload da imagem:", err);
+          showError("Erro ao adicionar imagem: " + err.message);
+          // Remove placeholder if upload fails
+          quill.deleteText(range.index, 1);
+        }
+      }
+    };
+  }, [userId]);
+
   const modules = React.useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, false] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-      ['link'], // Removido 'image' daqui
-      ['clean']
-    ],
-  }), []);
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+        ['link', 'image'], // Adicionado 'image' ao toolbar
+        ['clean']
+      ],
+      handlers: {
+        'image': imageHandler, // Usar o manipulador de imagem personalizado
+      }
+    },
+  }), [imageHandler]);
 
   const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
-    'link' // Removido 'image' daqui
+    'link', 'image' // Adicionado 'image' aos formatos
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
+    console.log("NoteForm userId before Supabase call:", userId); // Log de depuração
+
     if (!userId) {
       showError("Usuário não autenticado.");
       return;
@@ -234,14 +298,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
           <ReactQuill
             key={noteType}
             ref={quillRef}
-            theme="snow" // Alterado para 'snow'
+            theme="snow"
             value={form.watch("content")}
             onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            readOnly={false} // Explicitamente definido como false
-            className="bg-transparent text-foreground" // Removido quill-no-toolbar
+            readOnly={false}
+            className="bg-transparent text-foreground"
           />
         ) : (
           <div className="space-y-2">
@@ -318,8 +382,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
               </div>
             </PopoverContent>
           </Popover>
-
-          {/* Botão de upload de imagem separado removido */}
 
           <Popover>
             <PopoverTrigger asChild>

@@ -189,7 +189,7 @@ const Notes: React.FC = () => {
         Seu caderno digital para todas as suas ideias, pensamentos e informações importantes.
       </p>
 
-      <QuickNoteCreator onNoteCreated={refetch} />
+      <QuickNoteCreator onNoteCreated={refetch} userId={userId} /> {/* Passando userId */}
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-grow">

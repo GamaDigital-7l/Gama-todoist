@@ -4,22 +4,21 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Image as ImageIcon, ListTodo } from "lucide-react";
+import { PlusCircle, ListTodo } from "lucide-react"; // Removido ImageIcon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 
 interface QuickNoteCreatorProps {
   onNoteCreated: () => void;
+  userId: string | undefined; // Adicionado userId
 }
 
-const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) => {
+const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, userId }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  const handleOpenFormWithDefaults = (type: "text" | "checklist") => { // Removido withImagePicker
+  const handleOpenFormWithDefaults = (type: "text" | "checklist") => {
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
@@ -52,7 +51,6 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>
-            {/* Botão de imagem removido daqui, pois o upload será no editor */}
           </div>
         </CardContent>
       </Card>
@@ -71,6 +69,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
             initialData={initialNoteData as Note}
             onNoteSaved={handleNoteSaved}
             onClose={() => setIsFormOpen(false)}
+            userId={userId} // Passando userId
           />
         </DialogContent>
       </Dialog>
