@@ -43,7 +43,7 @@ export interface Note {
   tags?: Tag[];
   reminder_date?: string | null;
   reminder_time?: string | null;
-  image_url?: string | null;
+  // image_url?: string | null; // REMOVIDO
 }
 
 const fetchNotes = async (userId: string): Promise<Note[]> => {

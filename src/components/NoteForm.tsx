@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,7 +12,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PlusCircle, XCircle, CalendarIcon, Image as ImageIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
+import { PlusCircle, XCircle, CalendarIcon, Trash2, Pin, PinOff, Bell, Tag as TagIcon, ListTodo, TextCursorInput } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import TagSelector from "./TagSelector";
 import TimePicker from "./TimePicker";
@@ -36,11 +36,6 @@ const noteSchema = z.object({
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
   reminder_time: z.string().optional().nullable(),
-  image_file: z
-    .instanceof(File)
-    .optional()
-    .refine((file) => !file || (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024), "Apenas imagens (até 5MB) são permitidas."),
-  existing_image_url: z.string().optional().nullable(),
   pinned: z.boolean().default(false),
 });
 
@@ -67,7 +62,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   const { session } = useSession();
   const userId = session?.user?.id;
   const quillRef = useRef<ReactQuill>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -77,18 +71,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
-      existing_image_url: initialData.image_url || undefined,
-      image_file: undefined,
       pinned: initialData.pinned,
     } : {
       title: "",
-      content: "", // Conteúdo inicial vazio para o editor de texto
+      content: "",
       type: "text",
       selected_tag_ids: [],
       reminder_date: undefined,
       reminder_time: undefined,
-      image_file: undefined,
-      existing_image_url: undefined,
       pinned: false,
     },
   });
@@ -96,9 +86,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   const noteType = form.watch("type");
   const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const imageFile = form.watch("image_file");
-  const existingImageUrl = form.watch("existing_image_url");
-  const [imagePreview, setImagePreview] = useState<string | null>(existingImageUrl || null);
   const isPinned = form.watch("pinned");
 
   useEffect(() => {
@@ -113,18 +100,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       setChecklistItems([]);
     }
   }, [noteType, initialData]);
-
-  useEffect(() => {
-    if (imageFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(imageFile);
-    } else if (!existingImageUrl) {
-      setImagePreview(null);
-    }
-  }, [imageFile, existingImageUrl]);
 
   const addChecklistItem = () => {
     setChecklistItems(prev => [...prev, { text: "", completed: false }]);
@@ -142,48 +117,89 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
     form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
   };
 
-  const handleRemoveImage = () => {
-    form.setValue("image_file", undefined);
-    form.setValue("existing_image_url", null);
-    setImagePreview(null);
-  };
-
-  const handleImageUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      form.setValue("image_file", file, { shouldDirty: true });
-      form.setValue("existing_image_url", null);
-    }
-  };
-
   const handlePinToggle = () => {
     form.setValue("pinned", !isPinned, { shouldDirty: true });
   };
 
-  const modules = {
+  // Custom image handler for Quill
+  const imageHandler = useCallback(() => {
+    if (!userId) {
+      showError("Usuário não autenticado. Faça login para fazer upload de imagens.");
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file) {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
+        quill.setSelection(range.index + 1);
+
+        try {
+          const sanitizedFilename = sanitizeFilename(file.name);
+          const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("note-assets")
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
+          }
+
+          const { data: publicUrlData } = supabase.storage
+            .from("note-assets")
+            .getPublicUrl(filePath);
+          
+          const imageUrl = publicUrlData.publicUrl;
+
+          // Replace placeholder with actual image
+          const index = range.index;
+          quill.deleteText(index, 1);
+          quill.insertEmbed(index, 'image', imageUrl);
+          showSuccess("Imagem adicionada com sucesso!");
+
+        } catch (err: any) {
+          console.error("Erro ao fazer upload da imagem:", err);
+          showError("Erro ao adicionar imagem: " + err.message);
+          // Remove placeholder if upload fails
+          quill.deleteText(range.index, 1);
+        }
+      }
+    };
+  }, [userId]);
+
+  const modules = React.useMemo(() => ({
     toolbar: {
       container: [
         [{ 'header': [1, 2, false] }],
         ['bold', 'italic', 'underline', 'strike', 'blockquote'],
         [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link'],
+        ['link', 'image'], // Adicionado 'image' ao toolbar
         ['clean']
       ],
       handlers: {
-        'image': () => { /* no-op */ }
+        'image': imageHandler, // Usar o manipulador de imagem personalizado
       }
     },
-  };
+  }), [imageHandler]);
 
   const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
-    'link'
+    'link', 'image' // Adicionado 'image' aos formatos
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
@@ -209,33 +225,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
       finalContent = values.content;
     }
 
-    let imageUrlToSave: string | null = values.existing_image_url || null;
-
-    if (values.image_file) {
-      const file = values.image_file;
-      const sanitizedFilename = sanitizeFilename(file.name);
-      const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("note-assets")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("note-assets")
-        .getPublicUrl(filePath);
-      
-      imageUrlToSave = publicUrlData.publicUrl;
-    } else if (values.existing_image_url === null) {
-      imageUrlToSave = null;
-    }
-
     try {
       let noteId: string;
 
@@ -246,7 +235,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
-        image_url: imageUrlToSave,
         pinned: values.pinned,
         updated_at: new Date().toISOString(),
       };
@@ -296,21 +284,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 p-0 bg-card rounded-lg shadow-lg">
       <div className="relative p-4 bg-card">
-        {imagePreview && (
-          <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
-            <img src={imagePreview} alt="Pré-visualização da imagem" className="w-full h-full object-cover" />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              onClick={handleRemoveImage}
-              className="absolute top-2 right-2 rounded-full"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Remover Imagem</span>
-            </Button>
-          </div>
-        )}
+        {/* imagePreview e lógica de imagem de capa removidos */}
 
         <Input
           id="note-title"
@@ -407,17 +381,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose }
             </PopoverContent>
           </Popover>
 
-          <Button variant="ghost" size="icon" onClick={handleImageUploadClick} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-            <ImageIcon className="h-5 w-5" />
-            <span className="sr-only">Adicionar Imagem</span>
-          </Button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
+          {/* Botão de upload de imagem separado removido */}
 
           <Popover>
             <PopoverTrigger asChild>

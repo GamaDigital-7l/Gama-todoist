@@ -19,7 +19,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
 
-  const handleOpenFormWithDefaults = (type: "text" | "checklist", withImagePicker?: boolean) => {
+  const handleOpenFormWithDefaults = (type: "text" | "checklist") => { // Removido withImagePicker
     setInitialNoteData({
       type,
       color: "#FFFFFF", // Cor padrão branca
@@ -52,10 +52,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated }) =>
               <ListTodo className="h-5 w-5" />
               <span className="sr-only">Nova Checklist</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("text", true)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-              <ImageIcon className="h-5 w-5" />
-              <span className="sr-only">Adicionar Imagem</span>
-            </Button>
+            {/* Botão de imagem removido daqui, pois o upload será no editor */}
           </div>
         </CardContent>
       </Card>

@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell, Image as ImageIcon } from "lucide-react";
+import { Pin, PinOff, Archive, ArchiveRestore, Trash2, Edit, Undo2, MoreVertical, Bell } from "lucide-react"; // Removido ImageIcon
 import { useSession } from "@/integrations/supabase/auth";
 import { Note } from "@/pages/Notes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -147,9 +147,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
 
   return (
     <Card className="relative flex flex-col h-full rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group bg-card">
-      {note.image_url && (
-        <img src={note.image_url} alt={note.title || "Nota com imagem"} className="w-full h-auto object-cover rounded-t-lg" />
-      )}
+      {/* note.image_url removido */}
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
         {note.trashed ? (
           <>
