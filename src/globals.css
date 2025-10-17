@@ -39,10 +39,20 @@
 
     /* Cores de status para cards de tarefas */
     --status-overdue: #4C2EFF; /* Roxo vibrante */
-    --status-urgent: #5F77FF;   /* Azul neon */
+    --status-urgent: #5F77FF;   /* Azul vibrante */
     --status-today: #4CAF50;     /* Verde para hoje */
     --status-completed: rgba(169, 169, 184, 0.2); /* Cinza translúcido */
     --status-recurring: #9370DB; /* Lilás */
+
+    /* Cores específicas para a Sidebar */
+    --sidebar-background: 220 15% 10%; /* Um pouco mais escuro que o card */
+    --sidebar-foreground: 210 20% 90%; /* Texto da sidebar */
+    --sidebar-primary: 228 100% 67%; /* Azul neon para ícones/texto ativo */
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 220 15% 18%; /* Fundo de hover/ativo da sidebar */
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 15% 25%;
+    --sidebar-ring: 228 100% 67%;
   }
 
   .dark {
@@ -156,4 +166,19 @@
 .card-hover-effect:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 15px rgba(95, 119, 255, 0.2);
+}
+
+/* Estilos para links de navegação da Sidebar */
+@layer components {
+  .nav-link-base {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 transition-all;
+  }
+
+  .nav-link-active {
+    @apply bg-sidebar-accent text-sidebar-primary shadow-sm;
+  }
+
+  .nav-link-inactive {
+    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
 }

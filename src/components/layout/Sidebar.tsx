@@ -15,12 +15,12 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSidebar }) => {
   return (
     <div className={cn(
-      "fixed inset-y-0 left-0 z-40 flex flex-col h-full border-r bg-sidebar transition-all duration-300 ease-in-out",
+      "fixed inset-y-0 left-0 z-40 flex flex-col h-full border-r border-sidebar-border bg-sidebar-background transition-all duration-300 ease-in-out",
       "md:relative",
       isSidebarOpen ? "w-[220px] lg:w-[280px]" : "w-0 overflow-hidden",
       className
     )}>
-      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+      <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
         <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
           <span className="text-lg">Nexus Flow</span>
         </Link>
@@ -46,7 +46,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <Home className="h-4 w-4" />
             Dashboard
@@ -59,7 +58,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <CalendarDays className="h-4 w-4" />
             Planner
@@ -72,7 +70,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <ListTodo className="h-4 w-4" />
             Tarefas
@@ -85,7 +82,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <Target className="h-4 w-4" />
             Metas
@@ -98,7 +94,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <BookOpen className="h-4 w-4" />
             Livros
@@ -111,7 +106,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <GraduationCap className="h-4 w-4" />
             Estudos
@@ -124,7 +118,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <HeartPulse className="h-4 w-4" />
             Saúde
@@ -137,7 +130,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <NotebookText className="h-4 w-4" />
             Notas
@@ -150,7 +142,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <Users className="h-4 w-4" />
             Clientes
@@ -163,7 +154,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <MessageSquare className="h-4 w-4" />
             Chat IA
@@ -176,14 +166,13 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
-            // onClick={toggleSidebar} // Removido para evitar fechamento imediato
           >
             <Settings className="h-4 w-4" />
             Configurações
           </NavLink>
         </nav>
       </div>
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-4 border-t border-sidebar-border">
         {/* Elementos de usuário/login removidos */}
       </div>
     </div>
