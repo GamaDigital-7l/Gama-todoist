@@ -6,7 +6,7 @@ export interface Tag {
 }
 
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
-export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today";
+export type OriginBoard = "general" | "today_priority" | "today_no_priority" | "overdue" | "completed" | "recurrent" | "jobs_woe_today" | "client_tasks"; // Adicionado 'client_tasks'
 export type TemplateFormOriginBoard = "general" | "today_priority" | "today_no_priority" | "jobs_woe_today";
 
 export interface Task {

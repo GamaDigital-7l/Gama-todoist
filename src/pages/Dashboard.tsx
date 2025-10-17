@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
+import { ClientTask } from "@/types/client"; // Importar ClientTask
 
 interface Profile {
   id: string;
@@ -170,6 +171,58 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
   return mappedData;
 };
 
+// Nova função para buscar tarefas de clientes para o dashboard
+const fetchClientTasksForDashboard = async (userId: string, selectedDate: Date): Promise<Task[]> => {
+  const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+  const { data, error } = await supabase
+    .from("client_tasks")
+    .select(`
+      id, title, description, due_date, time, is_completed, created_at, updated_at, completed_at,
+      is_standard_task, main_task_id,
+      client_task_tags(
+        tags(id, name, color)
+      )
+    `)
+    .eq("user_id", userId)
+    .eq("is_standard_task", true) // Apenas tarefas de clientes marcadas como padrão
+    .eq("due_date", formattedDate) // Filtrar pela data selecionada
+    .eq("is_completed", false) // Apenas tarefas não concluídas
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  // Mapear ClientTask para Task
+  const mappedData: Task[] = data?.map((clientTask: any) => ({
+    id: clientTask.id,
+    title: clientTask.title,
+    description: clientTask.description,
+    due_date: clientTask.due_date,
+    time: clientTask.time,
+    is_completed: clientTask.is_completed,
+    recurrence_type: "none", // Tarefas de cliente não são recorrentes no dashboard principal
+    recurrence_details: null,
+    last_successful_completion_date: clientTask.completed_at,
+    origin_board: "client_tasks", // Novo board para tarefas de clientes
+    current_board: "client_tasks",
+    is_priority: false, // Pode ser ajustado se houver lógica de prioridade para tarefas de cliente
+    overdue: false, // Será atualizado pelo daily-reset se necessário
+    last_notified_at: null,
+    recurrence_time: null,
+    created_at: clientTask.created_at,
+    updated_at: clientTask.updated_at,
+    completed_at: clientTask.completed_at,
+    last_moved_to_overdue_at: null,
+    tags: clientTask.client_task_tags.map((ctt: any) => ctt.tags),
+    parent_task_id: null,
+    subtasks: [],
+  })) || [];
+
+  return mappedData;
+};
+
 
 const fetchLatestHealthMetric = async (userId: string): Promise<HealthMetric | null> => {
   const { data, error } = await supabase
@@ -253,6 +306,13 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   });
 
+  // Nova query para tarefas de clientes no dashboard
+  const { data: clientDashboardTasks, isLoading: isLoadingClientDashboardTasks, error: errorClientDashboardTasks, refetch: refetchClientDashboardTasks } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "client_tasks", userId, selectedDate.toISOString()],
+    queryFn: () => fetchClientTasksForDashboard(userId!, selectedDate),
+    enabled: !!userId,
+  });
+
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
 
   const handleTaskAdded = () => {
@@ -262,6 +322,7 @@ const Dashboard: React.FC = () => {
     refetchOverdue();
     refetchRecurrent();
     refetchCompleted();
+    refetchClientDashboardTasks(); // Refetch as tarefas de clientes também
     refetchAllTasks(); // Adicionado refetch para todas as tarefas
     queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
   };
@@ -373,6 +434,16 @@ const Dashboard: React.FC = () => {
           refetchTasks={handleTaskAdded}
           quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
           originBoard="jobs_woe_today"
+          selectedDate={selectedDate}
+        />
+        <TaskListBoard
+          title="Tarefas de Clientes" // Novo quadro para tarefas de clientes
+          tasks={clientDashboardTasks || []}
+          isLoading={isLoadingClientDashboardTasks}
+          error={errorClientDashboardTasks}
+          refetchTasks={handleTaskAdded}
+          showAddButton={false} // Tarefas de clientes são adicionadas via Kanban do cliente
+          originBoard="client_tasks"
           selectedDate={selectedDate}
         />
         <TaskListBoard
