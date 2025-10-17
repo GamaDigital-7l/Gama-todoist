@@ -97,7 +97,7 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
 const fetchPublicApprovalLink = async (clientId: string, userId: string, monthYearRef: string): Promise<PublicApprovalLink | null> => {
   const { data, error } = await supabase
     .from("public_approval_links")
-    .select("*")
+    .select('*')
     .eq("client_id", clientId)
     .eq("user_id", userId)
     .eq("month_year_reference", monthYearRef)
@@ -484,7 +484,7 @@ const ClientKanbanPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 p-4">
-                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], is_active: true, default_due_days: undefined, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], is_active: true, default_due_days: undefined, is_standard_task: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   <PlusCircle className="mr-2 h-4 w-4" /> Novo Template
                 </Button>
                 {clientTaskTemplates && clientTaskTemplates.length > 0 ? (

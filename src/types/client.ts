@@ -55,6 +55,7 @@ export interface ClientTaskGenerationTemplate {
   default_due_days?: number | null; // Novo campo
   created_at: string;
   updated_at: string;
+  is_standard_task: boolean; // Novo campo
 }
 
 export interface PublicApprovalLink {

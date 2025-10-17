@@ -88,6 +88,7 @@ serve(async (req) => {
         generation_pattern,
         is_active,
         default_due_days,
+        is_standard_task,
         client_task_tags(
           tags(id, name, color)
         )
