@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { Task } from "@/types/task";
-import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getDay, differenceInDays } from "date-fns";
+import { Task, DAYS_OF_WEEK_MAP } from "@/types/task"; // Importação corrigida
+import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getDay, differenceInDays } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale";
 import { ListTodo, CheckCircle2, XCircle, Repeat, CalendarCheck, TrendingUp, TrendingDown, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";

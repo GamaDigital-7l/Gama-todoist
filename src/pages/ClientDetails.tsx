@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import ClientForm from "@/components/ClientForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientKanbanPage from "./ClientKanbanPage";
-import { format, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale"; // Importação adicionada
 import ClientTaskTemplateManagement from "../components/client/ClientTaskTemplateManagement.tsx"; // Caminho relativo explícito com .tsx
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";

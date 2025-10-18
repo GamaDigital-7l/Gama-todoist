@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays, parseISO } from "date-fns";
+import { isToday, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays, parseISO } from "date-fns"; // Importação corrigida
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { ptBR } from "date-fns/locale";
+import { ptBR } from "date-fns/locale"; // Importação adicionada
 import { ClientTask } from "@/types/client"; // Importar ClientTask
 import { showSuccess } from "@/utils/toast"; // Importar showSuccess para feedback
 

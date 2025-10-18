@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2, AlertCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
+import { format, isSameDay, parseISO, getDay, isFuture, eachDayOfInterval } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

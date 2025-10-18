@@ -10,7 +10,7 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Meeting } from "@/types/meeting";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import MeetingForm, { MeetingFormValues } from "./MeetingForm";
-import { format, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
 

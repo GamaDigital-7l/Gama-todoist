@@ -1,5 +1,5 @@
 export type ClientType = 'fixed' | 'freela' | 'agency';
-export type ClientTaskStatus = 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published' | 'edit_requested'; // 'backlog' removido
+export type ClientTaskStatus = 'pending' | 'in_progress' | 'under_review' | 'approved' | 'rejected' | 'completed'; // Status alinhados com o Kanban
 
 export interface Client {
   id: string;
@@ -8,8 +8,10 @@ export interface Client {
   logo_url?: string | null;
   description?: string | null;
   color: string;
-  type: ClientType; // Novo campo
-  monthly_delivery_goal: number; // Novo campo
+  type: ClientType;
+  monthly_delivery_goal: number;
+  contact_email?: string | null; // Adicionado
+  contact_phone?: string | null; // Adicionado
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,8 @@ export interface ClientTask {
   edit_reason?: string | null; // Novo campo: Motivo da solicitação de edição
   is_standard_task: boolean; // Novo campo: Indica se a tarefa é padrão e deve ir para o dashboard principal
   main_task_id?: string | null; // Novo campo: ID da tarefa correspondente no dashboard principal
+  public_approval_enabled: boolean; // Adicionado
+  subtasks?: ClientTask[]; // Adicionado para subtarefas
 }
 
 export interface ClientTaskGenerationPattern {
@@ -49,13 +53,16 @@ export interface ClientTaskGenerationTemplate {
   client_id: string;
   user_id: string;
   template_name: string;
+  description?: string | null; // Adicionado
   delivery_count: number;
   generation_pattern: ClientTaskGenerationPattern[]; // JSONB
   is_active: boolean; // Novo campo
-  default_due_days?: number | null; // Novo campo
+  default_due_days?: number | null; // Adicionado
+  is_standard_task: boolean; // Novo campo
+  is_priority: boolean; // Adicionado
+  time?: string | null; // Adicionado
   created_at: string;
   updated_at: string;
-  is_standard_task: boolean; // Novo campo
 }
 
 export interface PublicApprovalLink {
@@ -66,4 +73,10 @@ export interface PublicApprovalLink {
   unique_id: string;
   expires_at: string;
   created_at: string;
+  client?: { // Adicionado para o join
+    id: string;
+    name: string;
+    logo_url?: string | null;
+  };
+  client_tasks: ClientTask[]; // Adicionado para o join
 }

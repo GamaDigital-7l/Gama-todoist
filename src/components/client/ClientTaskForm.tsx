@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2, Image as ImageIcon, XCircle } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns"; // Importação corrigida
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";

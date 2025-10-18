@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import GoalForm, { GoalFormValues } from "@/components/GoalForm";
-import { format, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante

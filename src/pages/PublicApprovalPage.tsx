@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseUrl } from "@/integrations/supabase/client"; // Importado supabaseUrl
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { format, parseISO, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { supabaseUrl } from "@/integrations/supabase/client"; // Importar supabaseUrl
+import { Checkbox } from "@/components/ui/checkbox"; // Importação adicionada
 
 interface PublicApprovalPageProps {}
 
@@ -32,7 +32,7 @@ const fetchPublicApprovalLink = async (linkId: string): Promise<PublicApprovalLi
         )
       )
     `)
-    .eq("id", linkId)
+    .eq("unique_id", linkId) // Corrigido para unique_id
     .single();
 
   if (error && error.code !== 'PGRST116') {
@@ -55,13 +55,13 @@ const fetchPublicApprovalLink = async (linkId: string): Promise<PublicApprovalLi
 };
 
 const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
-  const { linkId } = useParams<{ linkId: string }>();
+  const { uniqueId } = useParams<{ uniqueId: string }>(); // Corrigido para uniqueId
   const queryClient = useQueryClient();
 
   const { data: approvalLink, isLoading, error, refetch } = useQuery<PublicApprovalLink | null, Error>({
-    queryKey: ["publicApprovalLink", linkId],
-    queryFn: () => fetchPublicApprovalLink(linkId!),
-    enabled: !!linkId,
+    queryKey: ["publicApprovalLink", uniqueId],
+    queryFn: () => fetchPublicApprovalLink(uniqueId!),
+    enabled: !!uniqueId,
   });
 
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
@@ -92,7 +92,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            linkId: linkId,
+            uniqueId: uniqueId, // Usar uniqueId
             taskId: taskId,
             newStatus: status,
           }),
@@ -109,7 +109,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["publicApprovalLink", linkId] });
+      queryClient.invalidateQueries({ queryKey: ["publicApprovalLink", uniqueId] });
       refetch();
     },
     onError: (err: any) => {

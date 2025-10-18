@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client";
-import ClientKanbanColumn from "@/components/client/ClientKanbanColumn";
+import ClientKanbanColumn from "@/components/client/ClientKanbanColumn"; // Importação atualizada
 import ClientKanbanHeader from "@/components/client/ClientKanbanHeader";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -71,8 +71,7 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
   const { data, error } = await supabase
     .from("client_task_generation_templates")
     .select(`
-      id, template_name, description, due_date_offset_days, time, is_priority, created_at, updated_at
-      // Removed client_task_tags join as it's not directly on templates
+      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, created_at, updated_at
     `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
@@ -202,7 +201,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
 
       for (const template of templates) {
         const templateDueDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-        templateDueDate.setDate(templateDueDate.getDate() + (template.due_date_offset_days || 0));
+        templateDueDate.setDate(templateDueDate.getDate() + (template.default_due_days || 0));
 
         const formattedDueDate = format(templateDueDate, "yyyy-MM-dd");
 
@@ -218,11 +217,11 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             title: template.template_name,
             description: template.description,
             due_date: formattedDueDate,
-            time: template.time,
+            time: null,
             status: "pending" as ClientTaskStatus,
             is_completed: false,
-            is_standard_task: true, // Templates geram tarefas padrão
-            is_priority: template.is_priority,
+            is_standard_task: template.is_standard_task, // Templates geram tarefas padrão
+            is_priority: false, // is_priority não está no template, definir como false
             public_approval_enabled: false, // Padrão para false ao gerar de template
           });
         }
@@ -319,46 +318,166 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
         <div className="flex flex-grow overflow-x-auto pb-4 custom-scrollbar">
           <div className="flex space-x-4 min-h-[calc(100vh-250px)]">
             <ClientKanbanColumn
-              id="pending"
-              title="Pendente"
+              column={{ status: "pending", title: "Pendente", color: "bg-gray-600" }}
               tasks={getTasksByStatus.pending}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
             <ClientKanbanColumn
-              id="in_progress"
-              title="Em Progresso"
+              column={{ status: "in_progress", title: "Em Progresso", color: "bg-blue-600" }}
               tasks={getTasksByStatus.in_progress}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
             <ClientKanbanColumn
-              id="under_review"
-              title="Em Revisão"
+              column={{ status: "under_review", title: "Em Revisão", color: "bg-yellow-600" }}
               tasks={getTasksByStatus.under_review}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
             <ClientKanbanColumn
-              id="approved"
-              title="Aprovada"
+              column={{ status: "approved", title: "Aprovada", color: "bg-green-600" }}
               tasks={getTasksByStatus.approved}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
             <ClientKanbanColumn
-              id="rejected"
-              title="Rejeitada"
+              column={{ status: "rejected", title: "Rejeitada", color: "bg-red-600" }}
               tasks={getTasksByStatus.rejected}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
             <ClientKanbanColumn
-              id="completed"
-              title="Concluída"
+              column={{ status: "completed", title: "Concluída", color: "bg-purple-600" }}
               tasks={getTasksByStatus.completed}
-              refetchClientTasks={refetch}
+              isLoadingTasks={isLoading}
+              tasksError={error}
+              handleAddTask={(status) => {
+                setEditingTask(undefined);
+                setIsTaskFormOpen(true);
+              }}
+              handleEditTask={handleEditClientTask}
+              handleDragStart={() => {}}
+              handleDragOver={() => {}}
+              handleDrop={async (e, targetStatus) => {
+                const taskId = e.dataTransfer.getData("taskId");
+                if (taskId) {
+                  await supabase
+                    .from("client_tasks")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .eq("id", taskId)
+                    .eq("user_id", userId);
+                  showSuccess(`Tarefa movida para ${targetStatus.replace('_', ' ')}!`);
+                  refetch();
+                }
+              }}
               clientId={client.id}
+              monthYearRef={format(currentMonth, "yyyy-MM")}
             />
           </div>
         </div>

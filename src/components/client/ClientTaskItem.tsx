@@ -5,10 +5,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, parseISO, isPast, isToday } from "date-fns";
+import { format, parseISO, isPast, isToday } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, PlusCircle, CalendarDays, AlertCircle, Link as LinkIcon, Eye, ChevronDown, ChevronRight } from "lucide-react";
+import { Edit, Trash2, PlusCircle, CalendarDays, AlertCircle, Link as LinkIcon, Eye, ChevronDown, ChevronRight, Clock } from "lucide-react"; // Adicionado Clock
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { ClientTask, ClientTaskStatus } from "@/types/client";
@@ -144,7 +144,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ clientTask, refetchClie
   const isDueToday = clientTask.due_date && isToday(parseISO(clientTask.due_date)) && !clientTask.is_completed;
 
   const publicApprovalLink = clientTask.public_approval_enabled && clientTask.id
-    ? `${window.location.origin}/public-approval/${clientTask.id}`
+    ? `${window.location.origin}/approval/${clientTask.id}` // Corrigido para /approval/:uniqueId
     : null;
 
   return (
