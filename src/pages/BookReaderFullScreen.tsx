@@ -89,7 +89,7 @@ const BookReaderFullScreen: React.FC = () => {
         try {
           const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
           
-          startTransition(() => { // Wrap these initial state updates
+          startTransition(() => { // Wrap these initial page state updates
             setPageNumber(initialPage);
             setPageInput(String(initialPage));
           });
@@ -144,8 +144,10 @@ const BookReaderFullScreen: React.FC = () => {
   };
 
   const onDocumentLoadSuccess = (pdf: PDFDocumentProxy) => {
-    setNumPages(pdf.numPages);
-    setPdfDocument(pdf);
+    startTransition(() => { // Wrap these state updates
+      setNumPages(pdf.numPages);
+      setPdfDocument(pdf);
+    });
   };
 
   const changePage = (offset: number) => {
