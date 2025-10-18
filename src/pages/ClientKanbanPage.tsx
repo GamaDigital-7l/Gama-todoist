@@ -14,21 +14,21 @@ import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMon
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "@/components/client/ClientTaskForm";
 import ClientTaskItem from "@/components/client/ClientTaskItem";
 import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
 import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useIsMobile } from "@/hooks/use-mobile"; // Importar useIsMobile
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"; // Importar componentes do Carousel
+} from "@/components/ui/carousel";
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "backlog", title: "Backlog", color: "bg-gray-700" },
@@ -638,7 +638,7 @@ const ClientKanbanPage: React.FC = () => {
           >
             <CarouselContent className="-ml-4">
               {KANBAN_COLUMNS.map((column) => (
-                <CarouselItem key={column.status} className="pl-4 basis-full"> {/* Ajustado para basis-full */}
+                <CarouselItem key={column.status} className="pl-4 basis-full">
                   <Card
                     className="flex flex-col h-full bg-card border border-border rounded-xl shadow-md frosted-glass"
                     onDragOver={handleDragOver}
