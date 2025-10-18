@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import StudySessionForm, { StudySessionFormValues } from "@/components/StudySessionForm";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -141,7 +141,7 @@ const Study: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <StudySessionForm
-              initialData={editingSession ? { ...editingSession, session_date: new Date(editingSession.session_date) } : undefined}
+              initialData={editingSession ? { ...editingSession, session_date: parseISO(editingSession.session_date) } : undefined}
               onSessionSaved={refetch}
               onClose={() => setIsFormOpen(false)}
             />
@@ -153,7 +153,7 @@ const Study: React.FC = () => {
       </p>
 
       {studySessions && studySessions.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 */}
           {studySessions.map((session) => (
             <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -164,7 +164,7 @@ const Study: React.FC = () => {
                     onCheckedChange={() => handleToggleComplete(session.id, session.is_completed)}
                     className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                   />
-                  <CardTitle className={`text-xl md:text-2xl font-semibold break-words min-w-0 ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <CardTitle className={`text-xl md:text-2xl font-semibold break-words min-w-0 ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}> {/* Fontes adaptáveis */}
                     {session.title}
                   </CardTitle>
                 </div>
@@ -181,13 +181,15 @@ const Study: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {session.notes && (
-                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{session.notes}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">
+                    {session.notes}
+                  </CardDescription>
                 )}
-                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1">
-                  <BookOpen className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(new Date(session.session_date), "PPP", { locale: ptBR })}
+                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1"> {/* Fontes adaptáveis */}
+                  <BookOpen className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
                 </p>
                 {session.duration_minutes && (
-                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
+                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                     <Clock className="h-4 w-4 text-primary flex-shrink-0" /> Duração: {session.duration_minutes} minutos
                   </p>
                 )}
@@ -196,7 +198,9 @@ const Study: React.FC = () => {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-base md:text-lg">Nenhuma sessão de estudo encontrada. Adicione uma nova para começar a registrar seu progresso!</p>
+        <p className="text-muted-foreground text-base md:text-lg">
+          Nenhuma sessão de estudo encontrada. Adicione uma nova para começar a registrar seu progresso!
+        </p>
       )}
     </div>
   );

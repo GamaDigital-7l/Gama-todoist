@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import GoalForm, { GoalFormValues } from "@/components/GoalForm";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 
@@ -145,7 +145,7 @@ const Goals: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <GoalForm
-                initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? new Date(editingGoal.target_date) : undefined } : undefined}
+                initialData={editingGoal ? { ...editingGoal, target_date: editingGoal.target_date ? parseISO(editingGoal.target_date) : undefined } : undefined}
                 onGoalSaved={refetch}
                 onClose={() => setIsFormOpen(false)}
               />
@@ -158,11 +158,11 @@ const Goals: React.FC = () => {
       </p>
 
       {goals && goals.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 */}
           {goals.map((goal) => (
             <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{goal.title}</CardTitle>
+                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{goal.title}</CardTitle> {/* Fontes adaptáveis */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
@@ -176,14 +176,16 @@ const Goals: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {goal.description && (
-                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{goal.description}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">
+                    {goal.description}
+                  </CardDescription>
                 )}
                 {goal.target_date && (
-                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2">
-                    <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(new Date(goal.target_date), "PPP", { locale: ptBR })}
+                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2"> {/* Fontes adaptáveis */}
+                    <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
-                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
+                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                   {getStatusIcon(goal.status)} Status: {getStatusText(goal.status)}
                 </p>
               </CardContent>
@@ -191,7 +193,7 @@ const Goals: React.FC = () => {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-base md:text-lg">Nenhuma meta encontrada. Adicione uma nova meta para começar!</p>
+        <p className="text-muted-foreground text-base md:text-lg">Nenhuma meta encontrada. Adicione uma nova meta para começar!</p> {/* Fontes adaptáveis */}
       )}
 
       <div className="flex-1 flex items-end justify-center mt-8">
