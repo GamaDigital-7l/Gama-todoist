@@ -18,7 +18,7 @@ const Login: React.FC = () => {
   }, [session, isLoading, navigate]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-lg md:text-xl">Carregando...</div>; {/* Fontes adaptáveis */}
+    return <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-lg md:text-xl">Carregando...</div>;
   }
 
   return (

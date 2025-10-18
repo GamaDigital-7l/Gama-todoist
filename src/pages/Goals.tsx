@@ -193,7 +193,7 @@ const Goals: React.FC = () => {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-base md:text-lg">Nenhuma meta encontrada. Adicione uma nova meta para começar!</p> {/* Fontes adaptáveis */}
+        <p className="text-muted-foreground text-base md:text-lg">Nenhuma meta encontrada. Adicione uma nova meta para começar!</p>
       )}
 
       <div className="flex-1 flex items-end justify-center mt-8">
