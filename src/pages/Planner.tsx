@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react"; // Importar useTransition
 import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2, AlertCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -149,6 +149,7 @@ const Planner: React.FC = () => {
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
+  const [isPending, startTransition] = useTransition(); // Initialize useTransition
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
@@ -574,7 +575,7 @@ const Planner: React.FC = () => {
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={setSelectedDate}
+              onSelect={(date) => startTransition(() => setSelectedDate(date))} // Wrapped with startTransition
               initialFocus
               locale={ptBR}
               className="rounded-md border border-border bg-input text-foreground"
@@ -590,7 +591,7 @@ const Planner: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoadingMeetings || isLoadingGoogleEvents ? (
+              {isLoadingMeetings || isLoadingGoogleEvents || isPending ? (
                 <p className="text-muted-foreground">Carregando eventos...</p>
               ) : combinedEvents.length === 0 ? (
                 <p className="text-muted-foreground">Nenhum evento agendado para esta data.</p>
@@ -660,7 +661,7 @@ const Planner: React.FC = () => {
               <div className="mb-4">
                 <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />
               </div>
-              {isLoadingTasks ? (
+              {isLoadingTasks || isPending ? (
                 <p className="text-muted-foreground">Carregando tarefas...</p>
               ) : tasks && tasks.length === 0 ? (
                 <p className="text-muted-foreground">Nenhuma tarefa agendada para esta data.</p>
@@ -684,7 +685,7 @@ const Planner: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoadingFutureMeetings ? (
+          {isLoadingFutureMeetings || isPending ? (
             <p className="text-muted-foreground">Carregando próximas reuniões...</p>
           ) : futureMeetings && futureMeetings.length === 0 ? (
             <p className="text-muted-foreground">Nenhuma reunião futura agendada.</p>
