@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, BookOpen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ptBR } from "date-fns/locale";
+import { useIsMobile } from "@/hooks/use-mobile"; // Importar o hook
 
 interface Book {
   id: string;
@@ -36,12 +37,29 @@ const fetchBookById = async (bookId: string): Promise<Book | null> => {
 const BookDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const touchStartX = useRef(0);
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book", id],
     queryFn: () => fetchBookById(id!),
     enabled: !!id,
   });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX.current;
+    const swipeThreshold = 50; // Pixels to consider a swipe
+
+    if (swipeDistance > swipeThreshold) {
+      navigate(-1); // Swipe right to go back
+    }
+  };
 
   if (!id) {
     return (
@@ -91,7 +109,11 @@ const BookDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
+    <div
+      className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
           <ArrowLeft className="h-4 w-4" />

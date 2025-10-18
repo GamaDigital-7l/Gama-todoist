@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,7 @@ import { format, parseISO } from "date-fns"; // Importação corrigida
 import { ptBR } from "date-fns/locale"; // Importação adicionada
 import ClientTaskTemplateManagement from "../components/client/ClientTaskTemplateManagement.tsx"; // Caminho relativo explícito com .tsx
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
+import { useIsMobile } from "@/hooks/use-mobile"; // Importar o hook
 
 const fetchClientById = async (clientId: string): Promise<Client | null> => {
   const { data, error } = await supabase
@@ -37,6 +38,8 @@ const ClientDetails: React.FC = () => {
   const navigate = useNavigate();
   const { session } = useSession();
   const userId = session?.user?.id;
+  const isMobile = useIsMobile();
+  const touchStartX = useRef(0);
 
   const { data: client, isLoading, error, refetch } = useQuery<Client | null, Error>({
     queryKey: ["client", id],
@@ -46,6 +49,21 @@ const ClientDetails: React.FC = () => {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX.current;
+    const swipeThreshold = 50; // Pixels to consider a swipe
+
+    if (swipeDistance > swipeThreshold) {
+      navigate(-1); // Swipe right to go back
+    }
+  };
 
   const handleClientSaved = () => {
     refetch();
@@ -110,7 +128,11 @@ const ClientDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6">
+    <div
+      className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4 min-w-0">
           <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
