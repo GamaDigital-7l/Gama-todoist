@@ -125,7 +125,7 @@ const ClientKanbanPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const isMobile = useIsMobile(); // Usar o hook para detectar mobile
+  const isMobile = useIsMobile();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthYearRef = format(currentMonth, "yyyy-MM");
@@ -411,7 +411,7 @@ const ClientKanbanPage: React.FC = () => {
             },
           });
           if (error) throw error;
-          // console.log("Notificação de conclusão de cliente enviada:", data); // Removido console.log
+          // console.log("Notificação de conclusão de cliente enviada:", data);
         } catch (err) {
           console.error("Erro ao enviar notificação de conclusão de cliente:", err);
         }

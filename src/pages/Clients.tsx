@@ -254,7 +254,7 @@ const Clients: React.FC = () => {
       </p>
 
       {/* Indicadores do Topo */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4"> {/* Ajustado para md:grid-cols-2 */}
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Clientes</CardTitle>

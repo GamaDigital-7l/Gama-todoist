@@ -17,7 +17,7 @@ import FullScreenImageViewer from "./FullScreenImageViewer";
 import EditReasonDialog from "./EditReasonDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "./ClientTaskForm";
-import { OriginBoard } from "@/types/task"; // Importar OriginBoard
+import { OriginBoard } from "@/types/task";
 
 interface ClientTaskItemProps {
   task: ClientTask;
@@ -277,7 +277,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             ))}
           </div>
         )}
-        <div className="flex flex-col sm:flex-row gap-2 mt-3"> {/* Ajustado para flex-col em mobile, flex-row em sm+ */}
+        <div className="flex flex-col sm:flex-row gap-2 mt-3">
           <Button
             onClick={handleApproveTask}
             disabled={task.status === 'approved' || task.status === 'published'}

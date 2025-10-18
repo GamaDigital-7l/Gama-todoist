@@ -57,10 +57,33 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth; /* Rolagem suave */
+  }
   body {
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Esconder barra de rolagem horizontal no mobile, mas permitir scroll */
+    overflow-x: hidden;
+  }
+  /* Para navegadores Webkit (Chrome, Safari) */
+  body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  body::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  body::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 4px;
+    border: 2px solid hsl(var(--background));
+  }
+  /* Para Firefox */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) hsl(var(--background));
   }
 
   /* Estilos globais para tipografia Inter */
