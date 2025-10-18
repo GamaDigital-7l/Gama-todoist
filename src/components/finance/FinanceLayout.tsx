@@ -26,7 +26,7 @@ const fetchTransactionsForPeriod = async (userId: string, period: Date): Promise
     .from("financial_transactions")
     .select(`
       *,
-      category:financial_categories(id, name, type),
+      category:financial_categories!financial_transactions_category_id_fkey(id, name, type),
       subcategory:financial_categories!financial_transactions_subcategory_id_fkey(id, name, type),
       account:financial_accounts(id, name, type),
       client:clients(id, name)
