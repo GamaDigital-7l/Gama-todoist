@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useTransition } from 'react';
 import PeriodSelector from './PeriodSelector';
 import MonthlySummaryCards from './MonthlySummaryCards';
 import QuickTransactionEntry from './QuickTransactionEntry';
@@ -54,6 +54,7 @@ const FinanceLayout: React.FC<FinanceLayoutProps> = ({ children }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
 
+  const [isPending, startTransition] = useTransition(); // Initialize useTransition
   const [currentPeriod, setCurrentPeriod] = useState(startOfMonth(new Date()));
 
   const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError, refetch: refetchTransactions } = useQuery<FinancialTransaction[], Error>({
@@ -73,6 +74,12 @@ const FinanceLayout: React.FC<FinanceLayoutProps> = ({ children }) => {
     queryFn: () => fetchCashBalance(userId!),
     enabled: !!userId,
   });
+
+  const handlePeriodChange = (newPeriod: Date) => {
+    startTransition(() => {
+      setCurrentPeriod(newPeriod);
+    });
+  };
 
   const handleTransactionAdded = useCallback(() => {
     refetchTransactions();
@@ -102,7 +109,7 @@ const FinanceLayout: React.FC<FinanceLayoutProps> = ({ children }) => {
         Gerencie suas finanças pessoais e da empresa de forma inteligente.
       </p>
 
-      <PeriodSelector currentPeriod={currentPeriod} onPeriodChange={setCurrentPeriod} />
+      <PeriodSelector currentPeriod={currentPeriod} onPeriodChange={handlePeriodChange} />
 
       <MonthlySummaryCards
         income={income}
@@ -111,7 +118,7 @@ const FinanceLayout: React.FC<FinanceLayoutProps> = ({ children }) => {
         previousMonthResult={previousMonthResult}
         cashBalance={cashBalance || 0}
         projection={projection}
-        isLoading={isLoadingTransactions || isLoadingPreviousMonthTransactions || isLoadingCashBalance}
+        isLoading={isLoadingTransactions || isLoadingPreviousMonthTransactions || isLoadingCashBalance || isPending}
       />
 
       <QuickTransactionEntry onTransactionAdded={handleTransactionAdded} />
