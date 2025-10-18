@@ -143,8 +143,8 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ clientTask, refetchClie
   const isOverdue = clientTask.due_date && isPast(parseISO(clientTask.due_date)) && !clientTask.is_completed;
   const isDueToday = clientTask.due_date && isToday(parseISO(clientTask.due_date)) && !clientTask.is_completed;
 
-  const publicApprovalLink = clientTask.public_approval_enabled && clientTask.id
-    ? `${window.location.origin}/approval/${clientTask.id}` // Corrigido para /approval/:uniqueId
+  const publicApprovalLink = clientTask.public_approval_enabled && clientTask.public_approval_link_id
+    ? `${window.location.origin}/approval/${clientTask.public_approval_link_id}`
     : null;
 
   return (

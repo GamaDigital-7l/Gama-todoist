@@ -39,6 +39,7 @@ export interface ClientTask {
   is_standard_task: boolean; // Novo campo: Indica se a tarefa é padrão e deve ir para o dashboard principal
   main_task_id?: string | null; // Novo campo: ID da tarefa correspondente no dashboard principal
   public_approval_enabled: boolean; // Adicionado
+  public_approval_link_id?: string | null; // NOVO: unique_id do link de aprovação pública
   subtasks?: ClientTask[]; // Adicionado para subtarefas
 }
 

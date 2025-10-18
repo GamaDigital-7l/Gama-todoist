@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client";
+import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client"; // Importação atualizada
 import ClientKanbanColumn from "@/components/client/ClientKanbanColumn"; // Importação atualizada
 import ClientKanbanHeader from "@/components/client/ClientKanbanHeader";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
@@ -34,6 +34,9 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
       client_task_tags(
         tags(id, name, color)
       ),
+      public_approval_links(
+        unique_id
+      ),
       subtasks:client_tasks!main_task_id(
         id, title, description, due_date, time, status, is_completed, created_at, updated_at, completed_at,
         is_standard_task, main_task_id, public_approval_enabled,
@@ -55,6 +58,7 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
   const mappedData = data?.map((task: any) => ({
     ...task,
     tags: task.client_task_tags.map((ctt: any) => ctt.tags),
+    public_approval_link_id: task.public_approval_links?.[0]?.unique_id || null, // Extrair unique_id
     subtasks: task.subtasks.map((subtask: any) => ({
       ...subtask,
       tags: subtask.client_task_tags.map((stt: any) => stt.tags),
