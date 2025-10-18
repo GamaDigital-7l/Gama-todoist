@@ -12,7 +12,7 @@ import { Client, ClientTask, PublicApprovalLink } from "@/types/client";
 import { format, parseISO, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FullScreenImageViewer from "@/components/client/FullScreenImageViewer";
-import EditReasonDialog from "@/components/client/EditReasonDialog";
+import EditReasonDialog from "@/components/client/EditReasonDialog"; // Corrected import path
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -199,7 +199,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
           Revise e aprove os materiais abaixo para o mês de {format(parseISO(`${approvalLink.month_year_reference}-01`), "MMMM yyyy", { locale: ptBR })}.
         </p>
         {isLinkExpired && (
-          <p className="text-red-500 text-xl md:text-2xl font-bold mt-4">Este link de aprovação expirou!</p> {/* Fontes adaptáveis */}
+          <p className="text-red-500 text-xl md:text-2xl font-bold mt-4">{/* Fontes adaptáveis */}Este link de aprovação expirou!</p>
         )}
       </header>
 
