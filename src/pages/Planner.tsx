@@ -9,11 +9,10 @@ import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm";
-import MeetingItem from "@/components/MeetingItem";
+import MeetingForm, { MeetingFormValues, meetingSchema } from "@/components/MeetingForm"; // Importar schema e tipo
 import { Meeting } from "@/types/meeting";
 import { Task, DAYS_OF_WEEK_MAP } from "@/types/task";
 import TaskItem from "@/components/TaskItem";
@@ -21,7 +20,10 @@ import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import TaskForm from "@/components/TaskForm";
 import { cn } from "@/lib/utils";
-import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
+import * as z from "zod"; // Importar zod
+import { zodResolver } from "@hookform/resolvers/zod"; // Importar zodResolver
+import { useForm } from "react-hook-form"; // Importar useForm
 
 interface GoogleCalendarEvent {
   id: string;
@@ -149,9 +151,27 @@ const Planner: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
-  const [editingMeeting, setEditingMeeting] = useState<(MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }) | undefined>(undefined);
+  // const [editingMeeting, setEditingMeeting] = useState<(MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }) | undefined>(undefined);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
+  // New form state for MeetingForm
+  const meetingForm = useForm<MeetingFormValues>({
+    resolver: zodResolver(meetingSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      date: new Date(),
+      start_time: "",
+      end_time: null,
+      location: "",
+      sendToGoogleCalendar: false,
+      id: undefined,
+      google_event_id: null,
+      google_html_link: null,
+    },
+  });
+  const [isMeetingSubmitting, setIsMeetingSubmitting] = useState(false);
 
 
   const { data: meetings, isLoading: isLoadingMeetings, error: meetingsError, refetch: refetchMeetings } = useQuery<Meeting[], Error>({
@@ -202,11 +222,171 @@ const Planner: React.FC = () => {
     refetchFutureMeetings(); 
     refetchGoogleEvents(); 
     setIsMeetingFormOpen(false); 
-    setEditingMeeting(undefined); 
+    // setEditingMeeting(undefined); // No longer needed
+  };
+
+  const handleMeetingSubmit = async (values: MeetingFormValues) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    setIsMeetingSubmitting(true);
+
+    try {
+      let googleEventId: string | null = values.google_event_id || null;
+      let googleHtmlLink: string | null = values.google_html_link || null;
+      const currentMeetingId = values.id;
+
+      const formattedDate = format(values.date, "yyyy-MM-dd");
+
+      if (values.sendToGoogleCalendar) {
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
+          setIsMeetingSubmitting(false);
+          return;
+        }
+
+        if (googleEventId) {
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('update-google-calendar-event', {
+            body: {
+              googleEventId: googleEventId,
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao atualizar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento atualizado no Google Calendar!");
+        } else {
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
+            body: {
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao criar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento criado no Google Calendar!");
+        }
+      } else if (googleEventId) {
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
+          setIsMeetingSubmitting(false);
+          return;
+        }
+        const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+          body: { googleEventId: googleEventId },
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (googleDeleteError) {
+          if (googleDeleteError.status === 404) {
+            console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+          } else {
+            throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+          }
+        }
+        googleEventId = null;
+        googleHtmlLink = null;
+        showSuccess("Evento removido do Google Calendar!");
+      }
+
+      const dataToSave = {
+        title: values.title,
+        description: values.description || null,
+        date: formattedDate,
+        start_time: values.start_time,
+        end_time: values.end_time || null,
+        location: values.location || null,
+        google_event_id: googleEventId, 
+        google_html_link: googleHtmlLink, 
+        updated_at: new Date().toISOString(),
+      };
+
+      if (currentMeetingId) {
+        const { error } = await supabase
+          .from("meetings")
+          .update(dataToSave)
+          .eq("id", currentMeetingId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Reunião atualizada com sucesso!");
+      } else {
+        const { error } = await supabase.from("meetings").insert({
+          ...dataToSave,
+          user_id: userId,
+        });
+
+        if (error) throw error;
+        showSuccess("Reunião adicionada com sucesso!");
+      }
+      meetingForm.reset();
+      handleMeetingSaved();
+      setIsMeetingFormOpen(false); // Close dialog
+    } catch (error: any) {
+      showError("Erro ao salvar reunião: " + error.message);
+      console.error("Erro ao salvar reunião:", error);
+    } finally {
+      setIsMeetingSubmitting(false);
+    }
+  };
+
+  const handleOpenMeetingForm = (initialData?: (MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null })) => {
+    if (initialData) {
+      meetingForm.reset({
+        ...initialData,
+        date: new Date(initialData.date),
+        start_time: initialData.start_time,
+        end_time: initialData.end_time || null,
+        sendToGoogleCalendar: !!initialData.google_event_id,
+        id: initialData.id,
+        google_event_id: initialData.google_event_id,
+        google_html_link: initialData.google_html_link,
+      });
+    } else {
+      meetingForm.reset({
+        title: "",
+        description: "",
+        date: selectedDate || new Date(), // Use selectedDate for new meetings
+        start_time: "",
+        end_time: null,
+        location: "",
+        sendToGoogleCalendar: false,
+        id: undefined, // Clear ID for new meeting
+        google_event_id: null,
+        google_html_link: null,
+      });
+    }
+    setIsMeetingFormOpen(true);
   };
 
   const handleEditMeeting = (meeting: Meeting) => {
-    const editableMeeting: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
+    handleOpenMeetingForm({
       id: meeting.id,
       title: meeting.title,
       description: meeting.description || undefined,
@@ -217,13 +397,11 @@ const Planner: React.FC = () => {
       sendToGoogleCalendar: !!meeting.google_event_id, 
       google_event_id: meeting.google_event_id,
       google_html_link: meeting.google_html_link,
-    };
-    setEditingMeeting(editableMeeting);
-    setIsMeetingFormOpen(true);
+    });
   };
 
   const handleEditGoogleEvent = (event: GoogleCalendarEvent) => {
-    const editableEvent: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
+    handleOpenMeetingForm({
       id: event.id, 
       google_event_id: event.google_event_id, 
       title: event.title,
@@ -234,9 +412,7 @@ const Planner: React.FC = () => {
       location: event.location || undefined,
       sendToGoogleCalendar: true, 
       google_html_link: event.html_link,
-    };
-    setEditingMeeting(editableEvent);
-    setIsMeetingFormOpen(true);
+    });
   };
 
   const handleDeleteMeeting = async (meetingId: string) => {
@@ -480,23 +656,24 @@ const Planner: React.FC = () => {
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
                 setIsMeetingFormOpen(open);
-                if (!open) setEditingMeeting(undefined);
+                if (!open) meetingForm.reset(); // Reset form when closing
               }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
+                  <Button size="sm" onClick={() => handleOpenMeetingForm()} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
                   <DialogHeader>
-                    <DialogTitle className="text-foreground">{editingMeeting?.id ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
+                    <DialogTitle className="text-foreground">{meetingForm.watch("id") ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
-                      {editingMeeting?.id ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
+                      {meetingForm.watch("id") ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
-                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "", sendToGoogleCalendar: false } as MeetingFormValues : undefined)}
-                    onMeetingSaved={handleMeetingSaved}
+                    form={meetingForm}
+                    onSubmit={handleMeetingSubmit}
+                    isSubmitting={isMeetingSubmitting}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />
                 </DialogContent>
