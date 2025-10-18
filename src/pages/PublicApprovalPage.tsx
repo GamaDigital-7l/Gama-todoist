@@ -12,7 +12,7 @@ import { Client, ClientTask, PublicApprovalLink } from "@/types/client";
 import { format, parseISO, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FullScreenImageViewer from "@/components/client/FullScreenImageViewer";
-import EditReasonDialog from "@/components/client/EditReasonDialog"; // Corrected import path
+import EditReasonDialog from "@/components/client/EditReasonDialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
