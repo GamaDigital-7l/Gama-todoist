@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react"; // Importar useTransition
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import DashboardTaskList from "@/components/DashboardTaskList";
@@ -256,6 +256,7 @@ const Dashboard: React.FC = () => {
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
+  const [isPending, startTransition] = useTransition(); // Initialize useTransition
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { data: allTasks, isLoading: isLoadingAllTasks, error: errorAllTasks, refetch: refetchAllTasks } = useQuery<Task[], Error>({
@@ -445,7 +446,7 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
-            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
+            <Button variant="outline" size="icon" onClick={() => startTransition(() => setSelectedDate(prev => addDays(prev, -1)))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Popover>
@@ -469,13 +470,13 @@ const Dashboard: React.FC = () => {
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(date) => setSelectedDate(date || new Date())}
+                onSelect={(date) => startTransition(() => setSelectedDate(date || new Date()))}
                 initialFocus
                 locale={ptBR}
               />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
+            <Button variant="outline" size="icon" onClick={() => startTransition(() => setSelectedDate(prev => addDays(prev, 1)))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
@@ -511,11 +512,17 @@ const Dashboard: React.FC = () => {
           </Card>
         )}
 
+        {isPending && (
+          <div className="flex items-center justify-center p-4 text-primary">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" /> Carregando tarefas...
+          </div>
+        )}
+
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <TaskListBoard
             title="Hoje Prioridade"
             tasks={todayPriorityTasks || []}
-            isLoading={isLoadingTodayPriority}
+            isLoading={isLoadingTodayPriority || isPending}
             error={errorTodayPriority}
             refetchTasks={handleTaskAdded}
             quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
@@ -525,7 +532,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Hoje sem Prioridade"
             tasks={todayNoPriorityTasks || []}
-            isLoading={isLoadingTodayNoPriority}
+            isLoading={isLoadingTodayNoPriority || isPending}
             error={errorTodayNoPriority}
             refetchTasks={handleTaskAdded}
             quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
@@ -535,7 +542,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Jobs Woe hoje"
             tasks={jobsWoeTodayTasks || []}
-            isLoading={isLoadingJobsWoeToday}
+            isLoading={isLoadingJobsWoeToday || isPending}
             error={errorJobsWoeToday}
             refetchTasks={handleTaskAdded}
             quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
@@ -545,7 +552,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Tarefas de Clientes"
             tasks={clientDashboardTasks || []}
-            isLoading={isLoadingClientDashboardTasks}
+            isLoading={isLoadingClientDashboardTasks || isPending}
             error={errorClientDashboardTasks}
             refetchTasks={handleTaskAdded}
             showAddButton={false}
@@ -555,7 +562,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Atrasadas"
             tasks={overdueTasks || []}
-            isLoading={isLoadingOverdue}
+            isLoading={isLoadingOverdue || isPending}
             error={errorOverdue}
             refetchTasks={handleTaskAdded}
             showAddButton={false}
@@ -565,7 +572,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Recorrentes"
             tasks={recurrentTasks || []}
-            isLoading={isLoadingRecurrent}
+            isLoading={isLoadingRecurrent || isPending}
             error={errorRecurrent}
             refetchTasks={handleTaskAdded}
             showAddButton={false}
@@ -575,7 +582,7 @@ const Dashboard: React.FC = () => {
           <TaskListBoard
             title="Finalizadas"
             tasks={completedTasks || []}
-            isLoading={isLoadingCompleted}
+            isLoading={isLoadingCompleted || isPending}
             error={errorCompleted}
             refetchTasks={handleTaskAdded}
             showAddButton={false}
@@ -589,7 +596,7 @@ const Dashboard: React.FC = () => {
               <CalendarIcon className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              {isLoadingTomorrowTasks ? (
+              {isLoadingTomorrowTasks || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{tomorrowTasks?.length || 0}</div>
@@ -612,7 +619,7 @@ const Dashboard: React.FC = () => {
               <ListTodo className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              {isLoadingAllTasks ? (
+              {isLoadingAllTasks || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{totalTasksCount}</div>
@@ -629,7 +636,7 @@ const Dashboard: React.FC = () => {
               <XCircle className="h-5 w-5 text-red-500" />
             </CardHeader>
             <CardContent>
-              {isLoadingOverdue ? (
+              {isLoadingOverdue || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{totalOverdueCount}</div>
@@ -646,7 +653,7 @@ const Dashboard: React.FC = () => {
               <Repeat className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
-              {isLoadingRecurrent ? (
+              {isLoadingRecurrent || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{failedRecurrentCount}</div>
@@ -663,7 +670,7 @@ const Dashboard: React.FC = () => {
               <CalendarCheck className="h-5 w-5 text-green-500" />
             </CardHeader>
             <CardContent>
-              {isLoadingCompleted ? (
+              {isLoadingCompleted || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{completedThisWeekCount}</div>
@@ -680,7 +687,7 @@ const Dashboard: React.FC = () => {
               <CalendarCheck className="h-5 w-5 text-green-500" />
             </CardHeader>
             <CardContent>
-              {isLoadingCompleted ? (
+              {isLoadingCompleted || isPending ? (
                 <div className="text-3xl font-bold text-foreground">Carregando...</div>
               ) : (
                 <div className="text-3xl font-bold text-foreground">{completedThisMonthCount}</div>
