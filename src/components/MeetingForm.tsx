@@ -10,15 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react"; // Adicionado Loader2
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TimePicker from "./TimePicker";
-import { Meeting } from "@/types/meeting"; // Mantido para referência, mas o tipo de prop foi alterado
+import { Meeting } from "@/types/meeting";
 import { ptBR } from "date-fns/locale";
+import { Checkbox } from "@/components/ui/checkbox"; // Adicionado Checkbox
 
 const meetingSchema = z.object({
   title: z.string().min(1, "O título da reunião é obrigatório."),
@@ -27,12 +28,13 @@ const meetingSchema = z.object({
   start_time: z.string().min(1, "O horário de início é obrigatório."),
   end_time: z.string().optional().nullable(),
   location: z.string().optional(),
+  sendToGoogleCalendar: z.boolean().default(false), // Novo campo
 });
 
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  initialData?: (MeetingFormValues & { id: string }); // Para edição, o ID é necessário
+  initialData?: (MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }); // Para edição, o ID é necessário
   onMeetingSaved: () => void;
   onClose: () => void;
 }
@@ -48,6 +50,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
       date: new Date(initialData.date),
       start_time: initialData.start_time,
       end_time: initialData.end_time || null,
+      sendToGoogleCalendar: !!initialData.google_event_id, // Marcar se já estiver no Google Calendar
     } : {
       title: "",
       description: "",
@@ -55,16 +58,56 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
       start_time: "",
       end_time: null,
       location: "",
+      sendToGoogleCalendar: false,
     },
   });
+
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const onSubmit = async (values: MeetingFormValues) => {
     if (!userId) {
       showError("Usuário não autenticado.");
       return;
     }
+    setIsSubmitting(true);
 
     try {
+      let googleEventId: string | null = initialData?.google_event_id || null;
+      let googleHtmlLink: string | null = initialData?.google_html_link || null;
+
+      // Se o usuário marcou para enviar ao Google Calendar E ainda não está lá
+      if (values.sendToGoogleCalendar && !initialData?.google_event_id) {
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente.");
+          setIsSubmitting(false);
+          return;
+        }
+        const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
+          body: {
+            title: values.title,
+            description: values.description,
+            date: format(values.date, "yyyy-MM-dd"),
+            startTime: values.start_time,
+            endTime: values.end_time,
+            location: values.location,
+          },
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (googleError) {
+          throw new Error(googleError.message || "Erro ao criar evento no Google Calendar.");
+        }
+        googleEventId = googleData.googleEventId;
+        googleHtmlLink = googleData.htmlLink;
+        showSuccess("Evento criado no Google Calendar!");
+      } else if (!values.sendToGoogleCalendar && initialData?.google_event_id) {
+        // Lógica para remover do Google Calendar (ainda não implementada)
+        showError("A remoção de eventos do Google Calendar ainda não está implementada.");
+        // Por enquanto, manteremos o google_event_id e google_html_link no DB
+      }
+
       const dataToSave = {
         title: values.title,
         description: values.description || null,
@@ -72,10 +115,12 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         start_time: values.start_time,
         end_time: values.end_time || null,
         location: values.location || null,
+        google_event_id: googleEventId, // Salvar o ID do evento do Google
+        google_html_link: googleHtmlLink, // Salvar o link do evento do Google
         updated_at: new Date().toISOString(),
       };
 
-      if (initialData && initialData.id) { // Verifica se é uma edição e se o ID existe
+      if (initialData && initialData.id) {
         const { error } = await supabase
           .from("meetings")
           .update(dataToSave)
@@ -99,6 +144,8 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
     } catch (error: any) {
       showError("Erro ao salvar reunião: " + error.message);
       console.error("Erro ao salvar reunião:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -192,8 +239,24 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
       </div>
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-        {initialData ? "Atualizar Reunião" : "Adicionar Reunião"}
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="sendToGoogleCalendar"
+          checked={form.watch("sendToGoogleCalendar")}
+          onCheckedChange={(checked) => form.setValue("sendToGoogleCalendar", checked as boolean)}
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
+          disabled={!!initialData?.google_event_id} // Desabilitar se já estiver no Google Calendar
+        />
+        <Label htmlFor="sendToGoogleCalendar" className="text-foreground">
+          {initialData?.google_event_id ? "Já no Google Calendar" : "Enviar para Google Calendar"}
+        </Label>
+      </div>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          initialData ? "Atualizar Reunião" : "Adicionar Reunião"
+        )}
       </Button>
     </form>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2, AlertCircle, Star } from "lucide-react"; // Adicionado Edit, Trash2, AlertCircle, Star
+import { CalendarDays, PlusCircle, Briefcase, ListTodo, Clock, MapPin, Link as LinkIcon, Edit, Trash2, AlertCircle, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay, parseISO, getDay, isFuture } from "date-fns";
@@ -20,7 +20,7 @@ import TaskItem from "@/components/TaskItem";
 import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import TaskForm from "@/components/TaskForm";
-import { cn } from "@/lib/utils"; // Importar cn
+import { cn } from "@/lib/utils";
 
 interface GoogleCalendarEvent {
   id: string;
@@ -38,7 +38,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, created_at")
+    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at") // Adicionado google_event_id e google_html_link
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -52,7 +52,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location")
+    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link") // Adicionado google_event_id e google_html_link
     .eq("user_id", userId)
     .gte("date", today) // Apenas reuniões a partir de hoje
     .order("date", { ascending: true })
@@ -72,7 +72,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
       task_tags(
         tags(id, name, color)
       )
@@ -150,7 +150,7 @@ const Planner: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
-  const [editingMeeting, setEditingMeeting] = useState<MeetingFormValues & { id: string } | undefined>(undefined);
+  const [editingMeeting, setEditingMeeting] = useState<(MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }) | undefined>(undefined);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
@@ -206,7 +206,7 @@ const Planner: React.FC = () => {
   };
 
   const handleEditMeeting = (meeting: Meeting) => {
-    const editableMeeting: MeetingFormValues & { id: string } = {
+    const editableMeeting: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
       id: meeting.id,
       title: meeting.title,
       description: meeting.description || undefined,
@@ -214,6 +214,9 @@ const Planner: React.FC = () => {
       start_time: meeting.start_time,
       end_time: meeting.end_time || undefined,
       location: meeting.location || undefined,
+      sendToGoogleCalendar: !!meeting.google_event_id, // Preencher o checkbox
+      google_event_id: meeting.google_event_id,
+      google_html_link: meeting.google_html_link,
     };
     setEditingMeeting(editableMeeting);
     setIsMeetingFormOpen(true);
@@ -309,7 +312,7 @@ const Planner: React.FC = () => {
       start_time: parseISO(`${m.date}T${m.start_time}`),
       end_time: m.end_time ? parseISO(`${m.date}T${m.end_time}`) : undefined,
       location: m.location,
-      html_link: undefined,
+      html_link: m.google_html_link, // Usar o link do Google Calendar se existir
       original_meeting: m, // Adiciona a reunião original para edição/exclusão
     })),
     ...(googleEvents || []).map(ge => ({
@@ -385,6 +388,11 @@ const Planner: React.FC = () => {
                         <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
                       </p>
                     )}
+                    {meeting.google_html_link && (
+                      <a href={meeting.google_html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                        Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
+                      </a>
+                    )}
                   </div>
                 ))
               ) : (
@@ -404,7 +412,7 @@ const Planner: React.FC = () => {
               </CardTitle>
               <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
                 setIsMeetingFormOpen(open);
-                if (!open) setEditingMeeting(undefined); // Resetar o estado de edição ao fechar
+                if (!open) setEditingMeeting(undefined);
               }}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
@@ -419,7 +427,7 @@ const Planner: React.FC = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
-                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "" } as MeetingFormValues : undefined)}
+                    initialData={editingMeeting || (selectedDate ? { date: selectedDate, title: "", start_time: "", sendToGoogleCalendar: false } as MeetingFormValues : undefined)}
                     onMeetingSaved={handleMeetingSaved}
                     onClose={() => setIsMeetingFormOpen(false)}
                   />
@@ -480,7 +488,7 @@ const Planner: React.FC = () => {
               </CardTitle>
               <Dialog open={isTaskFormOpen} onOpenChange={(open) => {
                 setIsTaskFormOpen(open);
-                if (!open) setEditingTask(undefined); // Resetar o estado de edição ao fechar
+                if (!open) setEditingTask(undefined);
               }}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
@@ -499,7 +507,7 @@ const Planner: React.FC = () => {
                     onTaskSaved={handleTaskAdded}
                     onClose={() => setIsTaskFormOpen(false)}
                     initialOriginBoard="general"
-                    initialDueDate={selectedDate} // Passa a data selecionada
+                    initialDueDate={selectedDate}
                   />
                 </DialogContent>
               </Dialog>

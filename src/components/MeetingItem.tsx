@@ -5,11 +5,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, MapPin, Clock } from "lucide-react";
+import { Edit, Trash2, MapPin, Clock, Link as LinkIcon } from "lucide-react"; // Adicionado LinkIcon
 import { useSession } from "@/integrations/supabase/auth";
 import { Meeting } from "@/types/meeting";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import MeetingForm, { MeetingFormValues } from "./MeetingForm"; // Importar MeetingFormValues
+import MeetingForm, { MeetingFormValues } from "./MeetingForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -23,7 +23,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   const queryClient = useQueryClient();
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingMeeting, setEditingMeeting] = React.useState<(MeetingFormValues & { id: string }) | undefined>(undefined); // Tipo ajustado
+  const [editingMeeting, setEditingMeeting] = React.useState<(MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }) | undefined>(undefined); // Tipo ajustado
 
   const handleDeleteMeeting = useMutation({
     mutationFn: async (meetingId: string) => {
@@ -31,6 +31,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
         showError("Usuário não autenticado.");
         return;
       }
+      // TODO: Adicionar lógica para deletar do Google Calendar se google_event_id existir
       const { error } = await supabase
         .from("meetings")
         .delete()
@@ -43,7 +44,7 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
       showSuccess("Reunião deletada com sucesso!");
       refetchMeetings();
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
-      queryClient.invalidateQueries({ queryKey: ["futureMeetings"] }); // Invalidate future meetings
+      queryClient.invalidateQueries({ queryKey: ["futureMeetings"] });
     },
     onError: (err: any) => {
       showError("Erro ao deletar reunião: " + err.message);
@@ -52,15 +53,17 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
   });
 
   const handleEditMeeting = (meeting: Meeting) => {
-    // Converte o objeto Meeting para o tipo esperado pelo MeetingForm para edição
-    const editableMeeting: MeetingFormValues & { id: string } = {
+    const editableMeeting: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
       id: meeting.id,
       title: meeting.title,
       description: meeting.description || undefined,
-      date: parseISO(meeting.date), // Converte string para Date
+      date: parseISO(meeting.date),
       start_time: meeting.start_time,
       end_time: meeting.end_time || undefined,
       location: meeting.location || undefined,
+      sendToGoogleCalendar: !!meeting.google_event_id, // Preencher o checkbox
+      google_event_id: meeting.google_event_id,
+      google_html_link: meeting.google_html_link,
     };
     setEditingMeeting(editableMeeting);
     setIsFormOpen(true);
@@ -83,6 +86,11 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
             <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
               <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
             </p>
+          )}
+          {meeting.google_html_link && (
+            <a href={meeting.google_html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+              Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
+            </a>
           )}
         </div>
       </div>
