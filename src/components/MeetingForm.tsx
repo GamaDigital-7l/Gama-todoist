@@ -75,43 +75,93 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
       let googleEventId: string | null = initialData?.google_event_id || null;
       let googleHtmlLink: string | null = initialData?.google_html_link || null;
 
-      // Se o usuário marcou para enviar ao Google Calendar E ainda não está lá
-      if (values.sendToGoogleCalendar && !initialData?.google_event_id) {
+      const formattedDate = format(values.date, "yyyy-MM-dd");
+
+      // Lógica para interagir com o Google Calendar
+      if (values.sendToGoogleCalendar) {
+        // Se o checkbox está marcado
         if (!session?.access_token) {
-          showError("Sessão não encontrada. Faça login novamente.");
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
           setIsSubmitting(false);
           return;
         }
-        const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
-          body: {
-            title: values.title,
-            description: values.description,
-            date: format(values.date, "yyyy-MM-dd"),
-            startTime: values.start_time,
-            endTime: values.end_time,
-            location: values.location,
-          },
+
+        if (googleEventId) {
+          // Se já existe um evento no Google Calendar, atualizá-lo
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('update-google-calendar-event', {
+            body: {
+              googleEventId: googleEventId,
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao atualizar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento atualizado no Google Calendar!");
+        } else {
+          // Se não existe um evento no Google Calendar, criá-lo
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
+            body: {
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao criar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento criado no Google Calendar!");
+        }
+      } else if (googleEventId) {
+        // Se o checkbox NÃO está marcado, mas existe um googleEventId, significa que o usuário quer remover do Google Calendar
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
+          setIsSubmitting(false);
+          return;
+        }
+        const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+          body: { googleEventId: googleEventId },
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
         });
 
-        if (googleError) {
-          throw new Error(googleError.message || "Erro ao criar evento no Google Calendar.");
+        if (googleDeleteError) {
+          if (googleDeleteError.status === 404) {
+            console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+          } else {
+            throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+          }
         }
-        googleEventId = googleData.googleEventId;
-        googleHtmlLink = googleData.htmlLink;
-        showSuccess("Evento criado no Google Calendar!");
-      } else if (!values.sendToGoogleCalendar && initialData?.google_event_id) {
-        // Lógica para remover do Google Calendar (ainda não implementada)
-        showError("A remoção de eventos do Google Calendar ainda não está implementada.");
-        // Por enquanto, manteremos o google_event_id e google_html_link no DB
+        googleEventId = null;
+        googleHtmlLink = null;
+        showSuccess("Evento removido do Google Calendar!");
       }
 
       const dataToSave = {
         title: values.title,
         description: values.description || null,
-        date: format(values.date, "yyyy-MM-dd"),
+        date: formattedDate,
         start_time: values.start_time,
         end_time: values.end_time || null,
         location: values.location || null,
@@ -245,10 +295,9 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           checked={form.watch("sendToGoogleCalendar")}
           onCheckedChange={(checked) => form.setValue("sendToGoogleCalendar", checked as boolean)}
           className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-          disabled={!!initialData?.google_event_id} // Desabilitar se já estiver no Google Calendar
         />
         <Label htmlFor="sendToGoogleCalendar" className="text-foreground">
-          {initialData?.google_event_id ? "Já no Google Calendar" : "Enviar para Google Calendar"}
+          Enviar para Google Calendar
         </Label>
       </div>
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={isSubmitting}>
