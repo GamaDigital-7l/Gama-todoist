@@ -64,7 +64,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       };
 
       // Se a tarefa for marcada como concluída, também atualiza o status para 'published'
-      // Se for desmarcada, e o status era 'published' ou 'approved', volta para 'in_production'
+      // Se for desmarcada, e o status era 'published' ou 'approved', volta para 'backlog'
       if (newIsCompleted) {
         updateData.status = 'published';
       } else if (task.status === 'published' || task.status === 'approved') {
@@ -211,7 +211,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
     onSuccess: () => {
       showSuccess("Tarefa do cliente deletada com sucesso!");
       refetchTasks();
-      queryClient.invalidateQueries({ queryKey: ["clientTasks", task.client_id, userId, monthYearRef] });
+      queryClient.invalidateQueries({ queryKey: ["clientTasks", task.client_id, userId, task.month_year_reference] });
     },
     onError: (err: any) => {
       showError("Erro ao deletar tarefa do cliente: " + err.message);
@@ -253,7 +253,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       onDragStart={(e) => onDragStart(e, task.id, task.status)}
     >
       {task.image_urls && task.image_urls.length > 0 && (
-        <div className="relative w-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg aspect-video">
+        <div className="relative w-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg aspect-video"> {/* Usando aspect-video para proporção */}
           {task.image_urls.length > 1 ? (
             <Carousel className="w-full h-full">
               <CarouselContent>
@@ -378,11 +378,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
           </Button>
           <Button
-            onClick={() => {
-              setTaskToEditId(task.id);
-              setInitialEditReason(task.edit_reason || null);
-              setIsEditReasonDialogOpen(true);
-            }}
+            onClick={() => setIsEditReasonDialogOpen(true)}
             disabled={task.status === 'approved' || task.status === 'published'}
             variant="outline"
             className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10"
@@ -403,7 +399,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       <EditReasonDialog
         isOpen={isEditReasonDialogOpen}
         onClose={() => setIsEditReasonDialogOpen(false)}
-        onSubmit={handleRequestEdit} {/* Corrigido para chamar handleRequestEdit */}
+        onSubmit={handleRequestEditSubmit}
         initialReason={initialEditReason}
       />
     </div>
