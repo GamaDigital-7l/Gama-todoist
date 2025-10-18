@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "@/integrations/supabase/auth";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const goalSchema = z.object({
   title: z.string().min(1, "O título da meta é obrigatório."),

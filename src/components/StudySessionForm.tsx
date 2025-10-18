@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSession } from "@/integrations/supabase/auth";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const studySessionSchema = z.object({
   title: z.string().min(1, "O título da sessão de estudo é obrigatório."),

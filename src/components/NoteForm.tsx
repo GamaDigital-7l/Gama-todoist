@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
+import 'react-quill/dist/quill.snow.css'; 
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
-// Definir o esquema para um item de checklist
 const checklistItemSchema = z.object({
   text: z.string().min(1, "O item da checklist não pode ser vazio."),
   completed: z.boolean().default(false),
@@ -31,7 +31,7 @@ const checklistItemSchema = z.object({
 
 const noteSchema = z.object({
   title: z.string().optional(),
-  content: z.string().min(1, "O conteúdo da nota é obrigatório."), // Conteúdo agora é sempre string (HTML ou JSON string)
+  content: z.string().min(1, "O conteúdo da nota é obrigatório."), 
   type: z.enum(["text", "checklist"]).default("text"),
   selected_tag_ids: z.array(z.string()).optional(),
   reminder_date: z.date().optional().nullable(),
@@ -42,13 +42,12 @@ const noteSchema = z.object({
 export type NoteFormValues = z.infer<typeof noteSchema>;
 
 interface NoteFormProps {
-  initialData?: Partial<Note> & { id?: string }; // Ajustado para aceitar id opcional
+  initialData?: Partial<Note> & { id?: string }; 
   onNoteSaved: () => void;
   onClose: () => void;
-  userId: string | undefined; // Adicionado userId como prop
+  userId: string | undefined; 
 }
 
-// Função para sanitizar o nome do arquivo
 const sanitizeFilename = (filename: string) => {
   return filename
     .normalize("NFD")
@@ -59,16 +58,14 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
+const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { 
   const quillRef = useRef<ReactQuill>(null);
-
-  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: initialData ? {
       ...initialData,
-      content: initialData.content || "", // Garante que content não seja undefined
+      content: initialData.content || "", 
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
       reminder_date: initialData.reminder_date ? new Date(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
@@ -94,7 +91,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       try {
         setChecklistItems(JSON.parse(initialData.content || "[]") as { text: string; completed: boolean }[]);
       } catch (e) {
-        // console.error("Erro ao parsear conteúdo da checklist inicial:", e);
         setChecklistItems([]);
       }
     } else if (noteType === "text") {
@@ -122,7 +118,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
     form.setValue("pinned", !isPinned, { shouldDirty: true });
   };
 
-  // Custom image handler for Quill
   const imageHandler = useCallback(() => {
     if (!userId) {
       showError("Usuário não autenticado. Faça login para fazer upload de imagens.");
@@ -141,12 +136,11 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         if (!quill) return;
 
         const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'image', '/placeholder.svg'); // Placeholder image
-        quill.setSelection(range.index + 1, 0); // Corrigido: setSelection espera dois números ou um RangeStatic
+        quill.insertEmbed(range.index, 'image', '/placeholder.svg'); 
+        quill.setSelection(range.index + 1, 0); 
 
         try {
           const sanitizedFilename = sanitizeFilename(file.name);
-          // O caminho do arquivo agora inclui o userId como uma pasta para RLS
           const filePath = `note_images/${userId}/${Date.now()}-${sanitizedFilename}`;
 
           const { data: uploadData, error: uploadError } = await supabase.storage
@@ -166,16 +160,12 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           
           const imageUrl = publicUrlData.publicUrl;
 
-          // Replace placeholder with actual image
-          const index = range.index;
-          quill.deleteText(index, 1);
+          quill.deleteText(range.index, 1);
           quill.insertEmbed(index, 'image', imageUrl);
           showSuccess("Imagem adicionada com sucesso!");
 
         } catch (err: any) {
-          // console.error("Erro ao fazer upload da imagem:", err);
           showError("Erro ao adicionar imagem: " + err.message);
-          // Remove placeholder if upload fails
           quill.deleteText(range.index, 1);
         }
       }
@@ -188,11 +178,11 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         [{ 'header': [1, 2, false] }],
         ['bold', 'italic', 'underline', 'strike', 'blockquote'],
         [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link', 'image'], // Adicionado 'image' ao toolbar
+        ['link', 'image'], 
         ['clean']
       ],
       handlers: {
-        'image': imageHandler, // Usar o manipulador de imagem personalizado
+        'image': imageHandler, 
       }
     },
   }), [imageHandler]);
@@ -201,13 +191,10 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
-    'link', 'image' // Adicionado 'image' aos formatos
+    'link', 'image' 
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
-    // console.log("NoteForm.tsx - onSubmit: userId:", userId);
-    // console.log("NoteForm.tsx - onSubmit: initialData:", initialData);
-
     if (!userId) {
       showError("Usuário não autenticado.");
       return;
@@ -236,17 +223,17 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       const dataToSave = {
         title: values.title?.trim() === "" ? null : values.title,
         content: finalContent,
-        color: "#FFFFFF", // Cor fixada em branco
+        color: "#FFFFFF", 
         type: values.type,
         reminder_date: values.reminder_date ? format(values.reminder_date, "yyyy-MM-dd") : null,
         reminder_time: values.reminder_time || null,
         pinned: values.pinned,
-        archived: false, // Garante que não está arquivada ao salvar/atualizar
-        trashed: false, // Garante que não está na lixeira ao salvar/atualizar
+        archived: false, 
+        trashed: false, 
         updated_at: new Date().toISOString(),
       };
 
-      if (initialData?.id) { // Agora verifica se initialData E initialData.id existem
+      if (initialData?.id) { 
         const { data, error } = await supabase
           .from("notes")
           .update(dataToSave)
@@ -258,7 +245,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
         if (error) throw error;
         noteId = data.id;
         showSuccess("Nota atualizada com sucesso!");
-      } else { // Se initialData.id não existe, é uma nova nota
+      } else { 
         const { data, error } = await supabase.from("notes").insert({
           ...dataToSave,
           user_id: userId,
@@ -285,7 +272,6 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       onClose();
     } catch (err: any) {
       showError("Erro ao salvar nota: " + err.message);
-      // console.error("Erro ao salvar nota:", err);
     }
   };
 

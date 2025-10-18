@@ -19,6 +19,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/integrations/supabase/auth";
 import { ptBR } from "date-fns/locale";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const bookSchema = z.object({
   title: z.string().min(1, "O título do livro é obrigatório."),
@@ -48,7 +49,6 @@ interface BookFormProps {
   initialData?: BookFormValues & { id: string };
 }
 
-// Função para sanitizar o nome do arquivo
 const sanitizeFilename = (filename: string) => {
   return filename
     .normalize("NFD")

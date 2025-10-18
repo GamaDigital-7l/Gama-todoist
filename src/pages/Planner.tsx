@@ -21,6 +21,7 @@ import QuickAddTaskInput from "@/components/dashboard/QuickAddTaskInput";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
 import TaskForm from "@/components/TaskForm";
 import { cn } from "@/lib/utils";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 interface GoogleCalendarEvent {
   id: string;
@@ -38,7 +39,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at") // Adicionado google_event_id e google_html_link
+    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at") 
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -52,12 +53,12 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link") // Adicionado google_event_id e google_html_link
+    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link") 
     .eq("user_id", userId)
-    .gte("date", today) // Apenas reuniões a partir de hoje
+    .gte("date", today) 
     .order("date", { ascending: true })
     .order("start_time", { ascending: true })
-    .limit(5); // Limitar a 5 próximas reuniões
+    .limit(5); 
   if (error) {
     throw error;
   }
@@ -66,7 +67,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
 
 const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> => {
   const formattedDate = format(date, "yyyy-MM-dd");
-  const currentDayOfWeek = getDay(date); // 0 for Sunday, 1 for Monday, etc.
+  const currentDayOfWeek = getDay(date); 
 
   const { data, error } = await supabase
     .from("tasks")
@@ -78,7 +79,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
       )
     `)
     .eq("user_id", userId)
-    .or(`due_date.eq.${formattedDate},recurrence_type.neq.none`); // Tasks due today OR recurring
+    .or(`due_date.eq.${formattedDate},recurrence_type.neq.none`); 
 
   if (error) {
     throw error;
@@ -105,7 +106,6 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
       isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;
     }
     
-    // Only show tasks that are relevant for the date and not completed for their current cycle
     return isTaskRelevantForDate && !getAdjustedTaskCompletionStatus(task);
   }) || [];
 
@@ -114,12 +114,11 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     tags: task.task_tags.map((tt: any) => tt.tags),
   }));
 
-  // Sort tasks by time, then by creation date
   mappedData.sort((a: Task, b: Task) => {
     if (a.time && b.time) {
       return a.time.localeCompare(b.time);
     }
-    if (a.time) return -1; // Tasks with time come first
+    if (a.time) return -1; 
     if (b.time) return 1;
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
@@ -200,10 +199,10 @@ const Planner: React.FC = () => {
 
   const handleMeetingSaved = () => {
     refetchMeetings();
-    refetchFutureMeetings(); // Refetch future meetings after a meeting is saved
-    refetchGoogleEvents(); // Refetch Google events to ensure UI is up-to-date
-    setIsMeetingFormOpen(false); // Fechar o formulário após salvar
-    setEditingMeeting(undefined); // Resetar o estado de edição
+    refetchFutureMeetings(); 
+    refetchGoogleEvents(); 
+    setIsMeetingFormOpen(false); 
+    setEditingMeeting(undefined); 
   };
 
   const handleEditMeeting = (meeting: Meeting) => {
@@ -215,7 +214,7 @@ const Planner: React.FC = () => {
       start_time: meeting.start_time,
       end_time: meeting.end_time || undefined,
       location: meeting.location || undefined,
-      sendToGoogleCalendar: !!meeting.google_event_id, // Preencher o checkbox
+      sendToGoogleCalendar: !!meeting.google_event_id, 
       google_event_id: meeting.google_event_id,
       google_html_link: meeting.google_html_link,
     };
@@ -225,15 +224,15 @@ const Planner: React.FC = () => {
 
   const handleEditGoogleEvent = (event: GoogleCalendarEvent) => {
     const editableEvent: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
-      id: event.id, // Usar o ID do evento local (tabela 'events')
-      google_event_id: event.google_event_id, // ID do evento no Google Calendar
+      id: event.id, 
+      google_event_id: event.google_event_id, 
       title: event.title,
       description: event.description || undefined,
-      date: parseISO(event.start_time), // Usar a data de início
+      date: parseISO(event.start_time), 
       start_time: format(parseISO(event.start_time), "HH:mm"),
       end_time: event.end_time ? format(parseISO(event.end_time), "HH:mm") : undefined,
       location: event.location || undefined,
-      sendToGoogleCalendar: true, // Sempre true para eventos do Google
+      sendToGoogleCalendar: true, 
       google_html_link: event.html_link,
     };
     setEditingMeeting(editableEvent);
@@ -257,7 +256,7 @@ const Planner: React.FC = () => {
         showSuccess("Reunião deletada com sucesso!");
         refetchMeetings();
         refetchFutureMeetings();
-        refetchGoogleEvents(); // Refetch Google events to ensure UI is up-to-date
+        refetchGoogleEvents(); 
       } catch (err: any) {
         showError("Erro ao deletar reunião: " + err.message);
         console.error("Erro ao deletar reunião:", err);
@@ -280,7 +279,6 @@ const Planner: React.FC = () => {
         return;
       }
 
-      // 1. Deletar do Google Calendar via Edge Function
       const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
         body: { googleEventId: googleEventId },
         headers: {
@@ -297,7 +295,6 @@ const Planner: React.FC = () => {
       }
       showSuccess("Evento removido do Google Calendar!");
 
-      // 2. Deletar do banco de dados local (tabela 'events')
       const { error: localDeleteError } = await supabase
         .from("events")
         .delete()
@@ -307,7 +304,7 @@ const Planner: React.FC = () => {
       if (localDeleteError) throw localDeleteError;
 
       showSuccess("Evento deletado localmente com sucesso!");
-      refetchGoogleEvents(); // Refetch para atualizar a lista de eventos do Google
+      refetchGoogleEvents(); 
     } catch (err: any) {
       showError("Erro ao deletar evento do Google Calendar: " + err.message);
       console.error("Erro ao deletar evento do Google Calendar:", err);
@@ -342,7 +339,7 @@ const Planner: React.FC = () => {
 
         if (error) throw error;
         showSuccess("Tarefa deletada com sucesso!");
-        handleTaskAdded(); // Refetch all relevant task queries
+        handleTaskAdded(); 
       } catch (err: any) {
         showError("Erro ao deletar tarefa: " + err.message);
         console.error("Erro ao deletar tarefa:", err);
@@ -376,7 +373,6 @@ const Planner: React.FC = () => {
 
   const taskTree = React.useMemo(() => buildTaskTree(tasks || []), [tasks, buildTaskTree]);
 
-  // Combinar reuniões e eventos do Google Calendar e ordenar por hora
   const combinedEvents = [
     ...(meetings || []).map(m => ({
       type: 'meeting',
@@ -386,25 +382,25 @@ const Planner: React.FC = () => {
       start_time: parseISO(`${m.date}T${m.start_time}`),
       end_time: m.end_time ? parseISO(`${m.date}T${m.end_time}`) : undefined,
       location: m.location,
-      html_link: m.google_html_link, // Usar o link do Google Calendar se existir
-      original_meeting: m, // Adiciona a reunião original para edição/exclusão
+      html_link: m.google_html_link, 
+      original_meeting: m, 
     })),
     ...(googleEvents || []).map(ge => ({
       type: 'google_event',
-      id: ge.id, // ID do evento na tabela 'events'
-      google_event_id: ge.google_event_id, // ID do evento no Google Calendar
+      id: ge.id, 
+      google_event_id: ge.google_event_id, 
       title: ge.title,
       description: ge.description,
       start_time: parseISO(ge.start_time),
       end_time: parseISO(ge.end_time),
       location: ge.location,
       html_link: ge.html_link,
-      original_meeting: undefined, // Eventos do Google não têm original_meeting
+      original_meeting: undefined, 
     })),
   ].sort((a, b) => a.start_time.getTime() - b.start_time.getTime());
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6 bg-background text-foreground"> {/* Adicionado md:px-10 para padding lateral */}
+    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6 bg-background text-foreground"> 
       <h1 className="text-3xl font-bold flex items-center gap-3">
         <CalendarDays className="h-8 w-8 text-primary flex-shrink-0" /> Planner
       </h1>
@@ -413,8 +409,7 @@ const Planner: React.FC = () => {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna Esquerda: Calendário e Próximas Reuniões */}
-        <div className="flex flex-col gap-6 lg:col-span-1"> {/* Adicionado lg:col-span-1 */}
+        <div className="flex flex-col gap-6 lg:col-span-1"> 
           <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center frosted-glass card-hover-effect">
             <CardHeader className="w-full text-center pb-2">
               <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
@@ -441,7 +436,7 @@ const Planner: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
-              {isLoadingFutureMeetings ? (
+              {(isLoadingFutureMeetings || futureMeetingsError) ? (
                 <p className="text-center text-muted-foreground">Carregando próximas reuniões...</p>
               ) : futureMeetings && futureMeetings.length > 0 ? (
                 futureMeetings.map((meeting) => (
@@ -477,9 +472,7 @@ const Planner: React.FC = () => {
           </Card>
         </div>
 
-        {/* Colunas do Meio e Direita: Reuniões/Eventos do Dia e Tarefas do Dia */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Ajustado para grid-cols-1 md:grid-cols-2 */}
-          {/* Card de Reuniões e Eventos do Dia */}
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"> 
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
@@ -494,7 +487,7 @@ const Planner: React.FC = () => {
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+                <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingMeeting?.id ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
@@ -535,7 +528,7 @@ const Planner: React.FC = () => {
                         Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
                       </a>
                     )}
-                    <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 flex-wrap"> {/* Ajustado para flex-col sm:flex-row */}
+                    <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 flex-wrap"> 
                       {event.type === 'meeting' ? (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
@@ -547,7 +540,7 @@ const Planner: React.FC = () => {
                             <span className="sr-only">Deletar Reunião</span>
                           </Button>
                         </>
-                      ) : ( // Evento do Google Calendar
+                      ) : ( 
                         <>
                           <Button variant="ghost" size="icon" onClick={() => handleEditGoogleEvent(event as GoogleCalendarEvent)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
                             <Edit className="h-4 w-4" />
@@ -568,7 +561,6 @@ const Planner: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Card de Tarefas do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
@@ -583,7 +575,7 @@ const Planner: React.FC = () => {
                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+                <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
                   <DialogHeader>
                     <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">

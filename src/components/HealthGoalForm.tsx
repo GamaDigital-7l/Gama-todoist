@@ -17,6 +17,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ptBR } from "date-fns/locale";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const healthGoalSchema = z.object({
   title: z.string().min(1, "O título da meta é obrigatório."),
@@ -31,8 +32,8 @@ const healthGoalSchema = z.object({
   start_date: z.date().default(new Date()),
   target_date: z.date().refine(date => date >= new Date(new Date().setHours(0,0,0,0)), "A data alvo não pode ser no passado."),
   is_completed: z.boolean().default(false),
-  description: z.string().optional().nullable(), // Adicionado description
-  status: z.enum(["pending", "in_progress", "completed"]).default("pending"), // Adicionado status
+  description: z.string().optional().nullable(), 
+  status: z.enum(["pending", "in_progress", "completed"]).default("pending"), 
 });
 
 export type HealthGoalFormValues = z.infer<typeof healthGoalSchema>;

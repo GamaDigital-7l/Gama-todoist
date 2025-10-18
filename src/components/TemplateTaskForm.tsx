@@ -22,8 +22,9 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { OriginBoard, RecurrenceType, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
-import TimePicker from "./TimePicker"; // Importar TimePicker
+import TimePicker from "./TimePicker"; 
 import { useQueryClient } from "@tanstack/react-query";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -208,7 +209,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemp
           onValueChange={(value: RecurrenceType) => {
             form.setValue("recurrence_type", value);
             form.setValue("recurrence_details", null);
-            form.setValue("recurrence_time", null); // Resetar recurrence_time
+            form.setValue("recurrence_time", null); 
             setSelectedDays([]);
           }}
           value={recurrenceType}

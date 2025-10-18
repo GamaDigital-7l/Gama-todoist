@@ -12,6 +12,7 @@ import GoalForm, { GoalFormValues } from "@/components/GoalForm";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 interface Goal extends Omit<GoalFormValues, 'target_date'> {
   id: string;
@@ -135,7 +136,7 @@ const Goals: React.FC = () => {
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
               <DialogHeader>
                 <DialogTitle className="text-foreground">
                   {editingGoal ? "Editar Meta" : "Adicionar Nova Meta"}
@@ -158,11 +159,11 @@ const Goals: React.FC = () => {
       </p>
 
       {goals && goals.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> 
           {goals.map((goal) => (
             <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{goal.title}</CardTitle> {/* Fontes adaptáveis */}
+                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{goal.title}</CardTitle> 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)} className="text-blue-500 hover:bg-blue-500/10">
                     <Edit className="h-4 w-4" />
@@ -181,11 +182,11 @@ const Goals: React.FC = () => {
                   </CardDescription>
                 )}
                 {goal.target_date && (
-                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2"> {/* Fontes adaptáveis */}
+                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2"> 
                     <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
-                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
+                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> 
                   {getStatusIcon(goal.status)} Status: {getStatusText(goal.status)}
                 </p>
               </CardContent>

@@ -4,22 +4,21 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, ListTodo } from "lucide-react"; // Removido ImageIcon
+import { PlusCircle, ListTodo } from "lucide-react"; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import NoteForm from "./NoteForm";
 import { Note } from "@/pages/Notes";
-import { showError } from "@/utils/toast"; // Importar showError
+import { showError } from "@/utils/toast"; 
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 interface QuickNoteCreatorProps {
   onNoteCreated: () => void;
-  userId: string | undefined; // Adicionado userId
+  userId: string | undefined; 
 }
 
 const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, userId }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialNoteData, setInitialNoteData] = useState<Partial<Note> | undefined>(undefined);
-
-  // console.log("QuickNoteCreator.tsx userId:", userId); // Log de depuração removido
 
   const handleOpenFormWithDefaults = (type: "text" | "checklist") => {
     if (!userId) {
@@ -28,7 +27,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
     }
     setInitialNoteData({
       type,
-      color: "#FFFFFF", // Cor padrão branca
+      color: "#FFFFFF", 
       content: type === "text" ? "" : "[]",
       pinned: false,
       archived: false,
@@ -52,7 +51,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
             className="flex-grow bg-input border-none text-foreground focus-visible:ring-0"
             onClick={() => handleOpenFormWithDefaults("text")}
             readOnly
-            disabled={!userId} // Desabilitar se não houver userId
+            disabled={!userId} 
           />
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button variant="ghost" size="icon" onClick={() => handleOpenFormWithDefaults("checklist")} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground" disabled={!userId}>
@@ -64,7 +63,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {initialNoteData?.title ? "Editar Nota" : "Criar Nova Nota"}
@@ -77,7 +76,7 @@ const QuickNoteCreator: React.FC<QuickNoteCreatorProps> = ({ onNoteCreated, user
             initialData={initialNoteData as Note}
             onNoteSaved={handleNoteSaved}
             onClose={() => setIsFormOpen(false)}
-            userId={userId} // Passando userId
+            userId={userId} 
           />
         </DialogContent>
       </Dialog>

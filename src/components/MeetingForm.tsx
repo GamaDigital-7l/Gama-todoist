@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Loader2 } from "lucide-react"; // Adicionado Loader2
+import { CalendarIcon, Loader2 } from "lucide-react"; 
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,8 @@ import { useSession } from "@/integrations/supabase/auth";
 import TimePicker from "./TimePicker";
 import { Meeting } from "@/types/meeting";
 import { ptBR } from "date-fns/locale";
-import { Checkbox } from "@/components/ui/checkbox"; // Adicionado Checkbox
+import { Checkbox } from "@/components/ui/checkbox"; 
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const meetingSchema = z.object({
   title: z.string().min(1, "O título da reunião é obrigatório."),
@@ -28,13 +29,13 @@ const meetingSchema = z.object({
   start_time: z.string().min(1, "O horário de início é obrigatório."),
   end_time: z.string().optional().nullable(),
   location: z.string().optional(),
-  sendToGoogleCalendar: z.boolean().default(false), // Novo campo
+  sendToGoogleCalendar: z.boolean().default(false), 
 });
 
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  initialData?: (MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }); // Para edição, o ID é necessário
+  initialData?: (MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }); 
   onMeetingSaved: () => void;
   onClose: () => void;
 }
@@ -50,7 +51,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
       date: new Date(initialData.date),
       start_time: initialData.start_time,
       end_time: initialData.end_time || null,
-      sendToGoogleCalendar: !!initialData.google_event_id, // Marcar se já estiver no Google Calendar
+      sendToGoogleCalendar: !!initialData.google_event_id, 
     } : {
       title: "",
       description: "",
@@ -77,9 +78,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
 
       const formattedDate = format(values.date, "yyyy-MM-dd");
 
-      // Lógica para interagir com o Google Calendar
       if (values.sendToGoogleCalendar) {
-        // Se o checkbox está marcado
         if (!session?.access_token) {
           showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
           setIsSubmitting(false);
@@ -87,7 +86,6 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         }
 
         if (googleEventId) {
-          // Se já existe um evento no Google Calendar, atualizá-lo
           const { data: googleData, error: googleError } = await supabase.functions.invoke('update-google-calendar-event', {
             body: {
               googleEventId: googleEventId,
@@ -110,7 +108,6 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           googleHtmlLink = googleData.htmlLink;
           showSuccess("Evento atualizado no Google Calendar!");
         } else {
-          // Se não existe um evento no Google Calendar, criá-lo
           const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
             body: {
               title: values.title,
@@ -133,7 +130,6 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           showSuccess("Evento criado no Google Calendar!");
         }
       } else if (googleEventId) {
-        // Se o checkbox NÃO está marcado, mas existe um googleEventId, significa que o usuário quer remover do Google Calendar
         if (!session?.access_token) {
           showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
           setIsSubmitting(false);
@@ -165,8 +161,8 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
         start_time: values.start_time,
         end_time: values.end_time || null,
         location: values.location || null,
-        google_event_id: googleEventId, // Salvar o ID do evento do Google
-        google_html_link: googleHtmlLink, // Salvar o link do evento do Google
+        google_event_id: googleEventId, 
+        google_html_link: googleHtmlLink, 
         updated_at: new Date().toISOString(),
       };
 
@@ -259,7 +255,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           </p>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Ajustado para grid responsivo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"> 
         <div>
           <Label htmlFor="start_time" className="text-foreground">Início</Label>
           <TimePicker

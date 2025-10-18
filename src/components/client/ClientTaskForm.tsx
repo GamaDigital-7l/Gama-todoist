@@ -28,7 +28,8 @@ import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import TimePicker from "../TimePicker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { OriginBoard } from "@/types/task"; // Importar OriginBoard do types/task
+import { OriginBoard } from "@/types/task"; 
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const clientTaskSchema = z.object({
   title: z.string().min(1, "O título da tarefa é obrigatório."),
@@ -36,12 +37,12 @@ const clientTaskSchema = z.object({
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
   responsible_id: z.string().nullable().optional(),
-  status: z.enum(["in_production", "in_approval", "approved", "scheduled", "published", "edit_requested"]).default("in_production"), // 'backlog' removido, padrão 'in_production'
+  status: z.enum(["in_production", "in_approval", "approved", "scheduled", "published", "edit_requested"]).default("in_production"), 
   selected_tag_ids: z.array(z.string()).optional(),
   is_completed: z.boolean().default(false),
-  image_files: z.array(z.instanceof(File)).optional(), // Novo campo para upload de múltiplas imagens
-  image_urls: z.array(z.string().url("URL de imagem inválida.")).optional(), // Para exibir imagens existentes
-  is_standard_task: z.boolean().default(false), // Novo campo
+  image_files: z.array(z.instanceof(File)).optional(), 
+  image_urls: z.array(z.string().url("URL de imagem inválida.")).optional(), 
+  is_standard_task: z.boolean().default(false), 
 });
 
 export type ClientTaskFormValues = z.infer<typeof clientTaskSchema>;
@@ -103,7 +104,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
       due_date: undefined,
       time: undefined,
       responsible_id: undefined,
-      status: "in_production", // Padrão para nova tarefa
+      status: "in_production", 
       selected_tag_ids: [],
       is_completed: false,
       image_files: undefined,
@@ -136,9 +137,8 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
 
     try {
       let clientTaskId: string;
-      let finalImageUrls: string[] = [...(values.image_urls || [])]; // Começa com URLs existentes
+      let finalImageUrls: string[] = [...(values.image_urls || [])]; 
 
-      // Upload de novas imagens
       if (values.image_files && values.image_files.length > 0) {
         for (const file of values.image_files) {
           const sanitizedFilename = sanitizeFilename(file.name);
@@ -180,7 +180,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
       let mainTaskId: string | null = null;
 
       if (initialData?.id) {
-        // Atualizar tarefa do cliente
         const { data, error } = await supabase
           .from("client_tasks")
           .update(dataToSave)
@@ -195,13 +194,12 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
         mainTaskId = data.main_task_id;
         showSuccess("Tarefa do cliente atualizada com sucesso!");
       } else {
-        // Criar nova tarefa do cliente
         const { data, error } = await supabase.from("client_tasks").insert({
           ...dataToSave,
           client_id: clientId,
           user_id: userId,
           month_year_reference: monthYearRef,
-          order_index: 0, // Será reordenado no frontend se necessário
+          order_index: 0, 
         }).select("id, main_task_id").single();
 
         if (error) throw error;
@@ -210,7 +208,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
         showSuccess("Tarefa do cliente adicionada com sucesso!");
       }
 
-      // Sincronizar com a tabela 'tasks' (dashboard principal) se for uma tarefa padrão
       if (values.is_standard_task) {
         const taskDataForMainDashboard = {
           user_id: userId,
@@ -218,19 +215,18 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           description: values.description || null,
           due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
           time: values.time || null,
-          recurrence_type: "none", // Tarefas padrão de cliente não são recorrentes no dashboard principal, são instanciadas
+          recurrence_type: "none", 
           recurrence_details: null,
           recurrence_time: values.time || null,
-          origin_board: "client_tasks" as OriginBoard, // Definir como 'client_tasks'
-          current_board: values.is_completed ? "completed" : "client_tasks" as OriginBoard, // current_board também como 'client_tasks'
+          origin_board: "client_tasks" as OriginBoard, 
+          current_board: values.is_completed ? "completed" : "client_tasks" as OriginBoard, 
           is_completed: values.is_completed,
-          is_priority: false, // Pode ser ajustado se houver lógica de prioridade
-          overdue: false, // Será atualizado pelo daily-reset
+          is_priority: false, 
+          overdue: false, 
           completed_at: values.is_completed ? new Date().toISOString() : null,
         };
 
         if (mainTaskId) {
-          // Atualizar tarefa existente no dashboard principal
           const { error: updateMainTaskError } = await supabase
             .from("tasks")
             .update(taskDataForMainDashboard)
@@ -238,7 +234,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             .eq("user_id", userId);
           if (updateMainTaskError) throw updateMainTaskError;
         } else {
-          // Criar nova tarefa no dashboard principal
           const { data: newMainTask, error: insertMainTaskError } = await supabase
             .from("tasks")
             .insert(taskDataForMainDashboard)
@@ -247,7 +242,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           if (insertMainTaskError) throw insertMainTaskError;
           mainTaskId = newMainTask.id;
 
-          // Atualizar a tarefa do cliente com o main_task_id
           await supabase
             .from("client_tasks")
             .update({ main_task_id: mainTaskId })
@@ -255,7 +249,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             .eq("user_id", userId);
         }
 
-        // Sincronizar tags para a tarefa principal
         await supabase.from("task_tags").delete().eq("task_id", mainTaskId);
         if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
           const mainTaskTagsToInsert = values.selected_tag_ids.map(tagId => ({
@@ -266,18 +259,15 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           if (mainTagInsertError) throw mainTagInsertError;
         }
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); // Invalida o board de clientes
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); 
       } else if (mainTaskId && !values.is_standard_task) {
-        // Se a tarefa era padrão e foi desmarcada, deletar do dashboard principal
         await supabase.from("task_tags").delete().eq("task_id", mainTaskId);
         await supabase.from("tasks").delete().eq("id", mainTaskId).eq("user_id", userId);
         await supabase.from("client_tasks").update({ main_task_id: null }).eq("id", clientTaskId).eq("user_id", userId);
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); // Invalida o board de clientes
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); 
       }
 
-
-      // Sincronizar tags para a tarefa do cliente
       await supabase.from("client_task_tags").delete().eq("client_task_id", clientTaskId);
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
         const clientTaskTagsToInsert = values.selected_tag_ids.map(tagId => ({
@@ -444,7 +434,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           </p>
         )}
         {existingImageUrls.length > 0 && (
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2"> {/* Ajustado para grid responsivo */}
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2"> 
             {existingImageUrls.map((url, index) => (
               <div key={index} className="relative group">
                 <img src={url} alt={`Imagem ${index + 1}`} className="w-full h-24 object-cover rounded-md" />

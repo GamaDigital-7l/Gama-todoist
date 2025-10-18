@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { PlusCircle, XCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const DAYS_OF_WEEK_OPTIONS = [
   { value: "Sunday", label: "Domingo" },
@@ -49,7 +50,7 @@ const clientTaskGenerationTemplateSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().int().min(0, "O prazo deve ser um número positivo.").nullable().optional(),
   ),
-  is_standard_task: z.boolean().default(false), // Novo campo
+  is_standard_task: z.boolean().default(false), 
 });
 
 export type ClientTaskGenerationTemplateFormValues = z.infer<typeof clientTaskGenerationTemplateSchema>;
@@ -72,14 +73,14 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
       generation_pattern: initialData.generation_pattern || [{ week: 1, day_of_week: "Monday", count: 1 }],
       is_active: initialData.is_active,
       default_due_days: initialData.default_due_days || undefined,
-      is_standard_task: initialData.is_standard_task || false, // Novo campo
+      is_standard_task: initialData.is_standard_task || false, 
     } : {
       template_name: "",
       delivery_count: 0,
       generation_pattern: [{ week: 1, day_of_week: "Monday", count: 1 }],
       is_active: true,
       default_due_days: undefined,
-      is_standard_task: false, // Novo campo
+      is_standard_task: false, 
     },
   });
 
@@ -101,7 +102,7 @@ const ClientTaskGenerationTemplateForm: React.FC<ClientTaskGenerationTemplateFor
         generation_pattern: values.generation_pattern,
         is_active: values.is_active,
         default_due_days: values.default_due_days || null,
-        is_standard_task: values.is_standard_task, // Novo campo
+        is_standard_task: values.is_standard_task, 
         updated_at: new Date().toISOString(),
       };
 

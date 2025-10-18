@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ptBR } from "date-fns/locale";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const clientSchema = z.object({
   name: z.string().min(1, "O nome do cliente é obrigatório."),
@@ -30,8 +31,8 @@ const clientSchema = z.object({
   logo_url: z.string().url("URL da logo inválida.").optional().or(z.literal("")),
   description: z.string().optional(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida. Use formato hexadecimal (ex: #RRGGBB).").default("#FFFFFF"),
-  type: z.enum(["fixed", "freela", "agency"]).default("freela"), // Novo campo
-  monthly_delivery_goal: z.preprocess( // Novo campo
+  type: z.enum(["fixed", "freela", "agency"]).default("freela"), 
+  monthly_delivery_goal: z.preprocess( 
     (val) => (val === "" ? 0 : Number(val)),
     z.number().int().min(0, "A meta deve ser um número positivo.").default(0),
   ),
@@ -55,7 +56,7 @@ const sanitizeFilename = (filename: string) => {
     .toLowerCase();
 };
 
-const BUCKET_NAME = "client-logos"; // Alterado para um novo bucket dedicado a logos de clientes
+const BUCKET_NAME = "client-logos"; 
 
 const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onClose }) => {
   const { session } = useSession();
@@ -73,8 +74,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
       logo_url: "",
       description: "",
       color: "#FFFFFF",
-      type: "freela", // Default para novo cliente
-      monthly_delivery_goal: 0, // Default para novo cliente
+      type: "freela", 
+      monthly_delivery_goal: 0, 
     },
   });
 
@@ -90,11 +91,10 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
       if (values.logo_file) {
         const file = values.logo_file;
         const sanitizedFilename = sanitizeFilename(file.name);
-        // Caminho de armazenamento atualizado para usar 'client-avatars'
         const filePath = `client-avatars/${userId}/${Date.now()}-${sanitizedFilename}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(BUCKET_NAME) // Usando o novo BUCKET_NAME
+          .from(BUCKET_NAME) 
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: false,
@@ -116,8 +116,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         logo_url: finalLogoUrl,
         description: values.description || null,
         color: values.color,
-        type: values.type, // Novo campo
-        monthly_delivery_goal: values.monthly_delivery_goal, // Novo campo
+        type: values.type, 
+        monthly_delivery_goal: values.monthly_delivery_goal, 
         updated_at: new Date().toISOString(),
       };
 

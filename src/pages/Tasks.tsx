@@ -21,6 +21,7 @@ import TaskItem from "@/components/TaskItem";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
 import TemplateTaskItem from "@/components/TemplateTaskItem";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -128,7 +129,6 @@ const Tasks: React.FC = () => {
 
       if (updateError) throw updateError;
 
-      // Adicionar pontos
       const { data: profileData, error: fetchProfileError } = await supabase
         .from("profiles")
         .select("points")
@@ -140,7 +140,7 @@ const Tasks: React.FC = () => {
         currentPoints = profileData.points || 0;
       }
 
-      const newPoints = currentPoints + 10; // Pontos por tarefa
+      const newPoints = currentPoints + 10; 
       const { error: pointsError } = await supabase
         .from("profiles")
         .update({ points: newPoints, updated_at: new Date().toISOString() })
@@ -162,17 +162,16 @@ const Tasks: React.FC = () => {
     const taskIdToComplete = searchParams.get('complete_task_id');
     if (taskIdToComplete && userId) {
       completeTaskMutation.mutate(taskIdToComplete);
-      // Remover o parâmetro da URL para evitar que a ação seja repetida
       searchParams.delete('complete_task_id');
       navigate({ search: searchParams.toString() }, { replace: true });
     }
   }, [searchParams, userId, navigate, completeTaskMutation]);
 
   const handleTaskUpdated = () => {
-    refetch(); // Refetch all tasks for this page
-    queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] }); // Invalida todas as queries do dashboard
-    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] }); // Invalida a query de todas as tarefas
-    queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
+    refetch(); 
+    queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] }); 
+    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] }); 
+    queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); 
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -192,7 +191,7 @@ const Tasks: React.FC = () => {
 
         if (error) throw error;
         showSuccess("Tarefa deletada com sucesso!");
-        handleTaskUpdated(); // Chama a função de atualização
+        handleTaskUpdated(); 
       } catch (err: any) {
         showError("Erro ao deletar tarefa: " + err.message);
         console.error("Erro ao deletar tarefa:", err);
@@ -216,7 +215,6 @@ const Tasks: React.FC = () => {
       return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
     };
 
-    // Filtra tarefas que não estão concluídas e não estão na lixeira
     if (task.is_completed || task.current_board === "completed" || task.current_board === "overdue") return false;
 
     if (filterType === "daily") {
@@ -327,7 +325,7 @@ const Tasks: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -388,7 +386,7 @@ const Tasks: React.FC = () => {
                           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+                      <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
                         <DialogHeader>
                           <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
                           <DialogDescription className="text-muted-foreground">

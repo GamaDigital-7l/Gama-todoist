@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { showError } from '@/utils/toast';
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const editReasonSchema = z.object({
   reason: z.string().min(10, "O motivo da edição deve ter pelo menos 10 caracteres."),
@@ -38,7 +39,7 @@ const EditReasonDialog: React.FC<EditReasonDialogProps> = ({ isOpen, onClose, on
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
         <DialogHeader>
           <DialogTitle className="text-foreground">Solicitar Edição</DialogTitle>
           <DialogDescription className="text-muted-foreground">

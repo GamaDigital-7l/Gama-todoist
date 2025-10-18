@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/integrations/supabase/auth";
 import { ptBR } from "date-fns/locale";
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 interface Book {
   id: string;
@@ -160,7 +161,7 @@ const Books: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Livro
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
             <DialogHeader>
               <DialogTitle className="text-foreground">{editingBook ? "Editar Livro" : "Adicionar Novo Livro"}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
