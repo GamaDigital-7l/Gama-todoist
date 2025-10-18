@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -428,11 +428,11 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
+    <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6"> {/* Reduzido o gap para 6 */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3"> {/* Ajustado gap para 3 */}
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end"> {/* Adicionado flex-wrap e justify-center/end */}
-          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto"> {/* Adicionado w-full sm:w-auto */}
+          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Popover>
@@ -440,7 +440,7 @@ const Dashboard: React.FC = () => {
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                  "w-32 justify-center text-center font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0", /* Ajustado w-32 e justify-center */
                   !selectedDate && "text-muted-foreground"
                 )}
               >
@@ -462,12 +462,12 @@ const Dashboard: React.FC = () => {
               />
             </PopoverContent>
           </Popover>
-          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"> {/* Adicionado w-full sm:w-auto e flex-shrink-0 */}
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
               </Button>
             </DialogTrigger>
@@ -498,7 +498,7 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Simplificado o grid para melhor responsividade */}
         <TaskListBoard
           title="Hoje Prioridade"
           tasks={todayPriorityTasks || []}
@@ -530,12 +530,12 @@ const Dashboard: React.FC = () => {
           selectedDate={selectedDate}
         />
         <TaskListBoard
-          title="Tarefas de Clientes" // Novo quadro para tarefas de clientes
+          title="Tarefas de Clientes" {/* Novo quadro para tarefas de clientes */}
           tasks={clientDashboardTasks || []}
           isLoading={isLoadingClientDashboardTasks}
           error={errorClientDashboardTasks}
           refetchTasks={handleTaskAdded}
-          showAddButton={false} // Tarefas de clientes são adicionadas via Kanban do cliente
+          showAddButton={false} {/* Tarefas de clientes são adicionadas via Kanban do cliente */}
           originBoard="client_tasks"
           selectedDate={selectedDate}
         />
@@ -592,7 +592,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 mt-8"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Simplificado o grid para melhor responsividade */}
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
