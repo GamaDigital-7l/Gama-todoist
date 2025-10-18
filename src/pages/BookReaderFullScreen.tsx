@@ -119,9 +119,11 @@ const BookReaderFullScreen: React.FC = () => {
           const newInitialScale = containerWidth / viewport.width;
           
           if (initialScale !== newInitialScale) {
-            const currentZoomFactor = scale / initialScale;
-            setInitialScale(newInitialScale);
-            setScale(newInitialScale * currentZoomFactor);
+            startTransition(() => { // Wrap these state updates
+              const currentZoomFactor = scale / initialScale;
+              setInitialScale(newInitialScale);
+              setScale(newInitialScale * currentZoomFactor);
+            });
           }
         } catch (err) {
           console.error("Erro ao ajustar escala no redimensionamento:", err);
@@ -129,7 +131,7 @@ const BookReaderFullScreen: React.FC = () => {
       };
       adjustScale();
     }
-  }, [containerWidth, pdfDocument]);
+  }, [containerWidth, pdfDocument, initialScale, scale]); // Added initialScale and scale to dependencies
 
   const updateCurrentPageInDb = async (newPage: number) => {
     if (!id) return;
