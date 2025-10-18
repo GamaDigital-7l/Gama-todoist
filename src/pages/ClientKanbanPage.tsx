@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useTransition } from "react"; // Adicionado useTransition
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
@@ -90,6 +90,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
+  const [isPending, startTransition] = useTransition(); // Inicializar useTransition
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ClientTask | undefined>(undefined);
@@ -275,7 +276,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
       <ClientKanbanHeader
         client={client}
         currentMonth={currentMonth}
-        setCurrentMonth={setCurrentMonth}
+        setCurrentMonth={(date) => startTransition(() => setCurrentMonth(date))} // Envolvido com startTransition
         remainingTasks={remainingTasksCount}
         onGenerateTasks={handleGenerateTasksFromTemplates}
       />
@@ -320,7 +321,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "pending", title: "Pendente", color: "bg-gray-600" }}
               tasks={getTasksByStatus.pending}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
@@ -347,7 +348,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "in_progress", title: "Em Progresso", color: "bg-blue-600" }}
               tasks={getTasksByStatus.in_progress}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
@@ -374,7 +375,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "under_review", title: "Em Revisão", color: "bg-yellow-600" }}
               tasks={getTasksByStatus.under_review}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
@@ -401,7 +402,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "approved", title: "Aprovada", color: "bg-green-600" }}
               tasks={getTasksByStatus.approved}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
@@ -428,7 +429,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "rejected", title: "Rejeitada", color: "bg-red-600" }}
               tasks={getTasksByStatus.rejected}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
@@ -455,7 +456,7 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             <ClientKanbanColumn
               column={{ status: "completed", title: "Concluída", color: "bg-purple-600" }}
               tasks={getTasksByStatus.completed}
-              isLoadingTasks={isLoading}
+              isLoadingTasks={isLoading || isPending}
               tasksError={error}
               handleAddTask={(status) => {
                 setEditingTask(undefined);
