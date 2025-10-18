@@ -223,6 +223,23 @@ const Planner: React.FC = () => {
     setIsMeetingFormOpen(true);
   };
 
+  const handleEditGoogleEvent = (event: GoogleCalendarEvent) => {
+    const editableEvent: MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null } = {
+      id: event.id, // Usar o ID do evento local (tabela 'events')
+      google_event_id: event.google_event_id, // ID do evento no Google Calendar
+      title: event.title,
+      description: event.description || undefined,
+      date: parseISO(event.start_time), // Usar a data de início
+      start_time: format(parseISO(event.start_time), "HH:mm"),
+      end_time: event.end_time ? format(parseISO(event.end_time), "HH:mm") : undefined,
+      location: event.location || undefined,
+      sendToGoogleCalendar: true, // Sempre true para eventos do Google
+      google_html_link: event.html_link,
+    };
+    setEditingMeeting(editableEvent);
+    setIsMeetingFormOpen(true);
+  };
+
   const handleDeleteMeeting = async (meetingId: string) => {
     if (!userId) {
       showError("Usuário não autenticado.");
@@ -246,6 +263,61 @@ const Planner: React.FC = () => {
         console.error("Erro ao deletar reunião:", err);
       }
     }
+  };
+
+  const handleDeleteGoogleEvent = async (eventId: string, googleEventId: string) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    if (!window.confirm("Tem certeza que deseja deletar este evento do Google Calendar?")) {
+      return;
+    }
+
+    try {
+      if (!session?.access_token) {
+        showError("Sessão não encontrada. Faça login novamente.");
+        return;
+      }
+
+      // 1. Deletar do Google Calendar via Edge Function
+      const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+        body: { googleEventId: googleEventId },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (googleDeleteError) {
+        if (googleDeleteError.status === 404) {
+          console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+        } else {
+          throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+        }
+      }
+      showSuccess("Evento removido do Google Calendar!");
+
+      // 2. Deletar do banco de dados local (tabela 'events')
+      const { error: localDeleteError } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", eventId)
+        .eq("user_id", userId);
+
+      if (localDeleteError) throw localDeleteError;
+
+      showSuccess("Evento deletado localmente com sucesso!");
+      refetchGoogleEvents(); // Refetch para atualizar a lista de eventos do Google
+    } catch (err: any) {
+      showError("Erro ao deletar evento do Google Calendar: " + err.message);
+      console.error("Erro ao deletar evento do Google Calendar:", err);
+    }
+  };
+
+  const handleTaskSaved = () => {
+    refetchTasks();
+    queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] });
+    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
   };
 
   const handleEditTask = (task: Task) => {
@@ -319,7 +391,8 @@ const Planner: React.FC = () => {
     })),
     ...(googleEvents || []).map(ge => ({
       type: 'google_event',
-      id: ge.id,
+      id: ge.id, // ID do evento na tabela 'events'
+      google_event_id: ge.google_event_id, // ID do evento no Google Calendar
       title: ge.title,
       description: ge.description,
       start_time: parseISO(ge.start_time),
@@ -423,9 +496,9 @@ const Planner: React.FC = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-foreground">{editingMeeting ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
+                    <DialogTitle className="text-foreground">{editingMeeting?.id ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
-                      {editingMeeting ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
+                      {editingMeeting?.id ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
                     </DialogDescription>
                   </DialogHeader>
                   <MeetingForm
@@ -462,18 +535,31 @@ const Planner: React.FC = () => {
                         Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
                       </a>
                     )}
-                    {event.type === 'meeting' && (
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Editar Reunião</span>
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Deletar Reunião</span>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {event.type === 'meeting' ? (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar Reunião</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Deletar Reunião</span>
+                          </Button>
+                        </>
+                      ) : ( // Evento do Google Calendar
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditGoogleEvent(event as GoogleCalendarEvent)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar Evento do Google</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteGoogleEvent(event.id, event.google_event_id!)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Deletar Evento do Google</span>
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
