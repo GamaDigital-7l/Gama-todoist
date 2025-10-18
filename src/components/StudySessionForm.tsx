@@ -151,7 +151,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("session_date") ? (
-                format(form.watch("session_date")!, "PPP")
+                format(form.watch("session_date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -163,6 +163,7 @@ const StudySessionForm: React.FC<StudySessionFormProps> = ({ initialData, onSess
               selected={form.watch("session_date") || undefined}
               onSelect={(date) => form.setValue("session_date", date || new Date())}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>

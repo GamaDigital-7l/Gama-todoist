@@ -254,15 +254,16 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           .eq("user_id", userId)
           .select("id")
           .single();
+
         if (error) throw error;
         noteId = data.id;
         showSuccess("Nota atualizada com sucesso!");
       } else { // Se initialData.id não existe, é uma nova nota
-        const { data, error } = await supabase
-          .from("notes")
-          .insert({ ...dataToSave, user_id: userId })
-          .select("id")
-          .single();
+        const { data, error } = await supabase.from("notes").insert({
+          ...dataToSave,
+          user_id: userId,
+        }).select("id").single();
+
         if (error) throw error;
         noteId = data.id;
         showSuccess("Nota adicionada com sucesso!");

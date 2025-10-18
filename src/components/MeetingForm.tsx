@@ -259,7 +259,7 @@ const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, 
           </p>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Ajustado para grid responsivo */}
         <div>
           <Label htmlFor="start_time" className="text-foreground">Início</Label>
           <TimePicker

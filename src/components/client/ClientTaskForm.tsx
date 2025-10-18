@@ -445,7 +445,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           </p>
         )}
         {existingImageUrls.length > 0 && (
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2"> {/* Ajustado para grid responsivo */}
             {existingImageUrls.map((url, index) => (
               <div key={index} className="relative group">
                 <img src={url} alt={`Imagem ${index + 1}`} className="w-full h-24 object-cover rounded-md" />
