@@ -14,7 +14,7 @@ import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMon
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "@/components/client/ClientTaskForm";
 import ClientTaskItem from "@/components/client/ClientTaskItem";
 import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
@@ -667,11 +667,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 p-1 flex-nowrap">
+          <div className="inline-flex h-full space-x-4 flex-nowrap"> {/* Removido 'p-1' */}
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full"
+                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full" {/* Largura fixa de 280px */}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >
