@@ -34,7 +34,7 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
       client_task_tags(
         tags(id, name, color)
       ),
-      subtasks:client_tasks!main_task_id(
+      subtasks:client_tasks!client_tasks_main_task_id_fkey(
         id, title, description, due_date, time, status, is_completed, created_at, updated_at, completed_at,
         is_standard_task, main_task_id, public_approval_enabled, public_approval_link_id,
         client_task_tags(
