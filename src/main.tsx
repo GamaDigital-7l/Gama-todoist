@@ -11,7 +11,11 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then(registration => {
-        // console.log('Service Worker registrado com sucesso:', registration); // Removido console.log
+        console.log('Service Worker registrado com sucesso:', registration);
+        // Enviar mensagem para o SW para limpar o badge ao iniciar o app
+        if ('setAppBadge' in navigator) {
+          registration.active?.postMessage({ action: 'clearBadge' });
+        }
       })
       .catch(error => {
         console.error('Falha no registro do Service Worker:', error);

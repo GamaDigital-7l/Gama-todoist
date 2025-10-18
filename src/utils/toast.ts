@@ -12,6 +12,10 @@ export const showLoading = (message: string) => {
   return toast.loading(message);
 };
 
+export const showInfo = (message: string, options?: any) => { // Adicionado showInfo
+  toast.info(message, options);
+};
+
 export const dismissToast = (toastId: string) => {
   toast.dismiss(toastId);
 };

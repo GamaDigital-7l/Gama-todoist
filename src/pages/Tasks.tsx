@@ -21,7 +21,7 @@ import TaskItem from "@/components/TaskItem";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
 import TemplateTaskItem from "@/components/TemplateTaskItem";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase

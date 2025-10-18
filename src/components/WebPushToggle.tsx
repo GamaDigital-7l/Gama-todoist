@@ -78,7 +78,7 @@ const WebPushToggle: React.FC = () => {
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     } catch (err) {
-      // console.error("Erro ao verificar status da inscrição:", err); // Removido console.error
+      console.error("Erro ao verificar status da inscrição:", err);
       setIsSubscribed(false);
     } finally {
       setIsLoading(false);
@@ -145,7 +145,7 @@ const WebPushToggle: React.FC = () => {
       setIsSubscribed(true);
       await updateWebPushSetting(true); // Habilitar no DB
     } catch (err: any) {
-      // console.error('Erro ao inscrever o usuário para notificações push:', err); // Removido console.error
+      console.error('Erro ao inscrever o usuário para notificações push:', err);
       showError('Erro ao configurar notificações push: ' + err.message);
       setIsSubscribed(false);
       await updateWebPushSetting(false); // Desabilitar no DB em caso de erro
@@ -178,7 +178,7 @@ const WebPushToggle: React.FC = () => {
       setIsSubscribed(false);
       await updateWebPushSetting(false); // Desabilitar no DB
     } catch (err: any) {
-      // console.error('Erro ao desinscrever o usuário:', err); // Removido console.error
+      console.error('Erro ao desinscrever o usuário:', err);
       showError('Erro ao desativar notificações push: ' + err.message);
     } finally {
       setIsLoading(false);

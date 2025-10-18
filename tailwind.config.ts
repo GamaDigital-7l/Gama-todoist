@@ -125,6 +125,13 @@ export default {
         "glow-md": "0 0 15px rgba(95, 119, 255, 0.7)", // Médio glow
         "glow-lg": "0 0 25px rgba(95, 119, 255, 0.9)", // Grande glow
       },
+      // Adicionando safe areas como valores de espaçamento
+      spacing: {
+        'safe-top': 'var(--sat)',
+        'safe-bottom': 'var(--sab)',
+        'safe-left': 'var(--sal)',
+        'safe-right': 'var(--sar)',
+      },
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],

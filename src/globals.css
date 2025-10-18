@@ -45,6 +45,12 @@
     --status-today: #4CAF50;     /* Verde para hoje */
     --status-completed: rgba(169, 169, 184, 0.2); /* Cinza translúcido */
     --status-recurring: #9370DB; /* Lilás */
+
+    /* Variáveis para safe areas */
+    --sab: env(safe-area-inset-bottom);
+    --sat: env(safe-area-inset-top);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
   }
 
   .dark {
@@ -64,7 +70,11 @@
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* overflow-x: hidden; REMOVIDO para permitir rolagem horizontal */
+    overflow-x: hidden; /* Garantir que não haja overflow lateral */
+    padding-top: var(--sat);
+    padding-bottom: var(--sab);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
   }
   /* Para navegadores Webkit (Chrome, Safari) */
   body::-webkit-scrollbar {
