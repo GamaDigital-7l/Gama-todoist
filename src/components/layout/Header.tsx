@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Bell, Plus, Download } from "lucide-react"; // Adicionado ícone Download
+import { Menu, Bell, Plus, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background px-4 lg:px-6 shadow-sm frosted-glass">
+    <header className="fixed top-0 left-0 right-0 z-40 flex h-[calc(4rem+var(--sat))] items-center gap-4 border-b border-border bg-background px-4 lg:px-6 shadow-sm frosted-glass pt-[var(--sat)]">
       <Sheet>
         <SheetTrigger asChild>
           <Button
