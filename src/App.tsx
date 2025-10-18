@@ -24,6 +24,7 @@ import PublicApprovalPage from "./pages/PublicApprovalPage";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Finance from "./pages/Finance"; // Importar a nova página Finance
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
 import { ThemeProvider } from "./components/ThemeProvider";
 import PushNotificationManager from "./components/PushNotificationManager";
@@ -51,7 +52,7 @@ const LazyPublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
 const LazyResults = lazy(() => import("./pages/Results"));
 const LazyNotFound = lazy(() => import("./pages/NotFound"));
 const LazyLogin = lazy(() => import("./pages/Login"));
-
+const LazyFinance = lazy(() => import("./pages/Finance")); // Lazy load para Finance
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -228,7 +229,7 @@ const App = () => {
             <SessionContextProvider>
               <PWAHandler>
                 {(isOnline) => (
-                  <AnimatePresence> {/* Removido mode="wait" */}
+                  <AnimatePresence>
                     <Routes location={location} key={location.pathname}>
                       <Route path="/login" element={
                         <motion.div
@@ -416,6 +417,16 @@ const App = () => {
                             transition={{ duration: 0.3 }}
                           >
                             <LazyResults />
+                          </motion.div>
+                        } />
+                        <Route path="/finance" element={
+                          <motion.div
+                            initial={{ opacity: 0, x: 100 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -100 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <LazyFinance />
                           </motion.div>
                         } />
                       </Route>

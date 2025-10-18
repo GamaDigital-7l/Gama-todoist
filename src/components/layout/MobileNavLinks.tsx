@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, ListTodo, Target, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, CalendarDays, Users, BarChart2, LogOut } from "lucide-react";
+import { Home, ListTodo, Target, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, CalendarDays, Users, BarChart2, LogOut, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -94,6 +94,15 @@ const MobileNavLinks: React.FC<MobileNavLinksProps> = ({ onLinkClick, onLogout }
         onClick={onLinkClick}
       >
         <Users className="h-5 w-5" /> Clientes
+      </NavLink>
+      <NavLink
+        to="/finance"
+        className={({ isActive }) =>
+          cn("flex items-center gap-4 px-2.5 py-2 rounded-lg", isActive ? "text-sidebar-primary bg-sidebar-accent" : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent")
+        }
+        onClick={onLinkClick}
+      >
+        <Wallet className="h-5 w-5" /> Financeiro
       </NavLink>
       <NavLink
         to="/results"

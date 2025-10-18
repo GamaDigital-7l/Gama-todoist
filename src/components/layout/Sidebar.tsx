@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ListTodo, Goal, Book, Brain, Heart, NotebookPen, CalendarDays, Users, MessageSquare, Settings, BarChart3, Download } from "lucide-react"; // Adicionado ícone Download
+import { Home, ListTodo, Goal, Book, Brain, Heart, NotebookPen, CalendarDays, Users, MessageSquare, Settings, BarChart3, Download, Wallet, Menu } from "lucide-react"; // Adicionado ícone Wallet e Menu
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: "Planner", path: "/planner", icon: CalendarDays },
     { name: "Metas", path: "/goals", icon: Goal },
     { name: "Clientes", path: "/clients", icon: Users },
+    { name: "Financeiro", path: "/finance", icon: Wallet }, // Novo item de navegação
     { name: "Estudo", path: "/study", icon: Brain },
     { name: "Saúde", path: "/health", icon: Heart },
     { name: "Livros", path: "/books", icon: Book },
