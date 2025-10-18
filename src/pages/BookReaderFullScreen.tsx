@@ -98,8 +98,10 @@ const BookReaderFullScreen: React.FC = () => {
           const viewport = page.getViewport({ scale: 1 });
           const calculatedScale = readerRef.current.clientWidth / viewport.width;
           
-          setInitialScale(calculatedScale);
-          setScale(calculatedScale);
+          startTransition(() => { // Wrap these state updates as well
+            setInitialScale(calculatedScale);
+            setScale(calculatedScale);
+          });
 
         } catch (err) {
           console.error("Erro ao inicializar leitor (página/escala):", err);
