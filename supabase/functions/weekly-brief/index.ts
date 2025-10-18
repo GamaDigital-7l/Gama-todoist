@@ -117,17 +117,17 @@ serve(async (req) => {
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
     const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
 
-    if (webpushEnabled && (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY)) {
-      console.error("VAPID keys not configured in Supabase secrets for Web Push notifications.");
-      // Não lançar erro fatal, apenas desabilitar webpush para este usuário
-      webpushEnabled = false;
-    }
-    if (webpushEnabled) {
-      webpush.setVapidDetails(
-        'mailto: <gustavogama099@gmail.com>',
-        VAPID_PUBLIC_KEY!,
-        VAPID_PRIVATE_KEY!
-      );
+    if (webpushEnabled) { // Only set VAPID details if webpush is enabled
+      if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
+        console.error("VAPID keys not configured in Supabase secrets for Web Push notifications.");
+        webpushEnabled = false; // Disable webpush for this user if keys are missing
+      } else {
+        webpush.setVapidDetails(
+          'mailto: <gustavogama099@gmail.com>',
+          VAPID_PUBLIC_KEY!,
+          VAPID_PRIVATE_KEY!
+        );
+      }
     }
 
     const nowUtc = new Date();

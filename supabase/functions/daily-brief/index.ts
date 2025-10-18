@@ -105,8 +105,6 @@ serve(async (req) => {
     let webpushEnabled = settings?.webpush_enabled || false;
     const telegramBotToken = settings?.telegram_bot_token;
     const telegramChatId = settings?.telegram_chat_id;
-    // const dailyBriefMorningTime = settings?.daily_brief_morning_time || '08:00'; // Não usado diretamente aqui
-    // const dailyBriefEveningTime = settings?.daily_brief_evening_time || '18:00'; // Não usado diretamente aqui
 
     if (!telegramEnabled && !webpushEnabled) {
       return new Response(
@@ -119,17 +117,17 @@ serve(async (req) => {
     const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
     const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
 
-    if (webpushEnabled && (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY)) {
-      console.error("VAPID keys not configured in Supabase secrets for Web Push notifications.");
-      // Não lançar erro fatal, apenas desabilitar webpush para este usuário
-      webpushEnabled = false;
-    }
-    if (webpushEnabled) {
-      webpush.setVapidDetails(
-        'mailto: <gustavogama099@gmail.com>',
-        VAPID_PUBLIC_KEY!,
-        VAPID_PRIVATE_KEY!
-      );
+    if (webpushEnabled) { // Only set VAPID details if webpush is enabled
+      if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
+        console.error("VAPID keys not configured in Supabase secrets for Web Push notifications.");
+        webpushEnabled = false; // Disable webpush for this user if keys are missing
+      } else {
+        webpush.setVapidDetails(
+          'mailto: <gustavogama099@gmail.com>',
+          VAPID_PUBLIC_KEY!,
+          VAPID_PRIVATE_KEY!
+        );
+      }
     }
 
     // Obter a data e hora atual no fuso horário do usuário
@@ -150,7 +148,7 @@ serve(async (req) => {
         .from("tasks")
         .select("id, title, description, due_date, time, recurrence_type, recurrence_details, is_completed, last_successful_completion_date, is_priority, current_board")
         .eq("user_id", userId)
-        .or(`due_date.eq.${todayInUserTimezone},recurrence_type.neq.none`);
+        .or(`due_date.eq.${todayInUserTimezone},recurrence_type.neq.none`); // Filter by due_date OR recurring
 
       if (tasksError) {
         console.error("Erro ao buscar tarefas para o brief:", tasksError);

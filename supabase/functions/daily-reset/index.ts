@@ -254,9 +254,9 @@ serve(async (req) => {
         for (const client of clients || []) {
           console.log(`[User ${userId}, Client ${client.id}] Gerando tarefas para o mês atual (${currentMonthYearRef}).`);
           const { error: invokeGenerateError } = await supabase.functions.invoke('generate-client-tasks', {
-            body: { clientId: client.id, monthYearRef: currentMonthYearRef },
+            body: { clientId: client.id, monthYearRef: currentMonthYearRef, userId: userId }, // Passar userId no corpo
             headers: {
-              'Authorization': `Bearer ${userId}`, // Usar o user_id como token para a Edge Function
+              // Remover Authorization header, pois userId está no body
             },
           });
           if (invokeGenerateError) {

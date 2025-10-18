@@ -24,23 +24,29 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
-    }
-    const token = authHeader.replace('Bearer ', '');
-    const { data: userAuth, error: authError } = await supabaseServiceRole.auth.getUser(token);
+    let userId: string;
+    const { clientId, monthYearRef, userId: bodyUserId } = await req.json(); // monthYearRef: "yyyy-MM"
 
-    if (authError || !userAuth.user) {
-      console.error("Erro de autenticação:", authError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized: Invalid or missing token." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    const userId = userAuth.user.id;
+    if (bodyUserId) {
+      userId = bodyUserId;
+    } else {
+      // Se não houver userId no corpo, tentar autenticar via cabeçalho (chamada do frontend)
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+      }
+      const token = authHeader.replace('Bearer ', '');
+      const { data: userAuth, error: authError } = await supabaseServiceRole.auth.getUser(token);
 
-    const { clientId, monthYearRef } = await req.json(); // monthYearRef: "yyyy-MM"
+      if (authError || !userAuth.user) {
+        console.error("Erro de autenticação:", authError);
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Invalid or missing token." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      userId = userAuth.user.id;
+    }
 
     if (!clientId || !monthYearRef) {
       return new Response(
