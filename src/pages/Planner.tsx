@@ -201,6 +201,7 @@ const Planner: React.FC = () => {
   const handleMeetingSaved = () => {
     refetchMeetings();
     refetchFutureMeetings(); // Refetch future meetings after a meeting is saved
+    refetchGoogleEvents(); // Refetch Google events to ensure UI is up-to-date
     setIsMeetingFormOpen(false); // Fechar o formulário após salvar
     setEditingMeeting(undefined); // Resetar o estado de edição
   };
@@ -239,6 +240,7 @@ const Planner: React.FC = () => {
         showSuccess("Reunião deletada com sucesso!");
         refetchMeetings();
         refetchFutureMeetings();
+        refetchGoogleEvents(); // Refetch Google events to ensure UI is up-to-date
       } catch (err: any) {
         showError("Erro ao deletar reunião: " + err.message);
         console.error("Erro ao deletar reunião:", err);

@@ -16,9 +16,10 @@ import { ptBR } from "date-fns/locale";
 interface MeetingItemProps {
   meeting: Meeting;
   refetchMeetings: () => void;
+  refetchGoogleEvents: () => void; // Adicionado refetchGoogleEvents
 }
 
-const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) => {
+const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings, refetchGoogleEvents }) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
 
@@ -29,9 +30,38 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
     mutationFn: async (meetingId: string) => {
       if (!session?.user?.id) {
         showError("Usuário não autenticado.");
-        return;
+        throw new Error("Usuário não autenticado.");
       }
-      // TODO: Adicionar lógica para deletar do Google Calendar se google_event_id existir
+
+      // Se a reunião tem um google_event_id, tentar deletar do Google Calendar primeiro
+      if (meeting.google_event_id) {
+        try {
+          const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+            body: { googleEventId: meeting.google_event_id },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleDeleteError) {
+            // Se o erro for 404 (Not Found), significa que o evento já não existe no Google Calendar,
+            // então podemos prosseguir com a exclusão local.
+            if (googleDeleteError.status === 404) {
+              console.warn(`Evento Google Calendar ${meeting.google_event_id} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+            } else {
+              throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+            }
+          }
+          showSuccess("Evento removido do Google Calendar!");
+        } catch (err: any) {
+          showError("Erro ao deletar evento do Google Calendar: " + err.message);
+          console.error("Erro ao deletar evento do Google Calendar:", err);
+          // Decida se você quer parar a exclusão aqui ou continuar com a exclusão local
+          // Por enquanto, vamos continuar para garantir que o evento seja removido do app
+        }
+      }
+
+      // Deletar a reunião do Supabase
       const { error } = await supabase
         .from("meetings")
         .delete()
@@ -43,8 +73,10 @@ const MeetingItem: React.FC<MeetingItemProps> = ({ meeting, refetchMeetings }) =
     onSuccess: () => {
       showSuccess("Reunião deletada com sucesso!");
       refetchMeetings();
+      refetchGoogleEvents(); // Refetch eventos do Google para atualizar o Planner
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       queryClient.invalidateQueries({ queryKey: ["futureMeetings"] });
+      queryClient.invalidateQueries({ queryKey: ["googleEvents"] }); // Invalida a query de eventos do Google
     },
     onError: (err: any) => {
       showError("Erro ao deletar reunião: " + err.message);
