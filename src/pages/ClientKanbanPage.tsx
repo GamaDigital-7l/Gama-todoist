@@ -14,7 +14,7 @@ import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMon
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "@/components/client/ClientTaskForm";
 import ClientTaskItem from "@/components/client/ClientTaskItem";
 import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
@@ -638,7 +638,7 @@ const ClientKanbanPage: React.FC = () => {
           >
             <CarouselContent className="-ml-4">
               {KANBAN_COLUMNS.map((column) => (
-                <CarouselItem key={column.status} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                <CarouselItem key={column.status} className="pl-4 basis-full"> {/* Ajustado para basis-full */}
                   <Card
                     className="flex flex-col h-full bg-card border border-border rounded-xl shadow-md frosted-glass"
                     onDragOver={handleDragOver}
@@ -684,7 +684,7 @@ const ClientKanbanPage: React.FC = () => {
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
+                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >

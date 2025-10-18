@@ -318,7 +318,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}> {/* Link para o Dashboard do Cliente */}
+                <Link key={client.id} to={`/clients/${client.id}`} className="block"> {/* Removido onClick do Link */}
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -335,7 +335,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
+                <Link key={client.id} to={`/clients/${client.id}`} className="block">
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -352,7 +352,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
+                <Link key={client.id} to={`/clients/${client.id}`} className="block">
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}
@@ -369,7 +369,7 @@ const Clients: React.FC = () => {
           {filteredClients && filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredClients.map((client) => (
-                <Link key={client.id} to={`/clients/${client.id}`} onClick={(e) => e.stopPropagation()}>
+                <Link key={client.id} to={`/clients/${client.id}`} className="block">
                   <ClientCard
                     client={client}
                     onEdit={handleEditClient}

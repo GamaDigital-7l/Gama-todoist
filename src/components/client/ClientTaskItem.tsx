@@ -17,6 +17,7 @@ import FullScreenImageViewer from "./FullScreenImageViewer";
 import EditReasonDialog from "./EditReasonDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "./ClientTaskForm";
+import { OriginBoard } from "@/types/task"; // Importar OriginBoard
 
 interface ClientTaskItemProps {
   task: ClientTask;
@@ -200,7 +201,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
               id={`client-task-${task.id}`}
               checked={task.is_completed}
               onCheckedChange={(checked) => updateTaskStatusMutation.mutate({ taskId: task.id, newStatus: checked ? 'published' : 'backlog' })}
-              className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
               disabled={task.status === 'published'}
             />
             <label
@@ -276,11 +277,11 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             ))}
           </div>
         )}
-        <div className="flex gap-2 mt-3">
+        <div className="flex flex-col sm:flex-row gap-2 mt-3"> {/* Ajustado para flex-col em mobile, flex-row em sm+ */}
           <Button
             onClick={handleApproveTask}
             disabled={task.status === 'approved' || task.status === 'published'}
-            className="flex-1 bg-green-600 text-white hover:bg-green-700"
+            className="w-full bg-green-600 text-white hover:bg-green-700"
           >
             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
           </Button>
@@ -288,7 +289,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             onClick={() => setIsEditReasonDialogOpen(true)}
             disabled={task.status === 'approved' || task.status === 'published'}
             variant="outline"
-            className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500/10"
+            className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10"
           >
             <Edit className="mr-2 h-4 w-4" /> Editar
           </Button>
