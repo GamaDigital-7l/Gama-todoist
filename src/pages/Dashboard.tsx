@@ -449,13 +449,13 @@ const Dashboard: React.FC = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => setSelectedDate(date || new Date())}
-                initialFocus
-                locale={ptBR}
-              />
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => setSelectedDate(date || new Date())}
+              initialFocus
+              locale={ptBR}
+            />
             </PopoverContent>
           </Popover>
           <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">

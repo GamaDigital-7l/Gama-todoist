@@ -2,328 +2,282 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, Edit, XCircle, CalendarDays, Clock, User } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CheckCircle2, XCircle, Loader2, CalendarDays, Clock, Info, Link as LinkIcon } from "lucide-react";
 import { Client, ClientTask, PublicApprovalLink, ClientTaskStatus } from "@/types/client"; // Importar ClientTaskStatus
 import { format, parseISO, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import FullScreenImageViewer from "@/components/client/FullScreenImageViewer";
-import EditReasonDialog from "@/components/client/EditReasonDialog";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { supabaseUrl } from "@/integrations/supabase/client"; // Importar supabaseUrl
 
-interface PublicApprovalPageProps {
-  // Não recebe props, usa useParams
-}
+interface PublicApprovalPageProps {}
 
-const fetchApprovalData = async (uniqueId: string): Promise<{ client: Client; tasks: ClientTask[]; approvalLink: PublicApprovalLink } | null> => {
-  // 1. Buscar o link de aprovação
-  const { data: approvalLink, error: fetchLinkError } = await supabase
-    .from('public_approval_links')
-    .select('*')
-    .eq('unique_id', uniqueId)
-    .single();
-
-  if (fetchLinkError || !approvalLink) {
-    throw new Error("Link de aprovação inválido ou não encontrado.");
-  }
-
-  if (new Date() > new Date(approvalLink.expires_at)) {
-    throw new Error("Este link de aprovação expirou.");
-  }
-
-  // 2. Buscar o cliente
-  const { data: client, error: fetchClientError } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('id', approvalLink.client_id)
-    .eq('user_id', approvalLink.user_id)
-    .single();
-
-  if (fetchClientError || !client) {
-    throw new Error("Cliente associado ao link não encontrado.");
-  }
-
-  // 3. Buscar as tarefas do cliente para o mês de referência que estão 'in_approval' ou 'edit_requested'
-  const { data: tasks, error: fetchTasksError } = await supabase
-    .from('client_tasks')
+const fetchPublicApprovalLink = async (linkId: string): Promise<PublicApprovalLink | null> => {
+  const { data, error } = await supabase
+    .from("public_approval_links")
     .select(`
       *,
-      client_task_tags(
-        tags(id, name, color)
+      client:clients(
+        id, name, logo_url
       ),
-      responsible:profiles(id, first_name, last_name, avatar_url)
+      client_tasks:client_tasks(
+        id, title, description, due_date, time, status, is_completed, created_at, updated_at, public_approval_enabled,
+        client_task_tags(
+          tags(id, name, color)
+        )
+      )
     `)
-    .eq('client_id', approvalLink.client_id)
-    .eq('user_id', approvalLink.user_id)
-    .eq('month_year_reference', approvalLink.month_year_reference)
-    .in('status', ['in_approval', 'edit_requested', 'approved']) // Incluir 'approved' para mostrar o status final
-    .order('order_index', { ascending: true });
+    .eq("id", linkId)
+    .single();
 
-  if (fetchTasksError) {
-    throw new Error("Erro ao carregar tarefas para aprovação.");
+  if (error && error.code !== 'PGRST116') {
+    throw error;
   }
 
-  const mappedTasks = tasks?.map((task: any) => ({
-    ...task,
-    tags: task.client_task_tags.map((ctt: any) => ctt.tags),
-    responsible: task.responsible ? task.responsible : null,
-  })) || [];
+  if (data) {
+    // Map tags for client_tasks
+    const mappedClientTasks = data.client_tasks.map((task: any) => ({
+      ...task,
+      tags: task.client_task_tags.map((ctt: any) => ctt.tags),
+    }));
 
-  return { client, tasks: mappedTasks, approvalLink };
+    return {
+      ...data,
+      client_tasks: mappedClientTasks,
+    } as PublicApprovalLink;
+  }
+  return null;
 };
 
 const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
-  const { uniqueId } = useParams<{ uniqueId: string }>();
+  const { linkId } = useParams<{ linkId: string }>();
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch } = useQuery<
-    { client: Client; tasks: ClientTask[]; approvalLink: PublicApprovalLink } | null,
-    Error
-  >({
-    queryKey: ["publicApprovalData", uniqueId],
-    queryFn: () => fetchApprovalData(uniqueId!),
-    enabled: !!uniqueId,
+  const { data: approvalLink, isLoading, error, refetch } = useQuery<PublicApprovalLink | null, Error>({
+    queryKey: ["publicApprovalLink", linkId],
+    queryFn: () => fetchPublicApprovalLink(linkId!),
+    enabled: !!linkId,
   });
 
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [selectedImageUrls, setSelectedImageUrls] = useState<string[]>([]);
-  const [initialImageIndex, setInitialImageIndex] = useState(0);
-  const [selectedImageDescription, setSelectedImageDescription] = useState<string | null>(null);
-  const [isEditReasonDialogOpen, setIsEditReasonDialogOpen] = useState(false);
-  const [taskToEditId, setTaskToEditId] = useState<string | null>(null);
-  const [initialEditReason, setInitialEditReason] = useState<string | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateTaskStatusPublic = async (taskId: string, newStatus: ClientTaskStatus, editReason?: string | null) => {
-    try {
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/update-client-task-status-public`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uniqueId, taskId, newStatus, editReason }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro desconhecido ao atualizar status da tarefa.");
-      }
-
-      showSuccess(`Tarefa ${newStatus === 'approved' ? 'aprovada' : 'com edição solicitada'} com sucesso!`);
-      refetch(); // Re-fetch data to update UI
-    } catch (err: any) {
-      showError("Erro ao atualizar status da tarefa: " + err.message);
-      console.error("Erro ao atualizar status da tarefa:", err);
+  useEffect(() => {
+    if (approvalLink?.client_tasks) {
+      // Initialize selectedTasks with tasks that are already approved or under review
+      const initialSelected = approvalLink.client_tasks
+        .filter(task => task.status === "approved" || task.status === "under_review")
+        .map(task => task.id);
+      setSelectedTasks(initialSelected);
     }
-  };
+  }, [approvalLink]);
 
-  const handleApproveTask = (taskId: string) => {
-    updateTaskStatusPublic(taskId, 'approved');
-  };
-
-  const handleRequestEditClick = (taskId: string, currentReason?: string | null) => {
-    setTaskToEditId(taskId);
-    setInitialEditReason(currentReason || null);
-    setIsEditReasonDialogOpen(true);
-  };
-
-  const handleRequestEditSubmit = (reason: string) => {
-    if (taskToEditId) {
-      updateTaskStatusPublic(taskToEditId, 'edit_requested', reason);
-    }
-    setIsEditReasonDialogOpen(false);
-    setTaskToEditId(null);
-    setInitialEditReason(null);
-  };
-
-  const openImageViewer = (urls: string[], index: number, description?: string | null) => {
-    setSelectedImageUrls(urls);
-    setInitialImageIndex(index);
-    setSelectedImageDescription(description || null);
-    setIsImageViewerOpen(true);
-  };
-
-  if (!uniqueId) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">Link Inválido</h1>
-        <p className="text-lg md:text-xl text-muted-foreground">O link de aprovação não foi fornecido.</p>
-      </div>
+  const handleTaskSelection = (taskId: string, isChecked: boolean) => {
+    setSelectedTasks(prev =>
+      isChecked ? [...prev, taskId] : prev.filter(id => id !== taskId)
     );
-  }
+  };
+
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: string; status: ClientTaskStatus }) => {
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/update-client-task-status-public`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            linkId: linkId,
+            taskId: taskId,
+            newStatus: status,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Erro ao atualizar status da tarefa ${taskId}.`);
+        }
+        return response.json();
+      } catch (err: any) {
+        console.error("Erro na função de atualização de status:", err);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["publicApprovalLink", linkId] });
+      refetch();
+    },
+    onError: (err: any) => {
+      showError("Erro ao atualizar status da tarefa: " + err.message);
+    },
+  });
+
+  const handleSubmitApproval = async (newStatus: ClientTaskStatus) => {
+    if (!approvalLink || selectedTasks.length === 0) {
+      showError("Selecione pelo menos uma tarefa para aprovar/rejeitar.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      for (const taskId of selectedTasks) {
+        await updateTaskStatusMutation.mutateAsync({ taskId, status: newStatus });
+      }
+      showSuccess(`Tarefas marcadas como "${newStatus.replace('_', ' ')}" com sucesso!`);
+      setSelectedTasks([]); // Clear selection after submission
+    } catch (err) {
+      // Error handled by mutation's onError
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getStatusColor = (status: ClientTaskStatus) => {
+    switch (status) {
+      case "pending": return "bg-gray-500/20 text-gray-500 border-gray-500/50";
+      case "in_progress": return "bg-blue-500/20 text-blue-500 border-blue-500/50";
+      case "under_review": return "bg-yellow-500/20 text-yellow-500 border-yellow-500/50";
+      case "approved": return "bg-green-500/20 text-green-500 border-green-500/50";
+      case "rejected": return "bg-red-500/20 text-red-500 border-red-500/50";
+      case "completed": return "bg-purple-500/20 text-purple-500 border-purple-500/50";
+      default: return "bg-gray-500/20 text-gray-500 border-gray-500/50";
+    }
+  };
+
+  const getStatusText = (status: ClientTaskStatus) => {
+    switch (status) {
+      case "pending": return "Pendente";
+      case "in_progress": return "Em Progresso";
+      case "under_review": return "Em Revisão";
+      case "approved": return "Aprovada";
+      case "rejected": return "Rejeitada";
+      case "completed": return "Concluída";
+      default: return "Desconhecido";
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-3xl md:text-4xl font-bold mt-4">Carregando Materiais...</h1>
-        <p className="text-lg md:text-xl text-muted-foreground">Preparando a página de aprovação.</p>
+        <h1 className="text-3xl font-bold mt-4">Carregando Link de Aprovação...</h1>
+        <p className="text-lg text-muted-foreground">Aguarde um momento.</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-red-500">Erro ao Carregar</h1>
-        <p className="text-lg md:text-xl text-red-500 text-center">{error.message}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
+        <XCircle className="h-12 w-12 text-red-500" />
+        <h1 className="text-3xl font-bold mt-4">Erro ao Carregar Link</h1>
+        <p className="text-lg text-red-500">Ocorreu um erro: {error.message}</p>
+        <p className="text-md text-muted-foreground mt-2">Por favor, verifique o link e tente novamente.</p>
       </div>
     );
   }
 
-  if (!data || !data.client || !data.tasks) {
+  if (!approvalLink || isPast(parseISO(approvalLink.expires_at))) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold">Conteúdo Não Encontrado</h1>
-        <p className="text-lg md:text-xl text-muted-foreground">Não foi possível carregar os materiais para aprovação.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
+        <Info className="h-12 w-12 text-orange-500" />
+        <h1 className="text-3xl font-bold mt-4">Link de Aprovação Inválido ou Expirado</h1>
+        <p className="text-lg text-muted-foreground">Este link de aprovação não é válido ou já expirou.</p>
+        <p className="text-md text-muted-foreground mt-2">Entre em contato com o remetente para um novo link.</p>
       </div>
     );
   }
 
-  const { client, tasks, approvalLink } = data;
-  const isLinkExpired = new Date() > new Date(approvalLink.expires_at);
+  const tasksForApproval = approvalLink.client_tasks.filter(task => task.public_approval_enabled);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-6 lg:p-8">
-      <header className="flex flex-col items-center justify-center text-center mb-8">
-        {/* Logo da Agência (Ex: Gama Creative) - Pode ser uma imagem fixa ou configurável */}
-        <img src="/favicon.svg" alt="Gama Creative Logo" className="h-16 w-16 mb-4" />
-        <h1 className="text-4xl md:text-5xl font-bold mb-2">Gama Creative</h1>
-        
-        {client.logo_url && (
-          <img src={client.logo_url} alt={client.name} className="h-20 w-20 rounded-full object-cover mt-4 mb-2" />
-        )}
-        <h2 className="text-3xl md:text-4xl font-semibold text-primary mb-2 break-words">{client.name}</h2>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl break-words">
-          Revise e aprove os materiais abaixo para o mês de {format(parseISO(`${approvalLink.month_year_reference}-01`), "MMMM yyyy", { locale: ptBR })}.
-        </p>
-        {isLinkExpired && (
-          <p className="text-red-500 text-xl md:text-2xl font-bold mt-4">Este link de aprovação expirou!</p>
-        )}
-      </header>
+    <div className="flex flex-col items-center min-h-screen bg-background text-foreground p-4 md:p-8">
+      <Card className="w-full max-w-4xl bg-card border border-border rounded-xl shadow-lg p-6 space-y-6">
+        <CardHeader className="text-center">
+          {approvalLink.client?.logo_url && (
+            <img src={approvalLink.client.logo_url} alt={`${approvalLink.client.name} Logo`} className="h-20 w-20 object-contain mx-auto mb-4" />
+          )}
+          <CardTitle className="text-3xl md:text-4xl font-bold text-foreground">
+            Aprovação de Materiais para {approvalLink.client?.name || "Cliente"}
+          </CardTitle>
+          <CardDescription className="text-lg md:text-xl text-muted-foreground max-w-2xl break-words mx-auto">
+            Revise e aprove os materiais abaixo para o mês de {format(parseISO(`${approvalLink.month_year_reference}-01`), "MMMM yyyy", { locale: ptBR })}.
+          </CardDescription>
+        </CardHeader>
 
-      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {tasks.length === 0 ? (
-          <div className="col-span-full text-center text-muted-foreground text-xl md:text-2xl mt-8">
-            Nenhum material pendente de aprovação para este mês.
-          </div>
+        <Separator className="bg-border" />
+
+        {tasksForApproval.length === 0 ? (
+          <p className="text-center text-lg text-muted-foreground">Nenhum material disponível para aprovação neste link.</p>
         ) : (
-          tasks.map((task) => (
-            <Card key={task.id} className={cn(
-              "flex flex-col h-full bg-card border rounded-xl shadow-lg overflow-hidden frosted-glass card-hover-effect",
-              isLinkExpired && "opacity-50 cursor-not-allowed",
-              task.status === 'approved' && "border-green-500",
-              task.status === 'edit_requested' && "border-orange-500"
-            )}>
-              {task.image_urls && task.image_urls.length > 0 && (
-                <div className="relative w-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg aspect-video">
-                  <img
-                    src={task.image_urls[0]}
-                    alt={task.title}
-                    className="max-w-full max-h-full object-contain cursor-pointer"
-                    onClick={() => !isLinkExpired && openImageViewer(task.image_urls!, 0, task.description)}
-                  />
-                  {task.image_urls.length > 1 && (
-                    <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                      +{task.image_urls.length - 1}
-                    </div>
+          <div className="space-y-4">
+            {tasksForApproval.map((task) => (
+              <Card key={task.id} className="bg-muted/20 border border-border rounded-lg p-4 flex items-start gap-4">
+                <Checkbox
+                  id={`task-${task.id}`}
+                  checked={selectedTasks.includes(task.id)}
+                  onCheckedChange={(checked) => handleTaskSelection(task.id, checked as boolean)}
+                  className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0 mt-1"
+                  disabled={isSubmitting || task.status === "approved" || task.status === "rejected"} // Disable if already approved/rejected
+                />
+                <div className="flex-grow min-w-0">
+                  <label htmlFor={`task-${task.id}`} className="font-semibold text-foreground text-lg break-words cursor-pointer">
+                    {task.title}
+                  </label>
+                  {task.description && (
+                    <p className="text-sm text-muted-foreground break-words mt-1">{task.description}</p>
                   )}
-                </div>
-              )}
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{task.title}</CardTitle>
-                {task.responsible && (
-                  <CardDescription className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
-                    <User className="h-4 w-4 flex-shrink-0" /> Responsável: {task.responsible.first_name} {task.responsible.last_name}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col justify-between p-4">
-                {task.description && (
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 break-words">{task.description}</p>
-                )}
-                {task.due_date && (
                   <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-1">
                     <CalendarDays className="h-3 w-3 flex-shrink-0" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
                   </p>
-                )}
-                {task.time && (
-                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-3">
-                    <Clock className="h-3 w-3 flex-shrink-0" /> Horário: {task.time}
-                  </p>
-                )}
-                {task.tags && task.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-auto mb-3">
-                    {task.tags.map((tag) => (
-                      <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                {task.status === 'approved' ? (
-                  <Button disabled className="w-full bg-green-600 text-white text-sm md:text-base">
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovado
-                  </Button>
-                ) : task.status === 'edit_requested' ? (
-                  <>
-                    <Button disabled className="w-full bg-orange-600 text-white mb-2 text-sm md:text-base">
-                      <Edit className="mr-2 h-4 w-4" /> Edição Solicitada
-                    </Button>
-                    {task.edit_reason && (
-                      <p className="text-xs md:text-sm text-orange-500 italic break-words">Motivo: {task.edit_reason}</p>
-                    )}
-                    <Button
-                      onClick={() => handleApproveTask(task.id)}
-                      disabled={isLinkExpired}
-                      className="w-full bg-green-600 text-white hover:bg-green-700 mt-2 text-sm md:text-base"
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar Mesmo Assim
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-2 mt-auto">
-                    <Button
-                      onClick={() => handleApproveTask(task.id)}
-                      disabled={isLinkExpired}
-                      className="w-full bg-green-600 text-white hover:bg-green-700 text-sm md:text-base"
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
-                    </Button>
-                    <Button
-                      onClick={() => handleRequestEditClick(task.id, task.edit_reason)}
-                      disabled={isLinkExpired}
-                      variant="outline"
-                      className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10 text-sm md:text-base"
-                    >
-                      <Edit className="mr-2 h-4 w-4" /> Solicitar Edição
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
+                  {task.time && (
+                    <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3 flex-shrink-0" /> Horário: {task.time}
+                    </p>
+                  )}
+                  <Badge variant="secondary" className={`${getStatusColor(task.status)} w-fit flex items-center gap-1 mt-2 text-xs md:text-sm`}>
+                    Status: {getStatusText(task.status)}
+                  </Badge>
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {task.tags.map((tag) => (
+                        <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
-      </main>
 
-      <FullScreenImageViewer
-        isOpen={isImageViewerOpen}
-        onClose={() => setIsImageViewerOpen(false)}
-        imageUrls={selectedImageUrls}
-        initialIndex={initialImageIndex}
-        description={selectedImageDescription}
-      />
-
-      <EditReasonDialog
-        isOpen={isEditReasonDialogOpen}
-        onClose={() => setIsEditReasonDialogOpen(false)}
-        onSubmit={handleRequestEditSubmit}
-        initialReason={initialEditReason}
-      />
+        {tasksForApproval.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+            <Button
+              onClick={() => handleSubmitApproval("approved")}
+              disabled={selectedTasks.length === 0 || isSubmitting}
+              className="bg-green-600 text-white hover:bg-green-700 flex-1 sm:flex-none"
+            >
+              {isSubmitting && selectedTasks.length > 0 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Aprovar Selecionados
+            </Button>
+            <Button
+              onClick={() => handleSubmitApproval("rejected")}
+              disabled={selectedTasks.length === 0 || isSubmitting}
+              className="bg-red-600 text-white hover:bg-red-700 flex-1 sm:flex-none"
+            >
+              {isSubmitting && selectedTasks.length > 0 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+              Rejeitar Selecionados
+            </Button>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

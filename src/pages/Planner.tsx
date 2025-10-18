@@ -41,7 +41,7 @@ const fetchMeetingsByDate = async (userId: string, date: Date): Promise<Meeting[
   const formattedDate = format(date, "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at") 
+    .select("id, user_id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at, updated_at") 
     .eq("user_id", userId)
     .eq("date", formattedDate)
     .order("start_time", { ascending: true });
@@ -55,7 +55,7 @@ const fetchFutureMeetings = async (userId: string): Promise<Meeting[]> => {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data, error } = await supabase
     .from("meetings")
-    .select("id, title, description, date, start_time, end_time, location, google_event_id, google_html_link") 
+    .select("id, user_id, title, description, date, start_time, end_time, location, google_event_id, google_html_link, created_at, updated_at") 
     .eq("user_id", userId)
     .gte("date", today) 
     .order("date", { ascending: true })
@@ -75,7 +75,7 @@ const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> =>
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at, updated_at,
       task_tags(
         tags(id, name, color)
       )
@@ -151,7 +151,6 @@ const Planner: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isMeetingFormOpen, setIsMeetingFormOpen] = useState(false);
-  // const [editingMeeting, setEditingMeeting] = useState<(MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null }) | undefined>(undefined);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
@@ -222,7 +221,7 @@ const Planner: React.FC = () => {
     refetchFutureMeetings(); 
     refetchGoogleEvents(); 
     setIsMeetingFormOpen(false); 
-    // setEditingMeeting(undefined); // No longer needed
+    meetingForm.reset(); // Reset the form after saving
   };
 
   const handleMeetingSubmit = async (values: MeetingFormValues) => {
@@ -356,72 +355,46 @@ const Planner: React.FC = () => {
     }
   };
 
-  const handleOpenMeetingForm = (initialData?: (MeetingFormValues & { id: string; google_event_id?: string | null; google_html_link?: string | null })) => {
-    if (initialData) {
-      meetingForm.reset({
-        ...initialData,
-        date: new Date(initialData.date),
-        start_time: initialData.start_time,
-        end_time: initialData.end_time || null,
-        sendToGoogleCalendar: !!initialData.google_event_id,
-        id: initialData.id,
-        google_event_id: initialData.google_event_id,
-        google_html_link: initialData.google_html_link,
-      });
-    } else {
-      meetingForm.reset({
-        title: "",
-        description: "",
-        date: selectedDate || new Date(), // Use selectedDate for new meetings
-        start_time: "",
-        end_time: null,
-        location: "",
-        sendToGoogleCalendar: false,
-        id: undefined, // Clear ID for new meeting
-        google_event_id: null,
-        google_html_link: null,
-      });
-    }
-    setIsMeetingFormOpen(true);
-  };
-
   const handleEditMeeting = (meeting: Meeting) => {
-    handleOpenMeetingForm({
+    meetingForm.reset({
       id: meeting.id,
       title: meeting.title,
-      description: meeting.description || undefined,
+      description: meeting.description || "",
       date: parseISO(meeting.date),
       start_time: meeting.start_time,
-      end_time: meeting.end_time || undefined,
-      location: meeting.location || undefined,
-      sendToGoogleCalendar: !!meeting.google_event_id, 
+      end_time: meeting.end_time || null,
+      location: meeting.location || "",
+      sendToGoogleCalendar: !!meeting.google_event_id,
       google_event_id: meeting.google_event_id,
       google_html_link: meeting.google_html_link,
     });
+    setIsMeetingFormOpen(true);
   };
 
-  const handleEditGoogleEvent = (event: GoogleCalendarEvent) => {
-    handleOpenMeetingForm({
-      id: event.id, 
-      google_event_id: event.google_event_id, 
-      title: event.title,
-      description: event.description || undefined,
-      date: parseISO(event.start_time), 
-      start_time: format(parseISO(event.start_time), "HH:mm"),
-      end_time: event.end_time ? format(parseISO(event.end_time), "HH:mm") : undefined,
-      location: event.location || undefined,
-      sendToGoogleCalendar: true, 
-      google_html_link: event.html_link,
-    });
-  };
-
-  const handleDeleteMeeting = async (meetingId: string) => {
+  const handleDeleteMeeting = async (meetingId: string, googleEventId: string | null) => {
     if (!userId) {
       showError("Usuário não autenticado.");
       return;
     }
     if (window.confirm("Tem certeza que deseja deletar esta reunião?")) {
       try {
+        if (googleEventId && session?.access_token) {
+          const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+            body: { googleEventId: googleEventId },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+          if (googleDeleteError) {
+            if (googleDeleteError.status === 404) {
+              console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+            } else {
+              throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+            }
+          }
+          showSuccess("Evento removido do Google Calendar!");
+        }
+
         const { error } = await supabase
           .from("meetings")
           .delete()
@@ -430,9 +403,7 @@ const Planner: React.FC = () => {
 
         if (error) throw error;
         showSuccess("Reunião deletada com sucesso!");
-        refetchMeetings();
-        refetchFutureMeetings();
-        refetchGoogleEvents(); 
+        handleMeetingSaved();
       } catch (err: any) {
         showError("Erro ao deletar reunião: " + err.message);
         console.error("Erro ao deletar reunião:", err);
@@ -440,352 +411,321 @@ const Planner: React.FC = () => {
     }
   };
 
+  const handleEditGoogleEvent = (event: GoogleCalendarEvent) => {
+    meetingForm.reset({
+      id: event.id, // Usar o ID do evento local para atualização
+      title: event.title,
+      description: event.description || "",
+      date: parseISO(event.start_time), // Usar start_time como base para a data
+      start_time: format(parseISO(event.start_time), "HH:mm"),
+      end_time: event.end_time ? format(parseISO(event.end_time), "HH:mm") : null,
+      location: event.location || "",
+      sendToGoogleCalendar: true, // Já está no Google Calendar
+      google_event_id: event.google_event_id,
+      google_html_link: event.html_link,
+    });
+    setIsMeetingFormOpen(true);
+  };
+
   const handleDeleteGoogleEvent = async (eventId: string, googleEventId: string) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
+    if (!userId || !session?.access_token) {
+      showError("Usuário não autenticado ou sessão expirada. Faça login novamente.");
       return;
     }
-    if (!window.confirm("Tem certeza que deseja deletar este evento do Google Calendar?")) {
-      return;
-    }
-
-    try {
-      if (!session?.access_token) {
-        showError("Sessão não encontrada. Faça login novamente.");
-        return;
-      }
-
-      const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
-        body: { googleEventId: googleEventId },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (googleDeleteError) {
-        if (googleDeleteError.status === 404) {
-          console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
-        } else {
-          throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
-        }
-      }
-      showSuccess("Evento removido do Google Calendar!");
-
-      const { error: localDeleteError } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", eventId)
-        .eq("user_id", userId);
-
-      if (localDeleteError) throw localDeleteError;
-
-      showSuccess("Evento deletado localmente com sucesso!");
-      refetchGoogleEvents(); 
-    } catch (err: any) {
-      showError("Erro ao deletar evento do Google Calendar: " + err.message);
-      console.error("Erro ao deletar evento do Google Calendar:", err);
-    }
-  };
-
-  const handleTaskSaved = () => {
-    refetchTasks();
-    queryClient.invalidateQueries({ queryKey: ["dashboardTasks", userId] });
-    queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-  };
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsTaskFormOpen(true);
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!userId) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (window.confirm("Tem certeza que deseja deletar esta tarefa e todas as suas subtarefas?")) {
+    if (window.confirm("Tem certeza que deseja deletar este evento do Google Calendar?")) {
       try {
-        await supabase.from("task_tags").delete().eq("task_id", taskId);
+        const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+          body: { googleEventId: googleEventId },
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
 
-        const { error } = await supabase
-          .from("tasks")
+        if (googleDeleteError) {
+          if (googleDeleteError.status === 404) {
+            console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+          } else {
+            throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+          }
+        }
+
+        // Remover o evento do banco de dados local também
+        const { error: dbDeleteError } = await supabase
+          .from("events")
           .delete()
-          .eq("id", taskId)
+          .eq("id", eventId)
           .eq("user_id", userId);
 
-        if (error) throw error;
-        showSuccess("Tarefa deletada com sucesso!");
-        handleTaskAdded(); 
+        if (dbDeleteError) throw dbDeleteError;
+
+        showSuccess("Evento do Google Calendar deletado com sucesso!");
+        refetchGoogleEvents();
+        refetchMeetings(); // Pode ser que o evento estivesse duplicado como reunião local
       } catch (err: any) {
-        showError("Erro ao deletar tarefa: " + err.message);
-        console.error("Erro ao deletar tarefa:", err);
+        showError("Erro ao deletar evento do Google Calendar: " + err.message);
+        console.error("Erro ao deletar evento do Google Calendar:", err);
       }
     }
   };
-
-  const buildTaskTree = React.useCallback((allTasks: Task[]): Task[] => {
-    const taskMap = new Map<string, Task>();
-    allTasks.forEach(task => {
-      taskMap.set(task.id, { ...task, subtasks: [] });
-    });
-
-    const rootTasks: Task[] = [];
-    allTasks.forEach(task => {
-      if (task.parent_task_id && taskMap.has(task.parent_task_id)) {
-        taskMap.get(task.parent_task_id)?.subtasks?.push(taskMap.get(task.id)!);
-      } else {
-        rootTasks.push(taskMap.get(task.id)!);
-      }
-    });
-
-    rootTasks.forEach(task => {
-      if (task.subtasks) {
-        task.subtasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      }
-    });
-
-    return rootTasks.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }, []);
-
-  const taskTree = React.useMemo(() => buildTaskTree(tasks || []), [tasks, buildTaskTree]);
 
   const combinedEvents = [
     ...(meetings || []).map(m => ({
-      type: 'meeting',
+      type: "meeting",
       id: m.id,
       title: m.title,
-      description: m.description,
-      start_time: parseISO(`${m.date}T${m.start_time}`),
-      end_time: m.end_time ? parseISO(`${m.date}T${m.end_time}`) : undefined,
-      location: m.location,
-      html_link: m.google_html_link, 
-      original_meeting: m, 
+      description: m.description || "",
+      start_time: `${m.date}T${m.start_time}:00`,
+      end_time: m.end_time ? `${m.date}T${m.end_time}:00` : null,
+      location: m.location || "",
+      html_link: m.google_html_link || null,
+      google_event_id: m.google_event_id || null,
+      original_meeting: m,
     })),
     ...(googleEvents || []).map(ge => ({
-      type: 'google_event',
-      id: ge.id, 
-      google_event_id: ge.google_event_id, 
+      type: "google_event",
+      id: ge.id,
+      google_event_id: ge.google_event_id,
+      calendar_id: ge.calendar_id,
       title: ge.title,
-      description: ge.description,
-      start_time: parseISO(ge.start_time),
-      end_time: parseISO(ge.end_time),
-      location: ge.location,
-      html_link: ge.html_link,
-      original_meeting: undefined, 
+      description: ge.description || "",
+      start_time: ge.start_time,
+      end_time: ge.end_time,
+      location: ge.location || "",
+      html_link: ge.html_link || null,
+      original_meeting: ge, // Manter referência ao objeto original
     })),
-  ].sort((a, b) => a.start_time.getTime() - b.start_time.getTime());
+  ].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6 bg-background text-foreground"> 
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        <CalendarDays className="h-8 w-8 text-primary flex-shrink-0" /> Planner
-      </h1>
-      <p className="text-lg text-muted-foreground">
-        Organize seu dia, visualize tarefas e eventos do calendário.
-      </p>
+    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
+        <h1 className="text-3xl font-bold text-foreground">Planner Diário</h1>
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
+          <Dialog
+            open={isMeetingFormOpen}
+            onOpenChange={(open) => {
+              setIsMeetingFormOpen(open);
+              if (!open) meetingForm.reset(); // Reset form on close
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button onClick={() => meetingForm.reset({ date: selectedDate || new Date(), sendToGoogleCalendar: false })} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
+              </Button>
+            </DialogTrigger>
+            <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
+              <DialogHeader>
+                <DialogTitle className="text-foreground">
+                  {meetingForm.watch("id") ? "Editar Reunião" : "Adicionar Nova Reunião"}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {meetingForm.watch("id") ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para organizar seu dia."}
+                </DialogDescription>
+              </DialogHeader>
+              <MeetingForm
+                initialData={meetingForm.watch("id") ? { ...meetingForm.getValues(), date: meetingForm.getValues("date") } as MeetingFormValues & { id: string } : undefined}
+                onMeetingSaved={handleMeetingSaved}
+                onClose={() => setIsMeetingFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={isTaskFormOpen}
+            onOpenChange={(open) => {
+              setIsTaskFormOpen(open);
+              if (!open) setEditingTask(undefined);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingTask(undefined)} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
+              <DialogHeader>
+                <DialogTitle className="text-foreground">
+                  {editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para organizar seu dia."}
+                </DialogDescription>
+              </DialogHeader>
+              <TaskForm
+                initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
+                onTaskSaved={handleTaskAdded}
+                onClose={() => setIsTaskFormOpen(false)}
+                initialDueDate={selectedDate}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="flex flex-col gap-6 lg:col-span-1"> 
-          <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center frosted-glass card-hover-effect">
-            <CardHeader className="w-full text-center pb-2">
-              <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
-            </CardHeader>
-            <CardContent className="flex justify-center p-0">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                initialFocus
-                locale={ptBR}
-                className="rounded-lg border bg-popover text-popover-foreground shadow-md"
-              />
-            </CardContent>
-          </Card>
+        <Card className="lg:col-span-1 bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+          <CardHeader>
+            <CardTitle className="text-foreground">Calendário</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Selecione uma data para ver seus eventos e tarefas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              initialFocus
+              locale={ptBR}
+              className="rounded-md border border-border bg-input text-foreground"
+            />
+          </CardContent>
+        </Card>
 
-          <Card className="bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
-            <CardHeader className="border-b border-border p-4">
-              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary flex-shrink-0" /> Próximas Reuniões
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Um resumo das suas próximas reuniões.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              {(isLoadingFutureMeetings || futureMeetingsError) ? (
-                <p className="text-center text-muted-foreground">Carregando próximas reuniões...</p>
-              ) : futureMeetings && futureMeetings.length > 0 ? (
-                futureMeetings.map((meeting) => (
-                  <div key={meeting.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
-                    <p className="text-sm font-medium text-foreground flex items-center gap-1 break-words">
-                      {meeting.title}
-                    </p>
-                    {meeting.description && (
-                      <p className="text-xs text-muted-foreground break-words">{meeting.description}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <CalendarDays className="h-3 w-3 flex-shrink-0" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
-                    </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 flex-shrink-0" /> {meeting.start_time} {meeting.end_time ? `- ${meeting.end_time}` : ''}
-                    </p>
-                    {meeting.location && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
-                        <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
-                      </p>
-                    )}
-                    {meeting.google_html_link && (
-                      <a href={meeting.google_html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
-                        Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
-                      </a>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground">Nenhuma reunião futura agendada.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"> 
-          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
-            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
+        <div className="lg:col-span-2 grid gap-6">
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
                 <Briefcase className="h-5 w-5 text-primary flex-shrink-0" /> Eventos para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
-              <Dialog open={isMeetingFormOpen} onOpenChange={(open) => {
-                setIsMeetingFormOpen(open);
-                if (!open) meetingForm.reset(); // Reset form when closing
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="sm" onClick={() => handleOpenMeetingForm()} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Reunião
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">{meetingForm.watch("id") ? "Editar Reunião" : "Adicionar Nova Reunião"}</DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      {meetingForm.watch("id") ? "Atualize os detalhes da sua reunião." : "Crie uma nova reunião para a data selecionada."}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <MeetingForm
-                    form={meetingForm}
-                    onSubmit={handleMeetingSubmit}
-                    isSubmitting={isMeetingSubmitting}
-                    onClose={() => setIsMeetingFormOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
             </CardHeader>
-            <CardContent className="flex-grow p-4 overflow-y-auto space-y-3">
-              {(isLoadingMeetings || isLoadingGoogleEvents) ? (
-                <p className="text-center text-muted-foreground">Carregando eventos...</p>
-              ) : combinedEvents && combinedEvents.length > 0 ? (
-                combinedEvents.map((event) => (
-                  <div key={event.id} className="flex flex-col p-2 border border-border rounded-xl bg-background shadow-sm frosted-glass card-hover-effect">
-                    <p className="text-sm font-medium text-foreground flex items-center gap-1 break-words">
-                      {event.type === 'google_event' && <LinkIcon className="h-3 w-3 text-blue-500 flex-shrink-0" />}
-                      {event.title}
-                    </p>
-                    {event.description && (
-                      <p className="text-xs text-muted-foreground break-words">{event.description}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 flex-shrink-0" /> {format(event.start_time, "HH:mm")} {event.end_time ? `- ${format(event.end_time, "HH:mm")}` : ''}
-                    </p>
-                    {event.location && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 break-words">
-                        <MapPin className="h-3 w-3 flex-shrink-0" /> {event.location}
-                      </p>
-                    )}
-                    {event.html_link && (
-                      <a href={event.html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
-                        Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
-                      </a>
-                    )}
-                    <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 flex-wrap"> 
-                      {event.type === 'meeting' ? (
-                        <>
-                          <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar Reunião</span>
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Deletar Reunião</span>
-                          </Button>
-                        </>
-                      ) : ( 
-                        <>
-                          <Button variant="ghost" size="icon" onClick={() => handleEditGoogleEvent(event as GoogleCalendarEvent)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar Evento do Google</span>
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteGoogleEvent(event.id, event.google_event_id!)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Deletar Evento do Google</span>
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))
+            <CardContent>
+              {isLoadingMeetings || isLoadingGoogleEvents ? (
+                <p className="text-muted-foreground">Carregando eventos...</p>
+              ) : combinedEvents.length === 0 ? (
+                <p className="text-muted-foreground">Nenhum evento agendado para esta data.</p>
               ) : (
-                <p className="text-center text-muted-foreground">Nenhum evento agendado para esta data.</p>
+                <div className="space-y-4">
+                  {combinedEvents.map((event) => (
+                    <div key={event.type === "meeting" ? `meeting-${event.id}` : `google-${event.id}`} className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 border border-border">
+                      <div className="flex-shrink-0 mt-1">
+                        {event.type === "meeting" ? (
+                          <Briefcase className="h-5 w-5 text-blue-500" />
+                        ) : (
+                          <img src="/google-calendar-icon.svg" alt="Google Calendar" className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <h3 className="font-semibold text-foreground text-base break-words">{event.title}</h3>
+                        {event.description && <p className="text-sm text-muted-foreground break-words">{event.description}</p>}
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3 flex-shrink-0" /> {format(parseISO(event.start_time), "HH:mm")} {event.end_time && `- ${format(parseISO(event.end_time), "HH:mm")}`}
+                        </p>
+                        {event.location && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3 flex-shrink-0" /> {event.location}
+                          </p>
+                        )}
+                        {event.html_link && (
+                          <a href={event.html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                            <LinkIcon className="h-3 w-3 flex-shrink-0" /> Ver no Google Calendar
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 flex gap-1">
+                        {event.type === "meeting" ? (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting as Meeting)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(event.id, event.google_event_id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEditGoogleEvent(event as GoogleCalendarEvent)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteGoogleEvent(event.id, event.google_event_id!)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
-            <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
                 <ListTodo className="h-5 w-5 text-primary flex-shrink-0" /> Tarefas para {selectedDate ? format(selectedDate, "PPP", { locale: ptBR }) : "Nenhuma Data Selecionada"}
               </CardTitle>
-              <Dialog open={isTaskFormOpen} onOpenChange={(open) => {
-                setIsTaskFormOpen(open);
-                if (!open) setEditingTask(undefined);
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex-shrink-0">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para a data selecionada."}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <TaskForm
-                    initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : (selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", current_board: "general", is_priority: false, selected_tag_ids: [] } as any : undefined)}
-                    onTaskSaved={handleTaskSaved}
-                    onClose={() => setIsTaskFormOpen(false)}
-                    initialOriginBoard="general"
-                    initialDueDate={selectedDate}
-                  />
-                </DialogContent>
-              </Dialog>
             </CardHeader>
-            <CardContent className="flex-grow p-4 overflow-y-auto space-y-3">
-              <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />
-              <div className="mt-4 space-y-3">
-                {isLoadingTasks ? (
-                  <p className="text-center text-muted-foreground">Carregando tarefas...</p>
-                ) : taskTree && taskTree.length > 0 ? (
-                  taskTree.map((task) => (
-                    <TaskItem key={task.id} task={task} refetchTasks={handleTaskAdded} />
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground">Nenhuma tarefa agendada para esta data.</p>
-                )}
+            <CardContent>
+              <div className="mb-4">
+                <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />
               </div>
+              {isLoadingTasks ? (
+                <p className="text-muted-foreground">Carregando tarefas...</p>
+              ) : tasks && tasks.length === 0 ? (
+                <p className="text-muted-foreground">Nenhuma tarefa agendada para esta data.</p>
+              ) : (
+                <div className="space-y-3">
+                  {tasks?.map((task) => (
+                    <TaskItem key={task.id} task={task} refetchTasks={handleTaskAdded} />
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+        <CardHeader>
+          <CardTitle className="text-foreground">Próximas Reuniões</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Suas próximas 5 reuniões agendadas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingFutureMeetings ? (
+            <p className="text-muted-foreground">Carregando próximas reuniões...</p>
+          ) : futureMeetings && futureMeetings.length === 0 ? (
+            <p className="text-muted-foreground">Nenhuma reunião futura agendada.</p>
+          ) : (
+            <div className="space-y-4">
+              {futureMeetings?.map((meeting) => (
+                <div key={meeting.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 border border-border">
+                  <Briefcase className="h-5 w-5 text-blue-500 flex-shrink-0 mt-1" />
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-semibold text-foreground text-base break-words">{meeting.title}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3 flex-shrink-0" /> {format(parseISO(meeting.date), "PPP", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3 flex-shrink-0" /> {meeting.start_time} {meeting.end_time && `- ${meeting.end_time}`}
+                    </p>
+                    {meeting.location && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3 flex-shrink-0" /> {meeting.location}
+                      </p>
+                    )}
+                    {meeting.google_html_link && (
+                      <a href={meeting.google_html_link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                        <LinkIcon className="h-3 w-3 flex-shrink-0" /> Ver no Google Calendar
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(meeting)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteMeeting(meeting.id, meeting.google_event_id)} className="h-7 w-7 text-red-500 hover:bg-red-500/10">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -49,10 +49,29 @@ export interface TemplateTask {
   tags: Tag[]; // Para carregar tags associadas
 }
 
-export interface TemplateTaskTag {
-  template_task_id: string;
-  tag_id: string;
+export interface ClientTaskGenerationTemplate {
+  id: string;
+  user_id: string;
+  client_id: string;
+  template_name: string;
+  description?: string | null;
+  due_date_offset_days?: number | null;
+  time?: string | null;
+  is_priority: boolean;
   created_at: string;
+  updated_at: string;
+  // tags: Tag[]; // Removido, pois a relação direta com client_task_tags não existe para templates
+}
+
+export interface ClientTaskGenerationPattern {
+  id: string;
+  user_id: string;
+  client_id: string;
+  template_id: string;
+  day_of_month?: number | null;
+  day_of_week?: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {

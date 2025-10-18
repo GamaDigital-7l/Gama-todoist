@@ -22,13 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import TimePicker from "../TimePicker";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "../TagSelector";
-import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { Checkbox } from "@/components/ui/checkbox";
-import TimePicker from "../TimePicker";
+import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { OriginBoard } from "@/types/task"; 
+import { ptBR } from "date-fns/locale";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const clientTaskSchema = z.object({
@@ -36,53 +36,48 @@ const clientTaskSchema = z.object({
   description: z.string().optional(),
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
-  responsible_id: z.string().nullable().optional(),
-  status: z.enum(["in_production", "in_approval", "approved", "scheduled", "published", "edit_requested"]).default("in_production"), 
+  status: z.enum(["pending", "in_progress", "under_review", "approved", "rejected", "completed"]).default("pending"),
   selected_tag_ids: z.array(z.string()).optional(),
-  is_completed: z.boolean().default(false),
-  image_files: z.array(z.instanceof(File)).optional(), 
-  image_urls: z.array(z.string().url("URL de imagem inválida.")).optional(), 
-  is_standard_task: z.boolean().default(false), 
+  is_standard_task: z.boolean().default(true), // Nova propriedade
+  main_task_id: z.string().nullable().optional(), // Nova propriedade para subtarefas
+  public_approval_enabled: z.boolean().default(false), // Nova propriedade
 });
 
 export type ClientTaskFormValues = z.infer<typeof clientTaskSchema>;
 
 interface ClientTaskFormProps {
   clientId: string;
-  monthYearRef: string;
-  initialData?: ClientTask;
-  onTaskSaved: () => void;
+  initialData?: Omit<ClientTaskFormValues, 'due_date'> & {
+    id: string;
+    due_date?: string | Date | null;
+    tags?: { id: string; name: string; color: string }[];
+  };
+  onClientTaskSaved: () => void;
   onClose: () => void;
+  initialDueDate?: Date;
+  initialMainTaskId?: string; // Para criar subtarefas
 }
 
-interface ProfileOption {
+interface MainTaskOption {
   id: string;
-  first_name: string;
-  last_name: string;
+  title: string;
 }
 
-const fetchProfiles = async (): Promise<ProfileOption[]> => {
+const fetchClientMainTasks = async (userId: string, clientId: string): Promise<MainTaskOption[]> => {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, first_name, last_name")
-    .order("first_name", { ascending: true });
+    .from("client_tasks")
+    .select("id, title")
+    .eq("user_id", userId)
+    .eq("client_id", clientId)
+    .is("main_task_id", null) // Apenas tarefas principais
+    .order("title", { ascending: true });
   if (error) {
     throw error;
   }
   return data || [];
 };
 
-const sanitizeFilename = (filename: string) => {
-  return filename
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9.]/g, "-")
-    .replace(/--+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
-};
-
-const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef, initialData, onTaskSaved, onClose }) => {
+const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, onClientTaskSaved, onClose, initialDueDate, initialMainTaskId }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
@@ -91,42 +86,36 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
     resolver: zodResolver(clientTaskSchema),
     defaultValues: initialData ? {
       ...initialData,
-      due_date: initialData.due_date ? parseISO(initialData.due_date) : undefined,
+      due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
-      responsible_id: initialData.responsible_id || undefined,
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
-      image_files: undefined,
-      image_urls: initialData.image_urls || [],
-      is_standard_task: initialData.is_standard_task || false,
+      is_standard_task: initialData.is_standard_task,
+      main_task_id: initialData.main_task_id || initialMainTaskId || null,
+      public_approval_enabled: initialData.public_approval_enabled,
     } : {
       title: "",
       description: "",
-      due_date: undefined,
+      due_date: initialDueDate || undefined,
       time: undefined,
-      responsible_id: undefined,
-      status: "in_production", 
+      status: "pending",
       selected_tag_ids: [],
-      is_completed: false,
-      image_files: undefined,
-      image_urls: [],
-      is_standard_task: false,
+      is_standard_task: true,
+      main_task_id: initialMainTaskId || null,
+      public_approval_enabled: false,
     },
   });
 
   const selectedTagIds = form.watch("selected_tag_ids") || [];
-  const existingImageUrls = form.watch("image_urls") || [];
+  const watchedMainTaskId = form.watch("main_task_id");
 
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery<ProfileOption[], Error>({
-    queryKey: ["profiles"],
-    queryFn: fetchProfiles,
+  const { data: clientMainTasks, isLoading: isLoadingClientMainTasks } = useQuery<MainTaskOption[], Error>({
+    queryKey: ["clientMainTasks", userId, clientId],
+    queryFn: () => fetchClientMainTasks(userId!, clientId),
+    enabled: !!userId && !!clientId && !initialMainTaskId, // Habilitar apenas se não for subtarefa inicial
   });
 
   const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
     form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
-  };
-
-  const handleRemoveImage = (urlToRemove: string) => {
-    form.setValue("image_urls", existingImageUrls.filter(url => url !== urlToRemove), { shouldDirty: true });
   };
 
   const onSubmit = async (values: ClientTaskFormValues) => {
@@ -137,138 +126,45 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
 
     try {
       let clientTaskId: string;
-      let finalImageUrls: string[] = [...(values.image_urls || [])]; 
-
-      if (values.image_files && values.image_files.length > 0) {
-        for (const file of values.image_files) {
-          const sanitizedFilename = sanitizeFilename(file.name);
-          const filePath = `client-task-images/${userId}/${clientId}/${Date.now()}-${sanitizedFilename}`;
-
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("client-task-images")
-            .upload(filePath, file, {
-              cacheControl: "3600",
-              upsert: false,
-            });
-
-          if (uploadError) {
-            throw new Error("Erro ao fazer upload da imagem: " + uploadError.message);
-          }
-
-          const { data: publicUrlData } = supabase.storage
-            .from("client-task-images")
-            .getPublicUrl(filePath);
-          
-          finalImageUrls.push(publicUrlData.publicUrl);
-        }
-      }
 
       const dataToSave = {
+        client_id: clientId,
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
-        responsible_id: values.responsible_id || null,
         status: values.status,
-        is_completed: values.is_completed,
-        completed_at: values.is_completed ? new Date().toISOString() : null,
-        image_urls: finalImageUrls.length > 0 ? finalImageUrls : null,
         is_standard_task: values.is_standard_task,
+        main_task_id: values.main_task_id || null,
+        public_approval_enabled: values.public_approval_enabled,
         updated_at: new Date().toISOString(),
       };
 
-      let mainTaskId: string | null = null;
-
-      if (initialData?.id) {
+      if (initialData) {
         const { data, error } = await supabase
           .from("client_tasks")
           .update(dataToSave)
           .eq("id", initialData.id)
-          .eq("client_id", clientId)
           .eq("user_id", userId)
-          .select("id, main_task_id")
+          .select("id")
           .single();
 
         if (error) throw error;
         clientTaskId = data.id;
-        mainTaskId = data.main_task_id;
         showSuccess("Tarefa do cliente atualizada com sucesso!");
       } else {
         const { data, error } = await supabase.from("client_tasks").insert({
           ...dataToSave,
-          client_id: clientId,
           user_id: userId,
-          month_year_reference: monthYearRef,
-          order_index: 0, 
-        }).select("id, main_task_id").single();
+        }).select("id").single();
 
         if (error) throw error;
         clientTaskId = data.id;
-        mainTaskId = data.main_task_id;
         showSuccess("Tarefa do cliente adicionada com sucesso!");
       }
 
-      if (values.is_standard_task) {
-        const taskDataForMainDashboard = {
-          user_id: userId,
-          title: values.title,
-          description: values.description || null,
-          due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
-          time: values.time || null,
-          recurrence_type: "none", 
-          recurrence_details: null,
-          recurrence_time: values.time || null,
-          origin_board: "client_tasks" as OriginBoard, 
-          current_board: values.is_completed ? "completed" : "client_tasks" as OriginBoard, 
-          is_completed: values.is_completed,
-          is_priority: false, 
-          overdue: false, 
-          completed_at: values.is_completed ? new Date().toISOString() : null,
-        };
-
-        if (mainTaskId) {
-          const { error: updateMainTaskError } = await supabase
-            .from("tasks")
-            .update(taskDataForMainDashboard)
-            .eq("id", mainTaskId)
-            .eq("user_id", userId);
-          if (updateMainTaskError) throw updateMainTaskError;
-        } else {
-          const { data: newMainTask, error: insertMainTaskError } = await supabase
-            .from("tasks")
-            .insert(taskDataForMainDashboard)
-            .select("id")
-            .single();
-          if (insertMainTaskError) throw insertMainTaskError;
-          mainTaskId = newMainTask.id;
-
-          await supabase
-            .from("client_tasks")
-            .update({ main_task_id: mainTaskId })
-            .eq("id", clientTaskId)
-            .eq("user_id", userId);
-        }
-
-        await supabase.from("task_tags").delete().eq("task_id", mainTaskId);
-        if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
-          const mainTaskTagsToInsert = values.selected_tag_ids.map(tagId => ({
-            task_id: mainTaskId!,
-            tag_id: tagId,
-          }));
-          const { error: mainTagInsertError } = await supabase.from("task_tags").insert(mainTaskTagsToInsert);
-          if (mainTagInsertError) throw mainTagInsertError;
-        }
-        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); 
-      } else if (mainTaskId && !values.is_standard_task) {
-        await supabase.from("task_tags").delete().eq("task_id", mainTaskId);
-        await supabase.from("tasks").delete().eq("id", mainTaskId).eq("user_id", userId);
-        await supabase.from("client_tasks").update({ main_task_id: null }).eq("id", clientTaskId).eq("user_id", userId);
-        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); 
-      }
-
       await supabase.from("client_task_tags").delete().eq("client_task_id", clientTaskId);
+
       if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
         const clientTaskTagsToInsert = values.selected_tag_ids.map(tagId => ({
           client_task_id: clientTaskId,
@@ -279,8 +175,10 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
       }
 
       form.reset();
-      onTaskSaved();
+      onClientTaskSaved();
       onClose();
+      queryClient.invalidateQueries({ queryKey: ["clientTasks", clientId, userId] });
+      queryClient.invalidateQueries({ queryKey: ["clientMainTasks", userId, clientId] });
     } catch (error: any) {
       showError("Erro ao salvar tarefa do cliente: " + error.message);
       console.error("Erro ao salvar tarefa do cliente:", error);
@@ -288,13 +186,13 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card rounded-xl frosted-glass card-hover-effect">
       <div>
         <Label htmlFor="title" className="text-foreground">Título da Tarefa</Label>
         <Input
           id="title"
           {...form.register("title")}
-          placeholder="Ex: Criar 4 posts para Instagram"
+          placeholder="Ex: Criar post para Instagram"
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
         {form.formState.errors.title && (
@@ -326,7 +224,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             >
               <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
               {form.watch("due_date") ? (
-                format(form.watch("due_date")!, "PPP")
+                format(form.watch("due_date")!, "PPP", { locale: ptBR })
               ) : (
                 <span>Escolha uma data</span>
               )}
@@ -338,6 +236,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
               selected={form.watch("due_date") || undefined}
               onSelect={(date) => form.setValue("due_date", date || null)}
               initialFocus
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>
@@ -352,33 +251,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
       </div>
 
       <div>
-        <Label htmlFor="responsible_id" className="text-foreground">Responsável (Opcional)</Label>
-        <Select
-          onValueChange={(value: string) => form.setValue("responsible_id", value === "none-selected" ? null : value)}
-          value={form.watch("responsible_id") || "none-selected"}
-          disabled={isLoadingProfiles}
-        >
-          <SelectTrigger id="responsible_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
-            {isLoadingProfiles ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" /> Carregando...
-              </div>
-            ) : (
-              <SelectValue placeholder="Selecionar responsável" />
-            )}
-          </SelectTrigger>
-          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-            <SelectItem value="none-selected">Nenhum</SelectItem>
-            {profiles?.map(profile => (
-              <SelectItem key={profile.id} value={profile.id}>
-                {profile.first_name} {profile.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
         <Label htmlFor="status" className="text-foreground">Status</Label>
         <Select
           onValueChange={(value: ClientTaskStatus) => form.setValue("status", value)}
@@ -388,24 +260,14 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-            <SelectItem value="in_production">Em Produção</SelectItem>
-            <SelectItem value="in_approval">Em Aprovação</SelectItem>
-            <SelectItem value="approved">Aprovado</SelectItem>
-            <SelectItem value="scheduled">Agendado</SelectItem>
-            <SelectItem value="published">Publicado</SelectItem>
-            <SelectItem value="edit_requested">Edição Solicitada</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="in_progress">Em Progresso</SelectItem>
+            <SelectItem value="under_review">Em Revisão</SelectItem>
+            <SelectItem value="approved">Aprovada</SelectItem>
+            <SelectItem value="rejected">Rejeitada</SelectItem>
+            <SelectItem value="completed">Concluída</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_completed"
-          checked={form.watch("is_completed")}
-          onCheckedChange={(checked) => form.setValue("is_completed", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-        />
-        <Label htmlFor="is_completed" className="text-foreground">Concluída</Label>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -415,42 +277,38 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           onCheckedChange={(checked) => form.setValue("is_standard_task", checked as boolean)}
           className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
-        <Label htmlFor="is_standard_task" className="text-foreground">Tarefa Padrão (aparece no Dashboard Principal)</Label>
+        <Label htmlFor="is_standard_task" className="text-foreground">Tarefa Padrão (aparece no Dashboard)</Label>
       </div>
 
-      <div>
-        <Label htmlFor="image_files" className="text-foreground">Imagens (Opcional)</Label>
-        <Input
-          id="image_files"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => form.setValue("image_files", Array.from(e.target.files || []))}
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+      {!initialMainTaskId && ( // Só mostra a seleção de tarefa principal se não for uma subtarefa
+        <div>
+          <Label htmlFor="main_task_id" className="text-foreground">Tarefa Principal (Opcional)</Label>
+          <Select
+            onValueChange={(value: string) => form.setValue("main_task_id", value === "none-selected" ? null : value)}
+            value={watchedMainTaskId || "none-selected"}
+            disabled={isLoadingClientMainTasks}
+          >
+            <SelectTrigger id="main_task_id" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+              <SelectValue placeholder="Selecionar tarefa principal" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+              <SelectItem value="none-selected">Nenhuma</SelectItem>
+              {clientMainTasks?.map(task => (
+                <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="public_approval_enabled"
+          checked={form.watch("public_approval_enabled")}
+          onCheckedChange={(checked) => form.setValue("public_approval_enabled", checked as boolean)}
+          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />
-        {form.formState.errors.image_files && (
-          <p className="text-red-500 text-sm mt-1">
-            {form.formState.errors.image_files.message}
-          </p>
-        )}
-        {existingImageUrls.length > 0 && (
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2"> 
-            {existingImageUrls.map((url, index) => (
-              <div key={index} className="relative group">
-                <img src={url} alt={`Imagem ${index + 1}`} className="w-full h-24 object-cover rounded-md" />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => handleRemoveImage(url)}
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        <Label htmlFor="public_approval_enabled" className="text-foreground">Habilitar Aprovação Pública</Label>
       </div>
 
       <TagSelector
@@ -458,9 +316,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
         onTagSelectionChange={handleTagSelectionChange}
       />
 
-      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-        {initialData?.id ? "Atualizar Tarefa" : "Adicionar Tarefa"}
-      </Button>
+      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">{initialData ? "Atualizar Tarefa" : "Adicionar Tarefa"}</Button>
     </form>
   );
 };
