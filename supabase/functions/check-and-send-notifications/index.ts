@@ -72,10 +72,7 @@ serve(async (req) => {
         if (isSameMinute(nowInUserTimezone, scheduledMorningTime) && !hasSentMorningBriefToday) {
           console.log(`[User ${userId}] Enviando brief da manhã...`);
           const { error: invokeError } = await supabase.functions.invoke('daily-brief', {
-            body: { timeOfDay: 'morning' },
-            headers: {
-              'Authorization': `Bearer ${setting.user_id}`, // Usar o user_id como token para a Edge Function
-            },
+            body: { timeOfDay: 'morning', userId: userId }, // Passar userId no corpo
           });
           if (invokeError) {
             console.error(`[User ${userId}] Erro ao invocar daily-brief (manhã):`, invokeError);
@@ -107,10 +104,7 @@ serve(async (req) => {
         if (isSameMinute(nowInUserTimezone, scheduledEveningTime) && !hasSentEveningBriefToday) {
           console.log(`[User ${userId}] Enviando brief da noite...`);
           const { error: invokeError } = await supabase.functions.invoke('daily-brief', {
-            body: { timeOfDay: 'evening' },
-            headers: {
-              'Authorization': `Bearer ${setting.user_id}`,
-            },
+            body: { timeOfDay: 'evening', userId: userId }, // Passar userId no corpo
           });
           if (invokeError) {
             console.error(`[User ${userId}] Erro ao invocar daily-brief (noite):`, invokeError);
@@ -146,10 +140,7 @@ serve(async (req) => {
         ) {
           console.log(`[User ${userId}] Enviando resumo semanal...`);
           const { error: invokeError } = await supabase.functions.invoke('weekly-brief', {
-            body: { type: 'weekly_brief' },
-            headers: {
-              'Authorization': `Bearer ${setting.user_id}`,
-            },
+            body: { type: 'weekly_brief', userId: userId }, // Passar userId no corpo
           });
           if (invokeError) {
             console.error(`[User ${userId}] Erro ao invocar weekly-brief:`, invokeError);
@@ -187,9 +178,8 @@ serve(async (req) => {
           console.log(`[User ${userId}] Enviando notificação para tarefa recorrente ${task.id}...`);
           const { error: invokeError } = await supabase.functions.invoke('send-recurring-task-notification', {
             body: { taskId: task.id, userId: userId },
-            headers: {
-              'Authorization': `Bearer ${setting.user_id}`,
-            },
+            // Não passar Authorization header aqui, pois a função send-recurring-task-notification
+            // já está configurada para usar o service role key quando userId é passado no body.
           });
           if (invokeError) {
             console.error(`[User ${userId}] Erro ao invocar send-recurring-task-notification para tarefa ${task.id}:`, invokeError);
