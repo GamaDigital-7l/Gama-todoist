@@ -477,71 +477,8 @@ const ClientKanbanPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
-      {/* Header do Kanban */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 mb-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <Button variant="outline" size="icon" onClick={() => navigate("/clients")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Voltar para Clientes</span>
-          </Button>
-          {client.logo_url ? (
-            <img src={client.logo_url} alt={client.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-semibold flex-shrink-0">
-              {client.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <h1 className="text-3xl font-bold break-words min-w-0">{client.name}</h1>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-          <Button onClick={() => navigate(`/clients/${clientId}`)} variant="secondary" className="w-full sm:w-auto">
-            <LayoutDashboard className="mr-2 h-4 w-4" /> Ver Dashboard do Cliente
-          </Button>
-          <Dialog open={isTemplateFormOpen} onOpenChange={setIsTemplateFormOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingTemplate(undefined)} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-500/10 w-full sm:w-auto">
-                <Settings className="mr-2 h-4 w-4" /> Gerenciar Templates
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">Gerenciar Templates de Tarefas</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Crie e edite padrões para gerar tarefas automaticamente.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 p-4">
-                <Button onClick={() => setEditingTemplate({ id: "", client_id: clientId!, user_id: userId!, template_name: "", delivery_count: 0, generation_pattern: [], is_active: true, default_due_days: undefined, is_standard_task: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Novo Template
-                </Button>
-                {clientTaskTemplates && clientTaskTemplates.length > 0 ? (
-                  <div className="space-y-2">
-                    {clientTaskTemplates.map(template => (
-                      <ClientTaskGenerationTemplateItem
-                        key={template.id}
-                        template={template}
-                        onEdit={handleEditTemplate}
-                        onDelete={handleDeleteTemplate}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center">Nenhum template configurado.</p>
-                )}
-                {editingTemplate && (
-                  <ClientTaskGenerationTemplateForm
-                    clientId={clientId!}
-                    initialData={editingTemplate}
-                    onTemplateSaved={handleTemplateSaved}
-                    onClose={() => setEditingTemplate(undefined)}
-                  />
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+    <div className="flex flex-1 flex-col gap-4 bg-background text-foreground h-full"> {/* Removido padding aqui, será adicionado no ClientDetails */}
+      {/* O cabeçalho do cliente (nome, logo, botões de voltar/editar/excluir) foi movido para ClientDetails.tsx */}
 
       {/* Seletor de Mês e Progresso */}
       <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect p-4 mb-4">
@@ -680,11 +617,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 p-1">
+          <div className="inline-flex h-full space-x-4 p-1 flex-nowrap"> {/* Adicionado flex-nowrap */}
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
+                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full" {/* Adicionado h-full */}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >
@@ -694,7 +631,7 @@ const ClientKanbanPage: React.FC = () => {
                     {clientTasks?.filter(task => task.status === column.status).length} tarefas
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
+                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3"> {/* Adicionado flex-1 overflow-y-auto */}
                   {isLoadingTasks ? (
                     <p className="text-muted-foreground">Carregando tarefas...</p>
                   ) : tasksError ? (
