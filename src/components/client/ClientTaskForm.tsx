@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2, Image as ImageIcon, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns"; // Importação corrigida
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
@@ -28,7 +29,6 @@ import TagSelector from "../TagSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClientTask, ClientTaskStatus } from "@/types/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ptBR } from "date-fns/locale";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const clientTaskSchema = z.object({

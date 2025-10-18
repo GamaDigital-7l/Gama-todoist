@@ -60,8 +60,6 @@ export interface ClientTaskGenerationTemplate {
   is_active: boolean; // Novo campo
   default_due_days?: number | null; // Adicionado
   is_standard_task: boolean; // Novo campo
-  is_priority: boolean; // Adicionado
-  time?: string | null; // Adicionado
   created_at: string;
   updated_at: string;
 }

@@ -1,9 +1,9 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { persistQueryClient } from "@tanstack/query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Removed BrowserRouter, useNavigate
+import { Routes, Route, Navigate, useLocation, BrowserRouter } from "react-router-dom"; // Removed BrowserRouter, useNavigate
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
@@ -48,9 +48,10 @@ const LazyClients = lazy(() => import("./pages/Clients"));
 const LazyClientDetails = lazy(() => import("./pages/ClientDetails"));
 const LazyPublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
 const LazyResults = lazy(() => import("./pages/Results"));
-const LazyNotFound = lazy(() => import("./pages/NotFound"));
 const LazyLogin = lazy(() => import("./pages/Login"));
 const LazyFinance = lazy(() => import("./pages/Finance")); // Lazy load para Finance
+const LazyNotFound = lazy(() => import("./pages/NotFound"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,7 +185,7 @@ const App = () => {
             <PWAHandler>
               {(isOnline) => (
                 <AnimatePresence>
-                  <Routes location={location} key={location.pathname}>
+                  <Routes location={location} key={location.pathname} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <Route path="/login" element={
                       <motion.div
                         initial={{ opacity: 0, x: -100 }}

@@ -37,21 +37,13 @@ const ClientTaskGenerationTemplateItem: React.FC<ClientTaskGenerationTemplateIte
             {template.description}
           </CardDescription>
         )}
-        {template.due_date_offset_days !== null && (
+        {template.default_due_days !== null && (
           <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
-            <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" /> Vencimento: {template.due_date_offset_days === 0 ? "No dia da geração" : `Após ${template.due_date_offset_days} dias`}
+            <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" /> Vencimento: {template.default_due_days === 0 ? "No dia da geração" : `Após ${template.default_due_days} dias`}
           </p>
         )}
-        {template.time && (
-          <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
-            <Clock className="h-4 w-4 text-primary flex-shrink-0" /> Horário: {template.time}
-          </p>
-        )}
-        {template.is_priority && (
-          <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 w-fit flex items-center gap-1 mt-1 text-xs md:text-sm">
-            <Star className="h-3 w-3" fill="currentColor" /> Prioritária
-          </Badge>
-        )}
+        {/* Removed template.time as it does not exist in schema */}
+        {/* Removed template.is_priority as it does not exist in schema */}
       </CardContent>
     </Card>
   );

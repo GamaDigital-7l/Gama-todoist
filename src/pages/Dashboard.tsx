@@ -661,6 +661,7 @@ const Dashboard: React.FC = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Tarefas recorrentes não concluídas no ciclo.
               </p>
+            </p>
             </CardContent>
           </Card>
 

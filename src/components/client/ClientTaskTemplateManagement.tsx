@@ -22,11 +22,11 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
   const { data, error } = await supabase
     .from("client_task_generation_templates")
     .select(`
-      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, is_priority, created_at, updated_at
+      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, created_at, updated_at
     `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
-    .order("template_name", { ascending: true });
+    .eq("is_active", true); // Filtrar apenas templates ativos
 
   if (error) {
     throw error;

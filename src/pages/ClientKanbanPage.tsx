@@ -71,7 +71,7 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
   const { data, error } = await supabase
     .from("client_task_generation_templates")
     .select(`
-      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, is_priority, created_at, updated_at
+      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, created_at, updated_at
     `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
@@ -222,7 +222,6 @@ const ClientKanbanPage: React.FC<ClientKanbanPageProps> = ({ client }) => {
             status: "pending" as ClientTaskStatus,
             is_completed: false,
             is_standard_task: template.is_standard_task, // Templates geram tarefas padrão
-            is_priority: false, // is_priority não está no template, definir como false
             public_approval_enabled: false, // Padrão para false ao gerar de template
           });
         }
