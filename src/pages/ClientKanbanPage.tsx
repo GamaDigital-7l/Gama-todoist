@@ -615,7 +615,7 @@ const ClientKanbanPage: React.FC = () => {
       </Card>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto">
+      <div className="flex-1 overflow-hidden"> {/* Added overflow-hidden to parent to contain horizontal scrollbar */}
         {isMobile ? (
           <Carousel
             opts={{
@@ -668,11 +668,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 flex-nowrap overflow-x-auto scroll-smooth scroll-snap-x-mandatory scroll-p-4">
+          <div className="flex h-full gap-4 overflow-x-auto pb-4 scroll-smooth scroll-snap-x-mandatory scroll-p-4"> {/* Changed inline-flex to flex, added pb-4 for scrollbar visibility */}
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full scroll-snap-align-start"
+                className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full scroll-snap-align-start" // Adjusted width classes
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >

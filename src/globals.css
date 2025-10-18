@@ -64,8 +64,7 @@
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Esconder barra de rolagem horizontal no mobile, mas permitir scroll */
-    overflow-x: hidden;
+    /* overflow-x: hidden; REMOVIDO para permitir rolagem horizontal */
   }
   /* Para navegadores Webkit (Chrome, Safari) */
   body::-webkit-scrollbar {
