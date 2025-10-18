@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon } from "lucide-react";
+import { ListTodo, Award, Target, HeartPulse, TrendingDown, PlusCircle, Clock, CalendarCheck, XCircle, Repeat, Star, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { ClientTask } from "@/types/client"; // Importar ClientTask
+import { showSuccess } from "@/utils/toast"; // Importar showSuccess para feedback
 
 interface Profile {
   id: string;
@@ -173,6 +174,8 @@ const fetchClientTasksForDashboard = async (userId: string, selectedDate: Date):
     .select(`
       id, title, description, due_date, time, is_completed, created_at, updated_at, completed_at,
       is_standard_task, main_task_id,
+      client_id,
+      clients(name),
       client_task_tags(
         tags(id, name, color)
       )
@@ -211,6 +214,7 @@ const fetchClientTasksForDashboard = async (userId: string, selectedDate: Date):
     tags: clientTask.client_task_tags.map((ctt: any) => ctt.tags),
     parent_task_id: null,
     subtasks: [],
+    client_name: clientTask.clients?.name || null, // NOVO: Adicionar nome do cliente
   })) || [];
 
   return mappedData;
@@ -342,11 +346,95 @@ const Dashboard: React.FC = () => {
   const failedRecurrentTasks = recurrentTasks?.filter(task => !getAdjustedTaskCompletionStatus(task)) || [];
   const failedRecurrentCount = failedRecurrentTasks.length;
 
+  // Lógica para o feedback "Dia concluído ✅"
+  const allTodayTasks = [
+    ...(todayPriorityTasks || []),
+    ...(todayNoPriorityTasks || []),
+    ...(jobsWoeTodayTasks || []),
+    ...(clientDashboardTasks || []), // Incluir tarefas de clientes
+  ];
+  const allTodayTasksCompleted = allTodayTasks.every(task => getAdjustedTaskCompletionStatus(task));
+  const hasTodayTasks = allTodayTasks.length > 0;
+
+  // Lógica para o card "Amanhã"
+  const tomorrow = addDays(selectedDate, 1);
+  const { data: tomorrowTasks, isLoading: isLoadingTomorrowTasks, error: errorTomorrowTasks, refetch: refetchTomorrowTasks } = useQuery<Task[], Error>({
+    queryKey: ["dashboardTasks", "tomorrow", userId, tomorrow.toISOString()],
+    queryFn: () => fetchTasksForDate(userId!, tomorrow), // Reutiliza a função de planner para amanhã
+    enabled: !!userId,
+  });
+
+  const fetchTasksForDate = async (userId: string, date: Date): Promise<Task[]> => {
+    const formattedDate = format(date, "yyyy-MM-dd");
+    const currentDayOfWeek = getDay(date); // 0 for Sunday, 1 for Monday, etc.
+  
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(`
+        id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
+        last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+        task_tags(
+          tags(id, name, color)
+        )
+      `)
+      .eq("user_id", userId)
+      .or(`due_date.eq.${formattedDate},recurrence_type.neq.none`); // Tasks due today OR recurring
+  
+    if (error) {
+      throw error;
+    }
+  
+    const isDayIncluded = (details: string | null | undefined, dayIndex: number) => {
+      if (!details) return false;
+      const days = details.split(',');
+      return days.some(day => DAYS_OF_WEEK_MAP[day] === dayIndex);
+    };
+  
+    const filteredTasks = data?.filter(task => {
+      let isTaskRelevantForDate = false;
+  
+      if (task.recurrence_type !== "none") {
+        if (task.recurrence_type === "daily") {
+          isTaskRelevantForDate = true;
+        } else if (task.recurrence_type === "weekly" && task.recurrence_details) {
+          isTaskRelevantForDate = isDayIncluded(task.recurrence_details, currentDayOfWeek);
+        } else if (task.recurrence_type === "monthly" && task.recurrence_details) {
+          isTaskRelevantForDate = parseInt(task.recurrence_details) === date.getDate();
+        }
+      } else if (task.due_date) {
+        isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;
+      }
+      
+      // Only show tasks that are relevant for the date and not completed for their current cycle
+      return isTaskRelevantForDate && !getAdjustedTaskCompletionStatus(task);
+    }) || [];
+  
+    const mappedData = filteredTasks.map((task: any) => ({
+      ...task,
+      tags: task.task_tags.map((tt: any) => tt.tags),
+    }));
+  
+    // Sort tasks by time, then by creation date
+    mappedData.sort((a: Task, b: Task) => {
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time);
+      }
+      if (a.time) return -1; // Tasks with time come first
+      if (b.time) return 1;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+  
+    return mappedData;
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -357,10 +445,10 @@ const Dashboard: React.FC = () => {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                {selectedDate ? (
-                  format(selectedDate, "PPP", { locale: ptBR })
+                {isSameDay(selectedDate, new Date()) ? (
+                  <span>Hoje</span>
                 ) : (
-                  <span>Escolha uma data</span>
+                  format(selectedDate, "PPP", { locale: ptBR })
                 )}
               </Button>
             </PopoverTrigger>
@@ -374,6 +462,9 @@ const Dashboard: React.FC = () => {
               />
             </PopoverContent>
           </Popover>
+          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
           <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
@@ -397,6 +488,15 @@ const Dashboard: React.FC = () => {
           </Dialog>
         </div>
       </div>
+
+      {hasTodayTasks && allTodayTasksCompleted && isSameDay(selectedDate, new Date()) && (
+        <Card className="w-full bg-green-600 text-white border-green-700 rounded-xl shadow-sm frosted-glass card-hover-effect">
+          <CardContent className="p-4 flex items-center justify-center gap-2">
+            <CheckCircle2 className="h-6 w-6" />
+            <p className="text-lg font-semibold">Dia Concluído! ✅</p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         <TaskListBoard
@@ -469,7 +569,26 @@ const Dashboard: React.FC = () => {
           originBoard="completed"
           selectedDate={selectedDate}
         />
-        {/* <DashboardTaskList /> REMOVIDO */}
+        {/* Card de Amanhã */}
+        <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">Amanhã</CardTitle>
+            <CalendarIcon className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingTomorrowTasks ? (
+              <div className="text-3xl font-bold text-foreground">Carregando...</div>
+            ) : (
+              <div className="text-3xl font-bold text-foreground">{tomorrowTasks?.length || 0}</div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Tarefas agendadas para {format(tomorrow, "PPP", { locale: ptBR })}.
+            </p>
+            <div className="mt-4">
+              <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={tomorrow} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}

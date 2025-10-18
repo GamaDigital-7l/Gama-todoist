@@ -32,6 +32,7 @@ export interface Task {
   tags: Tag[];
   parent_task_id?: string | null; // Novo campo para subtarefas
   subtasks?: Task[]; // Para carregar subtarefas aninhadas
+  client_name?: string | null; // NOVO: Nome do cliente se for uma tarefa de cliente
 }
 
 export interface TemplateTask {
@@ -61,5 +62,5 @@ export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 export const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
   "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
-  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
+  "Thursday": 4, "Friday": "Sex", "Saturday": "Sáb"
 };

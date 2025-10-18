@@ -221,8 +221,8 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           recurrence_type: "none", // Tarefas padrão de cliente não são recorrentes no dashboard principal, são instanciadas
           recurrence_details: null,
           recurrence_time: values.time || null,
-          origin_board: "general" as OriginBoard, // Pode ser ajustado para um board específico se necessário
-          current_board: values.is_completed ? "completed" : "general" as OriginBoard,
+          origin_board: "client_tasks" as OriginBoard, // Definir como 'client_tasks'
+          current_board: values.is_completed ? "completed" : "client_tasks" as OriginBoard, // current_board também como 'client_tasks'
           is_completed: values.is_completed,
           is_priority: false, // Pode ser ajustado se houver lógica de prioridade
           overdue: false, // Será atualizado pelo daily-reset
@@ -266,14 +266,14 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
           if (mainTagInsertError) throw mainTagInsertError;
         }
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "general", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); // Invalida o board de clientes
       } else if (mainTaskId && !values.is_standard_task) {
         // Se a tarefa era padrão e foi desmarcada, deletar do dashboard principal
         await supabase.from("task_tags").delete().eq("task_id", mainTaskId);
         await supabase.from("tasks").delete().eq("id", mainTaskId).eq("user_id", userId);
         await supabase.from("client_tasks").update({ main_task_id: null }).eq("id", clientTaskId).eq("user_id", userId);
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "general", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] }); // Invalida o board de clientes
       }
 
 

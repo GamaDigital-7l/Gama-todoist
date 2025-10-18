@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
 import { showError } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import MeetingForm, { MeetingFormValues } from "@/components/MeetingForm";
 import MeetingItem from "@/components/MeetingItem";
 import { Meeting } from "@/types/meeting";
@@ -592,7 +592,7 @@ const Planner: React.FC = () => {
                   </DialogHeader>
                   <TaskForm
                     initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : (selectedDate ? { due_date: selectedDate, title: "", recurrence_type: "none", origin_board: "general", current_board: "general", is_priority: false, selected_tag_ids: [] } as any : undefined)}
-                    onTaskSaved={handleTaskAdded}
+                    onTaskSaved={handleTaskSaved}
                     onClose={() => setIsTaskFormOpen(false)}
                     initialOriginBoard="general"
                     initialDueDate={selectedDate}

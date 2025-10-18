@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle, Star } from "lucide-react"; // Adicionado AlertCircle e Star
+import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle, Star, ChevronDown, ChevronRight, Users } from "lucide-react"; // Adicionado AlertCircle, Star, ChevronDown, ChevronRight, Users
 import { useSession } from "@/integrations/supabase/auth";
 import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
@@ -33,6 +33,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
   const [isSubtaskFormOpen, setIsSubtaskFormOpen] = React.useState(false);
+  const [isSubtasksExpanded, setIsSubtasksExpanded] = React.useState(true); // Estado para expandir/colapsar subtarefas
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
@@ -172,6 +173,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   };
 
   const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
+  const isClientTask = task.origin_board === "client_tasks";
 
   return (
     <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
@@ -234,6 +236,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
                 {task.recurrence_time && ` às ${task.recurrence_time}`}
               </p>
             )}
+            {isClientTask && task.client_name && (
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-500 border-blue-500/50 w-fit flex items-center gap-1 mt-1">
+                <Users className="h-3 w-3" /> Cliente: {task.client_name}
+              </Badge>
+            )}
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {task.tags.map((tag) => (
@@ -246,46 +253,56 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
-          <Dialog
-            open={isSubtaskFormOpen}
-            onOpenChange={(open) => {
-              setIsSubtaskFormOpen(open);
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10">
-                <PlusCircle className="h-4 w-4" />
-                <span className="sr-only">Adicionar Subtarefa</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Crie uma nova subtarefa para detalhar a tarefa principal.
-                </DialogDescription>
-              </DialogHeader>
-              <TaskForm
-                onTaskSaved={refetchTasks}
-                onClose={() => setIsSubtaskFormOpen(false)}
-                initialOriginBoard={task.origin_board}
-                initialParentTaskId={task.id}
-              />
-            </DialogContent>
-          </Dialog>
+          {task.subtasks && task.subtasks.length > 0 && (
+            <Button variant="ghost" size="icon" onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+              {isSubtasksExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <span className="sr-only">{isSubtasksExpanded ? "Colapsar Subtarefas" : "Expandir Subtarefas"}</span>
+            </Button>
+          )}
+          {!isClientTask && ( // Esconder botões para tarefas de cliente
+            <>
+              <Dialog
+                open={isSubtaskFormOpen}
+                onOpenChange={(open) => {
+                  setIsSubtaskFormOpen(open);
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10">
+                    <PlusCircle className="h-4 w-4" />
+                    <span className="sr-only">Adicionar Subtarefa</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      Crie uma nova subtarefa para detalhar a tarefa principal.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <TaskForm
+                    onTaskSaved={refetchTasks}
+                    onClose={() => setIsSubtaskFormOpen(false)}
+                    initialOriginBoard={task.origin_board}
+                    initialParentTaskId={task.id}
+                  />
+                </DialogContent>
+              </Dialog>
 
-          <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
-            <Edit className="h-4 w-4" />
-            <span className="sr-only">Editar Tarefa</span>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Deletar Tarefa</span>
-          </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
+                <Edit className="h-4 w-4" />
+                <span className="sr-only">Editar Tarefa</span>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Deletar Tarefa</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {task.subtasks && task.subtasks.length > 0 && (
+      {task.subtasks && task.subtasks.length > 0 && isSubtasksExpanded && (
         <div className="space-y-2">
           {task.subtasks.map(subtask => (
             <TaskItem key={subtask.id} task={subtask} refetchTasks={refetchTasks} level={level + 1} />

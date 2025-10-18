@@ -10,6 +10,8 @@ import { useSession } from "@/integrations/supabase/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { OriginBoard } from "@/types/task";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import TaskForm from "../TaskForm"; // Importar o TaskForm
 
 interface QuickAddTaskInputProps {
   originBoard: OriginBoard;
@@ -34,6 +36,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false); // Estado para o formulário completo
 
   const handleAddTask = async () => {
     if (input.trim() === "" || isLoading) return;
@@ -138,26 +141,71 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        // Shift + Enter: Abrir formulário completo
+        setIsFormOpen(true);
+      } else {
+        // Enter: Adicionar tarefa rápida
+        handleAddTask();
+      }
+    }
+  };
+
+  const handleTaskFormSaved = () => {
+    onTaskAdded();
+    setIsFormOpen(false);
+    setInput(""); // Limpar o input rápido após salvar no formulário completo
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
-      <Input
-        type="text"
-        placeholder="Adicionar tarefa rapidamente (ex: 'Comprar pão')"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-        className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
-        disabled={isLoading}
-      />
-      <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <PlusCircle className="h-4 w-4" />
-        )}
-        <span className="sr-only sm:not-sr-only sm:ml-2">Adicionar</span>
-      </Button>
-    </div>
+    <>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Input
+          type="text"
+          placeholder="Adicionar tarefa rapidamente (Enter) ou abrir formulário (Shift+Enter)"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
+          disabled={isLoading}
+        />
+        <Button onClick={handleAddTask} disabled={isLoading || input.trim() === ""} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <PlusCircle className="h-4 w-4" />
+          )}
+          <span className="sr-only sm:not-sr-only sm:ml-2">Adicionar</span>
+        </Button>
+      </div>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Crie uma nova tarefa com todos os detalhes.
+            </DialogDescription>
+          </DialogHeader>
+          <TaskForm
+            initialData={{
+              title: input, // Preencher o título com o que foi digitado
+              due_date: dueDate,
+              origin_board: originBoard,
+              current_board: originBoard,
+              is_priority: originBoard === "today_priority",
+              selected_tag_ids: [], // Pode adicionar lógica para tags padrão aqui
+            }}
+            onTaskSaved={handleTaskFormSaved}
+            onClose={() => setIsFormOpen(false)}
+            initialOriginBoard={originBoard}
+            initialDueDate={dueDate}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
