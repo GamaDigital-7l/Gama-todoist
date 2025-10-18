@@ -3,19 +3,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, DollarSign, Briefcase, Repeat, Target, Settings, Edit, Trash2, CalendarDays, Clock, Banknote } from 'lucide-react';
+import { PlusCircle, DollarSign, Briefcase, Repeat, Target, Settings, Edit, Trash2, CalendarDays, Clock, Banknote, Wallet } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import TransactionForm from './TransactionForm';
 import RecurrenceForm from './RecurrenceForm';
 import FinancialGoalForm from './FinancialGoalForm';
 import ProLaboreForm from './ProLaboreForm';
-import { FinancialTransaction, FinancialRecurrence, FinancialGoal, FinancialAccount, FinancialCategory } from '@/types/finance';
+import BudgetForm from './BudgetForm'; // Importar BudgetForm
+import { FinancialTransaction, FinancialRecurrence, FinancialGoal, FinancialAccount, FinancialCategory, FinancialBudget } from '@/types/finance'; // Importar FinancialBudget
 import { DIALOG_CONTENT_CLASSNAMES } from '@/lib/constants';
 import { useSession } from '@/integrations/supabase/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showError, showSuccess } from '@/utils/toast';
-import { format, parseISO, isPast } from 'date-fns';
+import { format, parseISO, isPast, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -100,6 +101,21 @@ const fetchProLaboreSettings = async (userId: string): Promise<ProLaboreSetting 
   return data || null;
 };
 
+const fetchCompanyBudgets = async (userId: string): Promise<FinancialBudget[]> => {
+  const { data, error } = await supabase
+    .from("budgets")
+    .select(`
+      *,
+      category:financial_categories(id, name, type)
+    `)
+    .eq("user_id", userId)
+    .eq("scope", "company") // Filtrar por escopo da empresa
+    .order("end_date", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
 const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransactionAdded }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -109,11 +125,13 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
   const [isRecurrenceFormOpen, setIsRecurrenceFormOpen] = useState(false);
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
   const [isProLaboreFormOpen, setIsProLaboreFormOpen] = useState(false);
+  const [isBudgetFormOpen, setIsBudgetFormOpen] = useState(false); // Novo estado para BudgetForm
 
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | undefined>(undefined);
   const [editingRecurrence, setEditingRecurrence] = useState<FinancialRecurrence | undefined>(undefined);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | undefined>(undefined);
   const [editingProLabore, setEditingProLabore] = useState<ProLaboreSetting | undefined>(undefined);
+  const [editingBudget, setEditingBudget] = useState<FinancialBudget | undefined>(undefined); // Novo estado para Budget
 
   const { data: transactions, isLoading: isLoadingTransactions, error: transactionsError, refetch: refetchTransactions } = useQuery<FinancialTransaction[], Error>({
     queryKey: ["companyTransactions", userId, currentPeriod.toISOString()],
@@ -136,6 +154,12 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
   const { data: proLaboreSettings, isLoading: isLoadingProLabore, error: proLaboreError, refetch: refetchProLabore } = useQuery<ProLaboreSetting | null, Error>({
     queryKey: ["proLaboreSettings", userId],
     queryFn: () => fetchProLaboreSettings(userId!),
+    enabled: !!userId,
+  });
+
+  const { data: budgets, isLoading: isLoadingBudgets, error: budgetsError, refetch: refetchBudgets } = useQuery<FinancialBudget[], Error>({
+    queryKey: ["companyBudgets", userId],
+    queryFn: () => fetchCompanyBudgets(userId!),
     enabled: !!userId,
   });
 
@@ -162,6 +186,12 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
     refetchProLabore();
     setIsProLaboreFormOpen(false);
     setEditingProLabore(undefined);
+  };
+
+  const handleBudgetSaved = () => { // Novo handler para orçamentos
+    refetchBudgets();
+    setIsBudgetFormOpen(false);
+    setEditingBudget(undefined);
   };
 
   const handleEditTransaction = (transaction: FinancialTransaction) => {
@@ -220,6 +250,23 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
     setIsProLaboreFormOpen(true);
   };
 
+  const handleEditBudget = (budget: FinancialBudget) => { // Novo handler para editar orçamento
+    setEditingBudget(budget);
+    setIsBudgetFormOpen(true);
+  };
+
+  const handleDeleteBudget = async (budgetId: string) => { // Novo handler para deletar orçamento
+    if (!userId) { showError("Usuário não autenticado."); return; }
+    if (window.confirm("Tem certeza que deseja deletar este orçamento?")) {
+      try {
+        const { error } = await supabase.from("budgets").delete().eq("id", budgetId).eq("user_id", userId);
+        if (error) throw error;
+        showSuccess("Orçamento deletado com sucesso!");
+        handleBudgetSaved();
+      } catch (err: any) { showError("Erro ao deletar orçamento: " + err.message); console.error(err); }
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
@@ -233,6 +280,7 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
   if (recurrencesError) showError("Erro ao carregar recorrências da empresa: " + recurrencesError.message);
   if (goalsError) showError("Erro ao carregar metas da empresa: " + goalsError.message);
   if (proLaboreError) showError("Erro ao carregar configurações de pró-labore: " + proLaboreError.message);
+  if (budgetsError) showError("Erro ao carregar orçamentos da empresa: " + budgetsError.message);
 
   return (
     <div className="space-y-6">
@@ -342,6 +390,79 @@ const CompanyFinance: React.FC<CompanyFinanceProps> = ({ currentPeriod, onTransa
       )}
       {!proLaboreSettings && !isLoadingProLabore && (
         <p className="text-muted-foreground">Nenhuma configuração de pró-labore definida.</p>
+      )}
+
+      <Separator className="my-6" />
+
+      {/* Orçamentos da Empresa */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-primary" /> Orçamentos
+        </h3>
+        <Dialog open={isBudgetFormOpen} onOpenChange={setIsBudgetFormOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setEditingBudget(undefined)} variant="outline" className="border-primary text-primary hover:bg-primary/10">
+              <PlusCircle className="mr-2 h-4 w-4" /> Novo Orçamento
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            className={DIALOG_CONTENT_CLASSNAMES}
+            aria-labelledby="company-budget-title"
+            aria-describedby="company-budget-description"
+          >
+            <DialogHeader>
+              <DialogTitle id="company-budget-title" className="text-foreground">
+                {editingBudget ? "Editar Orçamento da Empresa" : "Adicionar Orçamento da Empresa"}
+              </DialogTitle>
+              <DialogDescription id="company-budget-description" className="text-muted-foreground">
+                {editingBudget ? "Atualize os detalhes do orçamento." : "Crie um novo orçamento para a empresa."}
+              </DialogDescription>
+            </DialogHeader>
+            <BudgetForm
+              initialData={editingBudget ? { ...editingBudget, start_date: parseISO(editingBudget.start_date), end_date: parseISO(editingBudget.end_date) } : undefined}
+              onBudgetSaved={handleBudgetSaved}
+              onClose={() => setIsBudgetFormOpen(false)}
+              defaultScope="company"
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+      {isLoadingBudgets ? (
+        <p className="text-muted-foreground">Carregando orçamentos...</p>
+      ) : budgets && budgets.length > 0 ? (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          {budgets.map(budget => (
+            <Card key={budget.id} className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect p-4">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-semibold text-foreground break-words">{budget.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditBudget(budget)} className="text-blue-500 hover:bg-blue-500/10">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteBudget(budget.id)} className="text-red-500 hover:bg-red-500/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <p className={cn("text-lg font-bold", budget.type === "income" ? "text-green-500" : "text-red-500")}>
+                  {formatCurrency(budget.amount)} ({budget.type === "income" ? "Receita" : "Despesa"})
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="h-4 w-4" /> Período: {format(parseISO(budget.start_date), "dd/MM/yyyy", { locale: ptBR })} - {format(parseISO(budget.end_date), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+                {budget.category && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Categoria: {budget.category.name}
+                  </p>
+                )}
+                {/* Aqui você pode adicionar a barra de progresso do orçamento vs gastos reais */}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Nenhum orçamento registrado para a empresa.</p>
       )}
 
       <Separator className="my-6" />
