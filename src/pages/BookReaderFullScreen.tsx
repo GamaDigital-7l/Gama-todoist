@@ -88,8 +88,11 @@ const BookReaderFullScreen: React.FC = () => {
       if (pdfDocument && readerRef.current && containerWidth && numPages !== null && initialScale === null) {
         try {
           const initialPage = Math.max(1, Math.min(book?.current_page || 1, numPages));
-          setPageNumber(initialPage);
-          setPageInput(String(initialPage));
+          
+          startTransition(() => { // Wrap these initial state updates
+            setPageNumber(initialPage);
+            setPageInput(String(initialPage));
+          });
 
           const page = await pdfDocument.getPage(1);
           const viewport = page.getViewport({ scale: 1 });
