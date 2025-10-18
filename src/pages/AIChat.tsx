@@ -115,14 +115,14 @@ const AIChat: React.FC = () => {
           )}
           <div ref={messagesEndRef} />
         </CardContent>
-        <div className="p-4 border-t border-border flex items-center gap-2">
+        <div className="p-4 border-t border-border flex items-center gap-2 flex-wrap"> {/* Adicionado flex-wrap */}
           <Input
             type="text"
             placeholder="Digite sua mensagem..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring"
+            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring min-w-[150px]" {/* Adicionado min-w */}
             disabled={isLoading}
           />
           <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">

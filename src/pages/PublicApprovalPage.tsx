@@ -203,7 +203,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
         )}
       </header>
 
-      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
         {tasks.length === 0 ? (
           <div className="col-span-full text-center text-muted-foreground text-xl mt-8">
             Nenhum material pendente de aprovação para este mês.

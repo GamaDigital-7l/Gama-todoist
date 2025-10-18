@@ -254,7 +254,7 @@ const Clients: React.FC = () => {
       </p>
 
       {/* Indicadores do Topo */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Clientes</CardTitle>
@@ -307,7 +307,7 @@ const Clients: React.FC = () => {
       </div>
 
       <Tabs defaultValue="all" className="flex-1 flex flex-col" onValueChange={(value) => setActiveTab(value as ClientType | "all")}>
-        <TabsList className="grid w-full grid-cols-4 bg-secondary/50 border border-border rounded-md mb-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md mb-4">
           <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todos</TabsTrigger>
           <TabsTrigger value="fixed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Fixos</TabsTrigger>
           <TabsTrigger value="freela" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Freela</TabsTrigger>

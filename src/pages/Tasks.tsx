@@ -346,7 +346,7 @@ const Tasks: React.FC = () => {
         Organize suas tarefas diárias, semanais e mensais aqui.
       </p>
 
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2"> {/* Ajustado para grid-cols-1 */}
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader>
             <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>

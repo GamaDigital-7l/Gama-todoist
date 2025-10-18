@@ -401,7 +401,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       {recurrenceType === "weekly" && (
         <div>
           <Label className="text-foreground">Dias da Semana</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"> {/* Ajustado para grid responsivo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"> {/* Ajustado para grid-cols-2 sm:grid-cols-4 */}
             {DAYS_OF_WEEK.map((day) => (
               <div key={day.value} className="flex items-center space-x-2">
                 <Checkbox

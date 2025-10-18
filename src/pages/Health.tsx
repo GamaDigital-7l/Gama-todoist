@@ -29,6 +29,7 @@ interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_d
   updated_at: string;
   start_date: string;
   target_date: string;
+  is_completed: boolean;
 }
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
@@ -235,7 +236,7 @@ const Health: React.FC = () => {
 
       <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Metas de Saúde</h2>
       {healthGoals && healthGoals.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
           {healthGoals.map((goal) => {
             const totalToLose = goal.initial_weight_kg - goal.target_weight_kg;
             const currentWeightLost = latestWeight ? (goal.initial_weight_kg - latestWeight) : 0;
@@ -308,7 +309,7 @@ const Health: React.FC = () => {
 
       <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Métricas de Saúde</h2>
       {healthMetrics && healthMetrics.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
           {healthMetrics.map((metric) => (
             <Card key={metric.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

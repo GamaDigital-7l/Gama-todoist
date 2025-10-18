@@ -431,7 +431,7 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-1 flex-col gap-8 p-4 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end"> {/* Adicionado flex-wrap e justify-center/end */}
           <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -440,7 +440,7 @@ const Dashboard: React.FC = () => {
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
+                  "w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
@@ -498,7 +498,7 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
         <TaskListBoard
           title="Hoje Prioridade"
           tasks={todayPriorityTasks || []}
@@ -592,7 +592,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 mt-8">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 mt-8"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
