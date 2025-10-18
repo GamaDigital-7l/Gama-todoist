@@ -298,7 +298,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
                   clientId={clientId}
                   monthYearRef={monthYearRef}
                   initialData={task}
-                  onTaskSaved={handleTaskSaved}
+                  onTaskSaved={refetchTasks} {/* Corrigido: Usar refetchTasks aqui */}
                   onClose={() => setIsTaskFormOpen(false)}
                 />
               </DialogContent>
