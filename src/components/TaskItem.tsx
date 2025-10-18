@@ -111,7 +111,6 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
       showSuccess("Tarefa atualizada com sucesso!");
       // Invalidação de cache mais granular
       queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-      queryClient.invalidateQueries({ queryKey: ["userProfile", userId] });
       queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.current_board, userId] }); // Invalida o board de origem
       queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.current_board : "completed", userId] }); // Invalida o board de destino
       queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
@@ -194,7 +193,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
               className={cn(
                 "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 break-words",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
+                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm" // Fontes adaptáveis
               )}
             >
               {task.overdue && ( // Exibir alerta de atraso
@@ -208,13 +207,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             {task.description && (
               <p className={cn(
                 "text-muted-foreground break-words",
-                level === 0 ? "text-sm" : "text-xs" // Texto menor para subtarefas
+                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm" // Fontes adaptáveis
               )}>{task.description}</p>
             )}
             {task.due_date && task.recurrence_type === "none" && (
               <p className={cn(
                 "text-xs text-muted-foreground",
-                level > 0 && "text-[0.65rem]" // Ainda menor para subtarefas aninhadas
+                level > 0 && "text-[0.65rem] md:text-xs" // Ainda menor para subtarefas aninhadas
               )}>
                 Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
               </p>
@@ -222,7 +221,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             {task.time && (
               <p className={cn(
                 "text-xs text-muted-foreground flex items-center gap-1",
-                level > 0 && "text-[0.65rem]"
+                level > 0 && "text-[0.65rem] md:text-xs"
               )}>
                 <Clock className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {task.time}
               </p>
@@ -230,14 +229,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             {task.recurrence_type !== "none" && (
               <p className={cn(
                 "text-xs text-muted-foreground flex items-center gap-1",
-                level > 0 && "text-[0.65rem]"
+                level > 0 && "text-[0.65rem] md:text-xs"
               )}>
                 <Repeat className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
                 {task.recurrence_time && ` às ${task.recurrence_time}`}
               </p>
             )}
             {isClientTask && task.client_name && (
-              <Badge variant="secondary" className="bg-blue-500/20 text-blue-500 border-blue-500/50 w-fit flex items-center gap-1 mt-1">
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-500 border-blue-500/50 w-fit flex items-center gap-1 mt-1 text-xs md:text-sm">
                 <Users className="h-3 w-3" /> Cliente: {task.client_name}
               </Badge>
             )}

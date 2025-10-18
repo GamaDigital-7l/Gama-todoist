@@ -152,7 +152,7 @@ const Notes: React.FC = () => {
 
   if (isLoading || isLoadingTags) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-muted-foreground">Carregando suas notas...</p>
       </div>
@@ -162,7 +162,7 @@ const Notes: React.FC = () => {
   if (error) {
     showError("Erro ao carregar notas: " + error.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-red-500">Erro ao carregar notas: {error.message}</p>
       </div>
@@ -172,7 +172,7 @@ const Notes: React.FC = () => {
   if (tagsError) {
     showError("Erro ao carregar rótulos: " + tagsError.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Segundo Cérebro (Notas)</h1>
         <p className="text-lg text-red-500">Erro ao carregar rótulos: {tagsError.message}</p>
       </div>
@@ -180,7 +180,7 @@ const Notes: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
           <NotebookText className="h-7 w-7 text-primary flex-shrink-0" /> Segundo Cérebro (Notas)

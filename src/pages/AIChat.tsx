@@ -63,7 +63,7 @@ const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <MessageSquare className="h-7 w-7 text-primary flex-shrink-0" /> Assistente de IA
       </h1>
@@ -73,11 +73,11 @@ const AIChat: React.FC = () => {
 
       <Card className="flex flex-col flex-grow bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader className="border-b border-border">
-          <CardTitle className="text-foreground">Chat com IA</CardTitle>
+          <CardTitle className="text-foreground text-xl md:text-2xl">Chat com IA</CardTitle> {/* Fontes adaptáveis */}
         </CardHeader>
         <CardContent className="flex-grow p-4 overflow-y-auto space-y-4">
           {messages.length === 0 && (
-            <p className="text-center text-muted-foreground">
+            <p className="text-center text-muted-foreground text-base md:text-lg"> {/* Fontes adaptáveis */}
               Olá! Como posso te ajudar hoje?
             </p>
           )}
@@ -98,7 +98,7 @@ const AIChat: React.FC = () => {
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                <p className="text-sm">{msg.content}</p>
+                <p className="text-sm md:text-base">{msg.content}</p> {/* Fontes adaptáveis */}
               </div>
               {msg.role === "user" && (
                 <User className="h-6 w-6 text-muted-foreground flex-shrink-0 mt-1" />
@@ -115,14 +115,14 @@ const AIChat: React.FC = () => {
           )}
           <div ref={messagesEndRef} />
         </CardContent>
-        <div className="p-4 border-t border-border flex items-center gap-2 flex-wrap"> {/* Adicionado flex-wrap */}
+        <div className="p-4 border-t border-border flex items-center gap-2 flex-wrap">
           <Input
             type="text"
             placeholder="Digite sua mensagem..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring min-w-[150px]" /* Adicionado min-w */
+            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring min-w-[150px] text-sm md:text-base" /* Fontes adaptáveis */
             disabled={isLoading}
           />
           <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">

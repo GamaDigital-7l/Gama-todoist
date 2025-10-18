@@ -96,6 +96,7 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
     // Para 'today_priority', 'today_no_priority', 'jobs_woe_today'
     query = query
       .eq("current_board", board)
+      .eq("is_priority", board === "today_priority") // Filtrar por is_priority para boards de hoje
       .eq("is_completed", false); // Apenas tarefas não concluídas
   }
 
@@ -112,13 +113,8 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
   };
 
   const filteredData = data?.filter(task => {
-    if (board === "overdue" || board === "completed") {
+    if (board === "overdue" || board === "completed" || board === "recurrent") {
       return true; // A filtragem já foi feita na query Supabase
-    }
-    if (board === "recurrent") {
-      // Para tarefas recorrentes, a filtragem já foi feita na query Supabase.
-      // Não precisamos de filtragem adicional por data aqui, pois queremos todas as recorrentes ativas.
-      return true; 
     }
     // Para boards de 'hoje', filtrar por due_date ou recorrência
     if (task.due_date && isSameDay(parseISO(task.due_date), selectedDate)) {
@@ -428,10 +424,10 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6"> {/* Reduzido o gap para 6 */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3"> {/* Ajustado gap para 3 */}
+    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6"> {/* Adicionado md:px-10 para padding lateral */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto"> {/* Adicionado w-full sm:w-auto */}
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
           <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -440,7 +436,7 @@ const Dashboard: React.FC = () => {
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-32 justify-center text-center font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0", /* Ajustado w-32 e justify-center */
+                  "w-32 justify-center text-center font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
@@ -467,7 +463,7 @@ const Dashboard: React.FC = () => {
           </Button>
           <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"> {/* Adicionado w-full sm:w-auto e flex-shrink-0 */}
+              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
               </Button>
             </DialogTrigger>

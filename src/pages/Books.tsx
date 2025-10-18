@@ -127,7 +127,7 @@ const Books: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-muted-foreground">Carregando seus livros...</p>
       </div>
@@ -137,7 +137,7 @@ const Books: React.FC = () => {
   if (error) {
     showError("Erro ao carregar livros: " + error.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <p className="text-lg text-red-500">Erro ao carregar livros: {error.message}</p>
       </div>
@@ -145,7 +145,7 @@ const Books: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Sua Biblioteca de Livros</h1>
         <Dialog

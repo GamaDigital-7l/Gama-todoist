@@ -21,8 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
       className
     )}>
       <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
-          <span className="text-lg">Nexus Flow</span>
+        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground text-lg md:text-xl"> {/* Fontes adaptáveis */}
+          <span className="text-lg md:text-xl">Nexus Flow</span>
         </Link>
         {isSidebarOpen && (
           <Button
@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/dashboard"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/planner"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/tasks"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/goals"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/books"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -102,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/study"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -114,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/health"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -126,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/notes"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -138,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/clients"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -150,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/results" /* Novo link para Resultados */
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/ai-chat"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }
@@ -174,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSideb
             to="/settings"
             className={({ isActive }) =>
               cn(
-                "nav-link-base",
+                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
                 isActive ? "nav-link-active" : "nav-link-inactive"
               )
             }

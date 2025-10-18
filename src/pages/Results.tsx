@@ -77,7 +77,7 @@ const Results: React.FC = () => {
 
   if (isLoadingAllTasks || isLoadingRecurringTasks) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Resultados</h1>
         <p className="text-lg text-muted-foreground">Carregando seu painel de desempenho...</p>
       </div>
@@ -87,7 +87,7 @@ const Results: React.FC = () => {
   if (errorAllTasks) {
     showError("Erro ao carregar tarefas gerais: " + errorAllTasks.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Resultados</h1>
         <p className="text-lg text-red-500">Erro ao carregar tarefas gerais: {errorAllTasks.message}</p>
       </div>
@@ -97,7 +97,7 @@ const Results: React.FC = () => {
   if (errorRecurringTasks) {
     showError("Erro ao carregar tarefas recorrentes: " + errorRecurringTasks.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Resultados</h1>
         <p className="text-lg text-red-500">Erro ao carregar tarefas recorrentes: {errorRecurringTasks.message}</p>
       </div>
@@ -105,7 +105,7 @@ const Results: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <BarChart2 className="h-7 w-7 text-primary" /> Resultados
       </h1>

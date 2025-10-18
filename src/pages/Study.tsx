@@ -98,7 +98,7 @@ const Study: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <p className="text-lg text-muted-foreground">Carregando suas sessões de estudo...</p>
       </div>
@@ -108,7 +108,7 @@ const Study: React.FC = () => {
   if (error) {
     showError("Erro ao carregar sessões de estudo: " + error.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <p className="text-lg text-red-500">Erro ao carregar sessões de estudo: {error.message}</p>
       </div>
@@ -116,7 +116,7 @@ const Study: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Evolução de Estudos</h1>
         <Dialog
@@ -133,7 +133,9 @@ const Study: React.FC = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-foreground">{editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}</DialogTitle>
+              <DialogTitle className="text-foreground">
+                {editingSession ? "Editar Sessão de Estudo" : "Adicionar Nova Sessão de Estudo"}
+              </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 {editingSession ? "Atualize os detalhes da sua sessão de estudo." : "Registre uma nova sessão de estudo."}
               </DialogDescription>
@@ -151,7 +153,7 @@ const Study: React.FC = () => {
       </p>
 
       {studySessions && studySessions.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 */}
           {studySessions.map((session) => (
             <Card key={session.id} className="flex flex-col h-full bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -162,7 +164,7 @@ const Study: React.FC = () => {
                     onCheckedChange={() => handleToggleComplete(session.id, session.is_completed)}
                     className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                   />
-                  <CardTitle className={`text-xl font-semibold break-words min-w-0 ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <CardTitle className={`text-xl md:text-2xl font-semibold break-words min-w-0 ${session.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}> {/* Fontes adaptáveis */}
                     {session.title}
                   </CardTitle>
                 </div>
@@ -179,13 +181,13 @@ const Study: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {session.notes && (
-                  <CardDescription className="mb-2 text-muted-foreground break-words">{session.notes}</CardDescription>
+                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{session.notes}</CardDescription> {/* Fontes adaptáveis */}
                 )}
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
+                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1"> {/* Fontes adaptáveis */}
                   <BookOpen className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}
                 </p>
                 {session.duration_minutes && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                     <Clock className="h-4 w-4 text-primary flex-shrink-0" /> Duração: {session.duration_minutes} minutos
                   </p>
                 )}
@@ -194,7 +196,7 @@ const Study: React.FC = () => {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">Nenhuma sessão de estudo encontrada. Adicione uma nova para começar a registrar seu progresso!</p>
+        <p className="text-muted-foreground text-base md:text-lg">Nenhuma sessão de estudo encontrada. Adicione uma nova para começar a registrar seu progresso!</p> {/* Fontes adaptáveis */}
       )}
     </div>
   );

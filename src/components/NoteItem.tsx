@@ -124,7 +124,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         const checklistItems = JSON.parse(note.content);
         if (!Array.isArray(checklistItems)) return <p className="text-sm text-red-500">Conteúdo da checklist inválido.</p>;
         return (
-          <ul className="space-y-1 text-sm text-gray-800 dark:text-gray-100">
+          <ul className="space-y-1 text-sm md:text-base text-gray-800 dark:text-gray-100"> {/* Fontes adaptáveis */}
             {checklistItems.map((item: { text: string; completed: boolean }, index: number) => (
               <li key={index} className="flex items-center gap-2">
                 <Checkbox
@@ -144,7 +144,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
       }
     }
-    return <div className="prose dark:prose-invert max-w-none text-sm text-gray-800 dark:text-gray-100 break-words" dangerouslySetInnerHTML={{ __html: note.content }} />;
+    return <div className="prose dark:prose-invert max-w-none text-sm md:text-base text-gray-800 dark:text-gray-100 break-words" dangerouslySetInnerHTML={{ __html: note.content }} />; // Fontes adaptáveis
   };
 
   return (
@@ -192,21 +192,21 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         )}
       </div>
       <CardHeader className="pb-2" onClick={() => handleEditNote(note)}>
-        {note.title && <CardTitle className="text-lg font-semibold break-words">{note.title}</CardTitle>}
+        {note.title && <CardTitle className="text-lg md:text-xl font-semibold break-words">{note.title}</CardTitle>} {/* Fontes adaptáveis */}
       </CardHeader>
       <CardContent className="flex-grow" onClick={() => handleEditNote(note)}>
         {renderNoteContent()}
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {note.tags.map((tag) => (
-              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs">
+              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
                 {tag.name}
               </Badge>
             ))}
           </div>
         )}
         {note.reminder_date && note.reminder_time && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+          <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mt-2"> {/* Fontes adaptáveis */}
             <Bell className="h-3 w-3 text-blue-500 flex-shrink-0" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
           </p>
         )}

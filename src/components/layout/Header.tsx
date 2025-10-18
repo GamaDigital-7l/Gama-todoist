@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen, isMobileM
   const displayInitials = (userProfile?.first_name?.charAt(0) || session?.user?.email?.charAt(0) || "U").toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-4 md:px-6 lg:px-8 sm:static sm:h-auto sm:border-0 sm:bg-transparent"> {/* Ajustado padding */}
       {/* Gatilho do Sheet para mobile */}
       {isMobile ? (
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

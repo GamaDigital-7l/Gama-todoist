@@ -139,7 +139,7 @@ const Health: React.FC = () => {
 
   if (isLoadingMetrics || isLoadingGoals) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-muted-foreground">Carregando suas métricas e metas de saúde...</p>
       </div>
@@ -149,7 +149,7 @@ const Health: React.FC = () => {
   if (metricsError) {
     showError("Erro ao carregar métricas de saúde: " + metricsError.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar métricas de saúde: {metricsError.message}</p>
       </div>
@@ -159,7 +159,7 @@ const Health: React.FC = () => {
   if (goalsError) {
     showError("Erro ao carregar metas de saúde: " + goalsError.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas de saúde: {goalsError.message}</p>
       </div>
@@ -167,7 +167,7 @@ const Health: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">
@@ -185,7 +185,9 @@ const Health: React.FC = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-foreground">{editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}</DialogTitle>
+                <DialogTitle className="text-foreground">
+                  {editingGoal ? "Editar Meta de Saúde" : "Adicionar Nova Meta de Saúde"}
+                </DialogTitle>
                 <DialogDescription className="text-muted-foreground">
                   Defina ou atualize uma meta para sua saúde.
                 </DialogDescription>
@@ -216,7 +218,9 @@ const Health: React.FC = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-foreground">{editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}</DialogTitle>
+                <DialogTitle className="text-foreground">
+                  {editingMetric ? "Editar Métrica de Saúde" : "Adicionar Nova Métrica de Saúde"}
+                </DialogTitle>
                 <DialogDescription className="text-muted-foreground">
                   Registre ou atualize suas métricas de saúde.
                 </DialogDescription>
@@ -234,7 +238,7 @@ const Health: React.FC = () => {
         Registre e acompanhe seu peso, outras métricas e suas metas de saúde.
       </p>
 
-      <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Metas de Saúde</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-foreground mt-6">Minhas Metas de Saúde</h2> {/* Fontes adaptáveis */}
       {healthGoals && healthGoals.length > 0 ? (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
           {healthGoals.map((goal) => {
@@ -247,7 +251,7 @@ const Health: React.FC = () => {
             return (
               <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                  <CardTitle className={`text-xl font-semibold break-words ${goal.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <CardTitle className={`text-xl md:text-2xl font-semibold break-words ${goal.is_completed ? "line-through text-muted-foreground" : "text-foreground"}`}> {/* Fontes adaptáveis */}
                     {goal.title}
                   </CardTitle>
                   <div className="flex items-center gap-2 flex-shrink-0 mt-1 sm:mt-0">
@@ -264,37 +268,37 @@ const Health: React.FC = () => {
                 </CardHeader>
                 <CardContent className="flex-grow space-y-2">
                   {goal.description && (
-                    <CardDescription className="mb-2 text-muted-foreground break-words">{goal.description}</CardDescription>
+                    <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{goal.description}</CardDescription> {/* Fontes adaptáveis */}
                   )}
                   {goal.target_date && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
+                    <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2"> {/* Fontes adaptáveis */}
                       <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
                     </p>
                   )}
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                     {/* getStatusIcon(goal.status) */} Status: {goal.status}
                   </p>
 
                   {latestWeight !== null && (
                     <>
-                      <p className="text-sm text-foreground flex items-center gap-1 font-semibold mt-3">
+                      <p className="text-sm md:text-base text-foreground flex items-center gap-1 font-semibold mt-3"> {/* Fontes adaptáveis */}
                         <TrendingDown className="h-4 w-4 text-green-500 flex-shrink-0" /> Peso Atual: {latestWeight} kg
                       </p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                         <TrendingUp className="h-4 w-4 text-green-500 flex-shrink-0" /> Perdido até agora: {currentWeightLost.toFixed(2)} kg
                       </p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
                         <TrendingDown className="h-4 w-4 text-red-500 flex-shrink-0" /> Restante para perder: {remainingToLose.toFixed(2)} kg
                       </p>
                       <div className="mt-3">
-                        <Label className="text-foreground">Progresso</Label>
+                        <Label className="text-foreground text-sm md:text-base">Progresso</Label> {/* Fontes adaptáveis */}
                         <Progress value={progressPercentage} className="w-full mt-1" />
-                        <p className="text-xs text-muted-foreground text-right mt-1">{progressPercentage.toFixed(0)}%</p>
+                        <p className="text-xs md:text-sm text-muted-foreground text-right mt-1">{progressPercentage.toFixed(0)}%</p> {/* Fontes adaptáveis */}
                       </div>
                     </>
                   )}
                   {latestWeight === null && (
-                    <p className="text-sm text-muted-foreground mt-3">
+                    <p className="text-sm md:text-base text-muted-foreground mt-3"> {/* Fontes adaptáveis */}
                       Adicione uma métrica de peso para ver o progresso da sua meta.
                     </p>
                   )}
@@ -304,16 +308,16 @@ const Health: React.FC = () => {
           })}
         </div>
       ) : (
-        <p className="text-muted-foreground">Nenhuma meta de saúde encontrada. Adicione uma nova meta para começar a acompanhar seu progresso!</p>
+        <p className="text-muted-foreground text-base md:text-lg">Nenhuma meta de saúde encontrada. Adicione uma nova meta para começar a acompanhar seu progresso!</p> {/* Fontes adaptáveis */}
       )}
 
-      <h2 className="text-2xl font-bold text-foreground mt-6">Minhas Métricas de Saúde</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-foreground mt-6">Minhas Métricas de Saúde</h2> {/* Fontes adaptáveis */}
       {healthMetrics && healthMetrics.length > 0 ? (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
           {healthMetrics.map((metric) => (
             <Card key={metric.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-semibold text-foreground break-words">
+                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words"> {/* Fontes adaptáveis */}
                   {metric.weight_kg ? `${metric.weight_kg} kg` : "Métrica de Saúde"}
                 </CardTitle>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -328,11 +332,11 @@ const Health: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
+                <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1"> {/* Fontes adaptáveis */}
                   <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
-                  <p className="text-sm text-muted-foreground flex items-start gap-1 break-words">
+                  <p className="text-sm md:text-base text-muted-foreground flex items-start gap-1 break-words"> {/* Fontes adaptáveis */}
                     <NotebookText className="h-4 w-4 text-primary flex-shrink-0 mt-1" /> Notas: {metric.notes}
                   </p>
                 )}
@@ -341,7 +345,7 @@ const Health: React.FC = () => {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">Nenhuma métrica de saúde encontrada. Adicione uma nova para começar a acompanhar seu progresso!</p>
+        <p className="text-muted-foreground text-base md:text-lg">Nenhuma métrica de saúde encontrada. Adicione uma nova para começar a acompanhar seu progresso!</p> {/* Fontes adaptáveis */}
       )}
     </div>
   );

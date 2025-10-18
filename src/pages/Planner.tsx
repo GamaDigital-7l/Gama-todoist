@@ -404,7 +404,7 @@ const Planner: React.FC = () => {
   ].sort((a, b) => a.start_time.getTime() - b.start_time.getTime());
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6 bg-background text-foreground"> {/* Adicionado md:px-10 para padding lateral */}
       <h1 className="text-3xl font-bold flex items-center gap-3">
         <CalendarDays className="h-8 w-8 text-primary flex-shrink-0" /> Planner
       </h1>
@@ -414,7 +414,7 @@ const Planner: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coluna Esquerda: Calendário e Próximas Reuniões */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:col-span-1"> {/* Adicionado lg:col-span-1 */}
           <Card className="bg-card border border-border rounded-xl shadow-lg p-4 flex flex-col items-center justify-center frosted-glass card-hover-effect">
             <CardHeader className="w-full text-center pb-2">
               <CardTitle className="text-2xl font-semibold text-foreground">Selecionar Data</CardTitle>
@@ -478,7 +478,7 @@ const Planner: React.FC = () => {
         </div>
 
         {/* Colunas do Meio e Direita: Reuniões/Eventos do Dia e Tarefas do Dia */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Ajustado para grid-cols-1 md:grid-cols-2 */}
           {/* Card de Reuniões e Eventos do Dia */}
           <Card className="flex flex-col bg-card border border-border rounded-xl shadow-lg frosted-glass card-hover-effect">
             <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between flex-wrap gap-2">
@@ -535,7 +535,7 @@ const Planner: React.FC = () => {
                         Ver no Google Calendar <LinkIcon className="h-3 w-3 flex-shrink-0" />
                       </a>
                     )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 flex-wrap"> {/* Ajustado para flex-col sm:flex-row */}
                       {event.type === 'meeting' ? (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => handleEditMeeting(event.original_meeting!)} className="h-7 w-7 text-blue-500 hover:bg-blue-500/10">

@@ -100,7 +100,7 @@ const ClientDetails: React.FC = () => {
 
   if (!id) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do cliente não foi fornecido.</p>
         <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
@@ -146,7 +146,7 @@ const ClientDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       {/* Área Superior: Nome do Cliente, Logo e Botões */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 mb-4">
         <div className="flex items-center gap-4 min-w-0">
@@ -193,10 +193,10 @@ const ClientDetails: React.FC = () => {
       {/* Tabs para Dashboard e Kanban */}
       <Tabs defaultValue="dashboard" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base"> {/* Fontes adaptáveis */}
             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">
+          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base"> {/* Fontes adaptáveis */}
             <KanbanSquare className="mr-2 h-4 w-4" /> Kanban
           </TabsTrigger>
         </TabsList>
@@ -204,22 +204,22 @@ const ClientDetails: React.FC = () => {
         <TabsContent value="dashboard" className="flex-1">
           <Card className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
             <CardHeader>
-              <CardTitle className="text-foreground">Visão Geral do Cliente</CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardTitle className="text-foreground text-lg md:text-xl">Visão Geral do Cliente</CardTitle> {/* Fontes adaptáveis */}
+              <CardDescription className="text-muted-foreground text-sm md:text-base"> {/* Fontes adaptáveis */}
                 Informações detalhadas e um resumo das atividades do cliente.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 p-4">
               {client.description ? (
-                <p className="text-muted-foreground break-words">{client.description}</p>
+                <p className="text-muted-foreground break-words text-sm md:text-base">{client.description}</p> {/* Fontes adaptáveis */}
               ) : (
-                <p className="text-muted-foreground">Nenhuma descrição fornecida para este cliente.</p>
+                <p className="text-muted-foreground text-sm md:text-base">Nenhuma descrição fornecida para este cliente.</p> {/* Fontes adaptáveis */}
               )}
               {/* Adicionar mais informações do dashboard aqui, se necessário */}
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground">Tipo de Cliente: <span className="font-semibold text-foreground">{client.type}</span></p>
-                <p className="text-sm text-muted-foreground">Meta de Entregas Mensais: <span className="font-semibold text-foreground">{client.monthly_delivery_goal}</span></p>
-                <p className="text-sm text-muted-foreground">Criado em: <span className="font-semibold text-foreground">{format(parseISO(client.created_at), "PPP", { locale: ptBR })}</span></p>
+              <div className="mt-4 space-y-1"> {/* Espaçamento uniforme */}
+                <p className="text-sm md:text-base text-muted-foreground">Tipo de Cliente: <span className="font-semibold text-foreground">{client.type}</span></p> {/* Fontes adaptáveis */}
+                <p className="text-sm md:text-base text-muted-foreground">Meta de Entregas Mensais: <span className="font-semibold text-foreground">{client.monthly_delivery_goal}</span></p> {/* Fontes adaptáveis */}
+                <p className="text-sm md:text-base text-muted-foreground">Criado em: <span className="font-semibold text-foreground">{format(parseISO(client.created_at), "PPP", { locale: ptBR })}</span></p> {/* Fontes adaptáveis */}
               </div>
             </CardContent>
           </Card>

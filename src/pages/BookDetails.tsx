@@ -45,7 +45,7 @@ const BookDetails: React.FC = () => {
 
   if (!id) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Livro Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do livro não foi fornecido.</p>
         <Button onClick={() => navigate("/books")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
@@ -91,36 +91,36 @@ const BookDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <Button variant="outline" size="icon" onClick={() => navigate("/books")} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
           <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Voltar</span>
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold break-words">{book.title}</h1>
-          {book.author && <p className="text-lg text-muted-foreground break-words">Por {book.author}</p>}
+          <h1 className="text-3xl md:text-4xl font-bold break-words">{book.title}</h1> {/* Fontes adaptáveis */}
+          {book.author && <p className="text-lg md:text-xl text-muted-foreground break-words">Por {book.author}</p>} {/* Fontes adaptáveis */}
         </div>
       </div>
 
       <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
         <CardHeader>
-          <CardTitle className="text-foreground">Detalhes do Livro</CardTitle>
+          <CardTitle className="text-foreground text-xl md:text-2xl">Detalhes do Livro</CardTitle> {/* Fontes adaptáveis */}
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 md:space-y-6"> {/* Espaçamento uniforme */}
           {book.cover_image_url && (
             <img src={book.cover_image_url} alt={book.title} className="w-48 h-auto rounded-md object-cover mx-auto" />
           )}
           {book.description && (
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Descrição:</h3>
-              <p className="text-muted-foreground break-words">{book.description}</p>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground">Descrição:</h3> {/* Fontes adaptáveis */}
+              <p className="text-muted-foreground break-words text-base md:text-lg">{book.description}</p> {/* Fontes adaptáveis */}
             </div>
           )}
 
           {book.pdf_url && (
             <Link to={`/books/${book.id}/read`}>
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-base md:text-lg"> {/* Fontes adaptáveis */}
                 <BookOpen className="mr-2 h-4 w-4" /> Ler PDF em Tela Cheia
               </Button>
             </Link>
@@ -128,15 +128,15 @@ const BookDetails: React.FC = () => {
 
           {book.content && !book.pdf_url && (
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Conteúdo:</h3>
-              <div className="prose dark:prose-invert max-w-none text-foreground break-words">
+              <h3 className="text-lg md:text-xl font-semibold text-foreground">Conteúdo:</h3> {/* Fontes adaptáveis */}
+              <div className="prose dark:prose-invert max-w-none text-foreground break-words text-base md:text-lg"> {/* Fontes adaptáveis */}
                 <div dangerouslySetInnerHTML={{ __html: book.content.replace(/\n/g, '<br />') }} />
               </div>
             </div>
           )}
 
           {!book.pdf_url && !book.content && (
-            <p className="text-muted-foreground">Nenhum conteúdo de livro ou PDF disponível para leitura.</p>
+            <p className="text-muted-foreground text-base md:text-lg">Nenhum conteúdo de livro ou PDF disponível para leitura.</p> {/* Fontes adaptáveis */}
           )}
         </CardContent>
       </Card>
