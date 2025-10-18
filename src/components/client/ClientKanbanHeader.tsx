@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"; // Adicionado importação
 import { format, subMonths, addMonths, endOfMonth, isSameMonth, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Client, ClientTask, PublicApprovalLink } from "@/types/client";
