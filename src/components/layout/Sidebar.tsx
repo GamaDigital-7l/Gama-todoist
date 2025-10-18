@@ -1,194 +1,112 @@
-"use client";
-
-import React from "react";
-import { NavLink, Link } from "react-router-dom";
-import { Home, ListTodo, Target, Sparkles, Settings, BookOpen, MessageSquare, GraduationCap, HeartPulse, NotebookText, X, CalendarDays, Users, BarChart2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
+import { Home, ListTodo, Goal, Book, Brain, Heart, NotebookPen, CalendarDays, Users, MessageSquare, Settings, BarChart3, Download } from "lucide-react"; // Adicionado ícone Download
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from "react";
+import { showSuccess, showInfo } from "@/utils/toast";
 
 interface SidebarProps {
-  className?: string;
-  isSidebarOpen: boolean;
-  toggleSidebar: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ className, isSidebarOpen, toggleSidebar }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const location = useLocation();
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      (deferredPrompt as any).prompt();
+      (deferredPrompt as any).userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          showSuccess('Nexus Flow instalado com sucesso!');
+        } else {
+          showInfo('Instalação cancelada.');
+        }
+        setDeferredPrompt(null);
+      });
+    }
+  };
+
+  const navItems = [
+    { name: "Dashboard", path: "/dashboard", icon: Home },
+    { name: "Tarefas", path: "/tasks", icon: ListTodo },
+    { name: "Planner", path: "/planner", icon: CalendarDays },
+    { name: "Metas", path: "/goals", icon: Goal },
+    { name: "Clientes", path: "/clients", icon: Users },
+    { name: "Estudo", path: "/study", icon: Brain },
+    { name: "Saúde", path: "/health", icon: Heart },
+    { name: "Livros", path: "/books", icon: Book },
+    { name: "Notas", path: "/notes", icon: NotebookPen },
+    { name: "AI Chat", path: "/ai-chat", icon: MessageSquare },
+    { name: "Resultados", path: "/results", icon: BarChart3 },
+    { name: "Configurações", path: "/settings", icon: Settings },
+  ];
+
   return (
-    <div className={cn(
-      "fixed inset-y-0 left-0 z-40 flex flex-col h-full border-r border-sidebar-border bg-sidebar-background transition-all duration-300 ease-in-out",
-      "md:relative",
-      isSidebarOpen ? "w-[220px] lg:w-[280px]" : "w-0 overflow-hidden",
-      className
-    )}>
-      <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-foreground text-lg md:text-xl"> {/* Fontes adaptáveis */}
-          <span className="text-lg md:text-xl">Nexus Flow</span>
+    <div
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar-background transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
+      <div className="flex h-16 items-center border-b border-sidebar-border px-4 lg:px-6">
+        <Link to="/" className="flex items-center gap-2 font-semibold text-sidebar-primary text-xl">
+          <span className="text-sidebar-primary-foreground">Nexus Flow</span>
         </Link>
-        {isSidebarOpen && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="ml-auto h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hidden md:flex"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Fechar Sidebar</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto md:hidden"
+          onClick={onClose}
+        >
+          <Menu className="h-5 w-5 text-sidebar-foreground" />
+          <span className="sr-only">Close sidebar</span>
+        </Button>
+      </div>
+      <nav className="flex-1 overflow-auto py-4">
+        <ul className="grid items-start gap-2 px-4 text-sm font-medium lg:px-6">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path + "/"));
+            return (
+              <li key={item.name}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "nav-link-base",
+                    isActive ? "nav-link-active" : "nav-link-inactive"
+                  )}
+                  onClick={onClose}
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <div className="mt-auto p-4 border-t border-sidebar-border">
+        {deferredPrompt && (
+          <Button onClick={handleInstallClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+            <Download className="mr-2 h-4 w-4" /> Instalar App
           </Button>
         )}
-      </div>
-      <div className="flex-1 py-2 overflow-y-auto">
-        <nav className="grid items-start px-4 text-sm font-medium lg:px-6 gap-1">
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <Home className="h-4 w-4" />
-            Dashboard
-          </NavLink>
-          <NavLink
-            to="/planner"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <CalendarDays className="h-4 w-4" />
-            Planner
-          </NavLink>
-          <NavLink
-            to="/tasks"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <ListTodo className="h-4 w-4" />
-            Tarefas
-          </NavLink>
-          <NavLink
-            to="/goals"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <Target className="h-4 w-4" />
-            Metas
-          </NavLink>
-          <NavLink
-            to="/books"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <BookOpen className="h-4 w-4" />
-            Livros
-          </NavLink>
-          <NavLink
-            to="/study"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <GraduationCap className="h-4 w-4" />
-            Estudos
-          </NavLink>
-          <NavLink
-            to="/health"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <HeartPulse className="h-4 w-4" />
-            Saúde
-          </NavLink>
-          <NavLink
-            to="/notes"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <NotebookText className="h-4 w-4" />
-            Notas
-          </NavLink>
-          <NavLink
-            to="/clients"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <Users className="h-4 w-4" />
-            Clientes
-          </NavLink>
-          <NavLink
-            to="/results" /* Novo link para Resultados */
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <BarChart2 className="h-4 w-4" />
-            Resultados
-          </NavLink>
-          <NavLink
-            to="/ai-chat"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <MessageSquare className="h-4 w-4" />
-            Chat IA
-          </NavLink>
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              cn(
-                "nav-link-base text-sm md:text-base", // Fontes adaptáveis
-                isActive ? "nav-link-active" : "nav-link-inactive"
-              )
-            }
-          >
-            <Settings className="h-4 w-4" />
-            Configurações
-          </NavLink>
-        </nav>
-      </div>
-      <div className="mt-auto p-4 border-t border-sidebar-border">
-        {/* Elementos de usuário/login removidos */}
       </div>
     </div>
   );
 };
-
-export default Sidebar;

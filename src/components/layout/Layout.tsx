@@ -1,42 +1,36 @@
-"use client";
-
-import React from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
+import { motion, AnimatePresence } from "framer-motion"; // Importar motion e AnimatePresence
+import { Loader2 } from "lucide-react"; // Ícone de loading
 
-const Layout: React.FC = () => {
-  const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false); // Controla a visibilidade da sidebar desktop
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false); // Controla a abertura do Sheet mobile
+const Layout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Estado de loading global
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  // O useEffect problemático foi removido daqui.
-  // A sidebar desktop agora será controlada apenas pelos botões de toggle.
-
-  // Determinar as colunas do grid com base no estado da sidebar e tamanho da tela
-  const gridColsClass = isSidebarOpen
-    ? "md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]"
-    : "md:grid-cols-[0px_1fr] lg:grid-cols-[0px_1fr]"; // Sidebar colapsada em desktop
+  // Função para simular um loading (pode ser integrado com React Query ou outras lógicas)
+  const startLoading = () => setIsLoading(true);
+  const stopLoading = () => setIsLoading(false);
 
   return (
-    <div className={`grid min-h-screen w-full ${gridColsClass}`}>
-      {/* Sidebar para desktop (controlada por isSidebarOpen) */}
-      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      
-      <div className="flex flex-col">
-        {/* Header recebe os estados para controlar o menu mobile e o botão de toggle desktop */}
-        <Header 
-          toggleSidebar={toggleSidebar} 
-          isSidebarOpen={isSidebarOpen} 
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-        />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto"> {/* Adicionado overflow-auto aqui */}
+    <div className="flex min-h-screen w-full bg-background text-foreground">
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <div className="flex flex-col flex-1">
+        <Header onMenuClick={() => setIsSidebarOpen(true)} />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto relative">
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center bg-background/80 z-50"
+              >
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <Outlet />
         </main>
       </div>

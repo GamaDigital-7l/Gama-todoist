@@ -1,50 +1,37 @@
-"use client";
-
-import React from "react";
+import React, { useState } from "react";
+import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Trash2, Repeat, Clock, Edit, PlusCircle, BookOpen, Dumbbell, GraduationCap, Loader2 } from "lucide-react"; // Adicionado Loader2
+import { format, isPast, isToday, isTomorrow, isThisWeek, isThisMonth, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import TaskForm from "@/components/TaskForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Checkbox } from "@/components/ui/checkbox";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle, Star, ChevronDown, ChevronRight, Users } from "lucide-react"; // Adicionado AlertCircle, Star, ChevronDown, ChevronRight, Users
-import { useSession } from "@/integrations/supabase/auth";
-import { Badge } from "@/components/ui/badge";
 import { getAdjustedTaskCompletionStatus } from "@/utils/taskHelpers";
-import { Task, DAYS_OF_WEEK_LABELS, OriginBoard } from "@/types/task";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import TaskForm from "@/components/TaskForm";
-import { cn } from "@/lib/utils"; // Importar cn
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
 
 interface TaskItemProps {
   task: Task;
   refetchTasks: () => void;
-  level?: number; // Para indentação de subtarefas
+  isSubtask?: boolean;
 }
 
-const POINTS_PER_TASK = 10;
-
-const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) => {
-  const { session } = useSession();
-  const userId = session?.user?.id;
+const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, isSubtask = false }) => {
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false); // Estado para feedback de conclusão
 
-  const [isTaskFormOpen, setIsTaskFormOpen] = React.useState(false);
-  const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
-  const [isSubtaskFormOpen, setIsSubtaskFormOpen] = React.useState(false);
-  const [isSubtasksExpanded, setIsSubtasksExpanded] = React.useState(true); // Estado para expandir/colapsar subtarefas
-
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, currentStatus }: { taskId: string; currentStatus: boolean }) => {
-      if (!userId) {
-        showError("Usuário não autenticado.");
-        throw new Error("Usuário não autenticado.");
-      }
-
+  const completeTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      setIsCompleting(true); // Inicia o feedback de loading
       const { data: taskToUpdate, error: fetchTaskError } = await supabase
         .from("tasks")
-        .select("recurrence_type, origin_board, current_board, is_priority, overdue") // Incluir novos campos
+        .select("recurrence_type, origin_board, current_board, is_priority, overdue, user_id")
         .eq("id", taskId)
         .single();
 
@@ -52,97 +39,73 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
 
       let newCurrentBoard = taskToUpdate.current_board;
       let newOverdueStatus = taskToUpdate.overdue;
-      let completedAt = null;
-      let lastSuccessfulCompletionDate = null;
-
-      if (!currentStatus) { // Se a tarefa está sendo marcada como concluída
-        completedAt = new Date().toISOString();
-        lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
-        if (taskToUpdate.recurrence_type === "none") {
-          newCurrentBoard = "completed"; // Mover para o quadro de finalizadas se não for recorrente
-          newOverdueStatus = false; // Não está mais atrasada se foi concluída
-        }
-      } else { // Se a tarefa está sendo desmarcada
-        completedAt = null;
-        lastSuccessfulCompletionDate = null;
-        if (taskToUpdate.recurrence_type === "none") {
-          newCurrentBoard = taskToUpdate.origin_board; // Voltar para o quadro de origem se não for recorrente
-          // Atrasada pode ser reavaliada pelo daily-reset
-        }
+      let completedAt = new Date().toISOString();
+      let lastSuccessfulCompletionDate = new Date().toISOString().split('T')[0];
+      
+      if (taskToUpdate.recurrence_type === "none") {
+        newCurrentBoard = "completed";
+        newOverdueStatus = false;
       }
 
       const { error: updateError } = await supabase
         .from("tasks")
         .update({
-          is_completed: !currentStatus,
+          is_completed: true,
           updated_at: new Date().toISOString(),
           last_successful_completion_date: lastSuccessfulCompletionDate,
           completed_at: completedAt,
-          current_board: newCurrentBoard, // Atualizar current_board
-          overdue: newOverdueStatus, // Atualizar status de atraso
+          current_board: newCurrentBoard,
+          overdue: newOverdueStatus,
         })
         .eq("id", taskId)
-        .eq("user_id", userId); // Adicionado user_id para segurança
+        .eq("user_id", taskToUpdate.user_id); // Usar user_id da tarefa
 
       if (updateError) throw updateError;
 
-      if (!currentStatus) { // Se a tarefa foi marcada como concluída, adicionar pontos
-        const { data: profileData, error: fetchProfileError } = await supabase
-          .from("profiles")
-          .select("points")
-          .eq("id", userId)
-          .single();
+      const { data: profileData, error: fetchProfileError } = await supabase
+        .from("profiles")
+        .select("points")
+        .eq("id", taskToUpdate.user_id)
+        .single();
 
-        let currentPoints = 0;
-        if (profileData) {
-          currentPoints = profileData.points || 0;
-        }
-
-        const newPoints = currentPoints + POINTS_PER_TASK;
-        const { error: pointsError } = await supabase
-          .from("profiles")
-          .update({ points: newPoints, updated_at: new Date().toISOString() })
-          .eq("id", userId);
-
-        if (pointsError) throw pointsError;
+      let currentPoints = 0;
+      if (profileData) {
+        currentPoints = profileData.points || 0;
       }
+
+      const newPoints = currentPoints + 10; 
+      const { error: pointsError } = await supabase
+        .from("profiles")
+        .update({ points: newPoints, updated_at: new Date().toISOString() })
+        .eq("id", taskToUpdate.user_id);
+
+      if (pointsError) throw pointsError;
     },
-    onSuccess: (_, variables) => {
-      showSuccess("Tarefa atualizada com sucesso!");
-      // Invalidação de cache mais granular
-      queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? "completed" : task.current_board, userId] }); // Invalida o board de origem
-      queryClient.invalidateQueries({ queryKey: ["dashboardTasks", variables.currentStatus ? task.current_board : "completed", userId] }); // Invalida o board de destino
-      queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] }); // Invalida tarefas do planner
-      refetchTasks(); // Refetch local para atualizar a lista
+    onSuccess: () => {
+      showSuccess("Tarefa concluída com sucesso!");
+      refetchTasks();
     },
     onError: (err: any) => {
-      showError("Erro ao atualizar tarefa: " + err.message);
-      console.error("Erro ao atualizar tarefa:", err);
+      showError("Erro ao concluir tarefa: " + err.message);
+      console.error("Erro ao concluir tarefa:", err);
     },
+    onSettled: () => {
+      setIsCompleting(false); // Finaliza o feedback de loading
+    }
   });
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!session?.user?.id) {
-      showError("Usuário não autenticado.");
-      return;
-    }
-    if (window.confirm("Tem certeza que deseja deletar esta tarefa e todas as suas subtarefas?")) {
+    if (window.confirm("Tem certeza que deseja deletar esta tarefa?")) {
       try {
         await supabase.from("task_tags").delete().eq("task_id", taskId);
 
         const { error } = await supabase
           .from("tasks")
           .delete()
-          .eq("id", taskId)
-          .eq("user_id", session.user.id);
+          .eq("id", taskId);
 
         if (error) throw error;
         showSuccess("Tarefa deletada com sucesso!");
-        // Invalidação de cache mais granular
-        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", task.current_board, userId] }); // Usar current_board
-        queryClient.invalidateQueries({ queryKey: ["dailyPlannerTasks", userId] });
         refetchTasks();
       } catch (err: any) {
         showError("Erro ao deletar tarefa: " + err.message);
@@ -151,164 +114,118 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsTaskFormOpen(true);
-  };
+  const status = getAdjustedTaskCompletionStatus(task);
 
-  const getRecurrenceText = (task: Task) => {
-    switch (task.recurrence_type) {
-      case "daily":
-        return "Recorre Diariamente";
-      case "weekly":
-        const days = task.recurrence_details?.split(',').map(day => DAYS_OF_WEEK_LABELS[day] || day).join(', ');
-        return `Recorre Semanalmente nos dias: ${days}`;
-      case "monthly":
-        return `Recorre Mensalmente no dia ${task.recurrence_details}`;
-      case "none":
+  const getStatusBadge = () => {
+    switch (status) {
+      case "overdue":
+        return <Badge variant="destructive" className="bg-status-overdue text-white">Atrasada</Badge>;
+      case "today_priority":
+      case "today_no_priority":
+        return <Badge className="bg-status-today text-white">Hoje</Badge>;
+      case "urgent":
+        return <Badge className="bg-status-urgent text-white">Urgente</Badge>;
+      case "completed":
+        return <Badge className="bg-status-completed text-white">Concluída</Badge>;
+      case "recurring":
+        return <Badge className="bg-status-recurring text-white">Recorrente</Badge>;
       default:
         return null;
     }
   };
 
-  const isTaskCompletedForPeriod = getAdjustedTaskCompletionStatus(task);
-  const isClientTask = task.origin_board === "client_tasks";
+  const getDueDateDisplay = () => {
+    if (!task.due_date) return "Sem data";
+    const dueDate = parseISO(task.due_date);
+    if (isToday(dueDate)) return "Hoje";
+    if (isTomorrow(dueDate)) return "Amanhã";
+    if (isPast(dueDate) && !task.is_completed) return `Atrasada (${format(dueDate, 'dd/MM')})`;
+    return format(dueDate, 'dd/MM/yyyy', { locale: ptBR });
+  };
+
+  const getRecurrenceDisplay = () => {
+    if (task.recurrence_type === "daily") return "Diariamente";
+    if (task.recurrence_type === "weekly" && task.recurrence_details) {
+      const days = task.recurrence_details.split(',').map(dayKey => DAYS_OF_WEEK_LABELS[dayKey]).join(', ');
+      return `Semanalmente: ${days}`;
+    }
+    if (task.recurrence_type === "monthly" && task.recurrence_details) return `Mensalmente: Dia ${task.recurrence_details}`;
+    return "";
+  };
 
   return (
-    <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}>
-      <div className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl shadow-sm frosted-glass card-hover-effect",
-        level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
-      )}>
-        <div className="flex items-center gap-3 flex-grow min-w-0">
-          <Checkbox
-            id={`task-${task.id}`}
-            checked={isTaskCompletedForPeriod}
-            onCheckedChange={() => updateTaskMutation.mutate({ taskId: task.id, currentStatus: isTaskCompletedForPeriod })}
-            className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-          />
-          <div className="grid gap-1.5 flex-grow min-w-0">
-            <label
-              htmlFor={`task-${task.id}`}
-              className={cn(
-                "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 break-words",
-                isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm"
-              )}
-            >
-              {task.overdue && (
-                <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 flex-shrink-0" />
-              )}
-              {task.is_priority && (
-                <Star className="h-4 w-4 text-yellow-500 inline-block mr-1 flex-shrink-0" fill="currentColor" />
-              )}
-              {task.title}
-            </label>
-            {task.description && (
-              <p className={cn(
-                "text-muted-foreground break-words",
-                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm"
-              )}>{task.description}</p>
-            )}
-            {task.due_date && task.recurrence_type === "none" && (
-              <p className={cn(
-                "text-xs text-muted-foreground",
-                level > 0 && "text-[0.65rem] md:text-xs"
-              )}>
-                Vencimento: {format(new Date(task.due_date), "PPP", { locale: ptBR })}
-              </p>
-            )}
-            {task.time && (
-              <p className={cn(
-                "text-xs text-muted-foreground flex items-center gap-1",
-                level > 0 && "text-[0.65rem] md:text-xs"
-              )}>
-                <Clock className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {task.time}
-              </p>
-            )}
-            {task.recurrence_type !== "none" && (
-              <p className={cn(
-                "text-xs text-muted-foreground flex items-center gap-1",
-                level > 0 && "text-[0.65rem] md:text-xs"
-              )}>
-                <Repeat className={cn("h-3 w-3 flex-shrink-0", level > 0 && "h-2.5 w-2.5")} /> {getRecurrenceText(task)}
-                {task.recurrence_time && ` às ${task.recurrence_time}`}
-              </p>
-            )}
-            {isClientTask && task.client_name && (
-              <Badge variant="secondary" className="bg-blue-500/20 text-blue-500 border-blue-500/50 w-fit flex items-center gap-1 mt-1 text-xs md:text-sm">
-                <Users className="h-3 w-3" /> Cliente: {task.client_name}
-              </Badge>
-            )}
-            {task.tags && task.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {task.tags.map((tag) => (
-                  <Badge key={tag.id} style={{ backgroundColor: tag.color, color: '#FFFFFF' }} className="text-xs flex-shrink-0">
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
-            )}
+    <Card className={`bg-card border border-border rounded-xl shadow-sm frosted-glass ${isSubtask ? 'ml-6' : 'card-hover-effect'}`}>
+      <CardContent className="p-4 flex items-start space-x-3">
+        <Checkbox
+          id={`task-${task.id}`}
+          checked={task.is_completed || isCompleting}
+          onCheckedChange={() => completeTaskMutation.mutate(task.id)}
+          disabled={isCompleting || task.is_completed}
+          className="mt-1"
+        />
+        <div className="flex-1">
+          <label
+            htmlFor={`task-${task.id}`}
+            className={`text-lg font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+          >
+            {task.title}
+          </label>
+          {task.description && (
+            <p className={`text-sm text-muted-foreground mt-1 ${task.is_completed ? 'line-through' : ''}`}>
+              {task.description}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {getStatusBadge()}
+            {task.due_date && <Badge variant="outline" className="flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" /> {getDueDateDisplay()}</Badge>}
+            {task.recurrence_type !== "none" && <Badge variant="outline" className="flex items-center gap-1 text-muted-foreground"><Repeat className="h-3 w-3" /> {getRecurrenceDisplay()}</Badge>}
+            {task.tags && task.tags.map((tag) => (
+              <Badge key={tag.id} style={{ backgroundColor: tag.color, color: 'white' }}>{tag.name}</Badge>
+            ))}
           </div>
-        </div>
-        <div className="flex items-center gap-2 mt-2 sm:mt-0 flex-shrink-0">
           {task.subtasks && task.subtasks.length > 0 && (
-            <Button variant="ghost" size="icon" onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)} className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-              {isSubtasksExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              <span className="sr-only">{isSubtasksExpanded ? "Colapsar Subtarefas" : "Expandir Subtarefas"}</span>
-            </Button>
-          )}
-          {!isClientTask && ( // Esconder botões para tarefas de cliente
-            <>
-              <Dialog
-                open={isSubtaskFormOpen}
-                onOpenChange={(open) => {
-                  setIsSubtaskFormOpen(open);
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10">
-                    <PlusCircle className="h-4 w-4" />
-                    <span className="sr-only">Adicionar Subtarefa</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Adicionar Subtarefa para "{task.title}"</DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      Crie uma nova subtarefa para detalhar a tarefa principal.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <TaskForm
-                    onTaskSaved={refetchTasks}
-                    onClose={() => setIsSubtaskFormOpen(false)}
-                    initialOriginBoard={task.origin_board}
-                    initialParentTaskId={task.id}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} className="text-blue-500 hover:bg-blue-500/10">
-                <Edit className="h-4 w-4" />
-                <span className="sr-only">Editar Tarefa</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:bg-red-500/10">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Deletar Tarefa</span>
-              </Button>
-            </>
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-semibold text-muted-foreground">Subtarefas:</p>
+              {task.subtasks.map((subtask) => (
+                <TaskItem key={subtask.id} task={subtask} refetchTasks={refetchTasks} isSubtask={true} />
+              ))}
+            </div>
           )}
         </div>
-      </div>
-
-      {task.subtasks && task.subtasks.length > 0 && isSubtasksExpanded && (
-        <div className="space-y-2">
-          {task.subtasks.map(subtask => (
-            <TaskItem key={subtask.id} task={subtask} refetchTasks={refetchTasks} level={level + 1} />
-          ))}
+        <div className="flex items-center gap-2">
+          {!task.is_completed && (
+            <Dialog
+              open={isEditing}
+              onOpenChange={(open) => {
+                setIsEditing(open);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                  <Edit className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">Editar Tarefa</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Atualize os detalhes da sua tarefa.
+                  </DialogDescription>
+                </DialogHeader>
+                <TaskForm
+                  initialData={{ ...task, due_date: task.due_date ? new Date(task.due_date) : undefined }}
+                  onTaskSaved={refetchTasks}
+                  onClose={() => setIsEditing(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
+            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+          </Button>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
