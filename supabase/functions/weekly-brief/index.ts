@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { format, subWeeks, isToday, isThisWeek, isThisMonth, parseISO, getDay, isBefore, startOfDay } from "https://esm.sh/date-fns@2.30.0";
+import { format, subWeeks, isToday, isThisWeek, isThisMonth, parseISO, getDay, isBefore, startOfDay } from "https://esm.sh/date-fns@3.6.0"; // Versão atualizada
 import { utcToZonedTime, formatInTimeZone } from "https://esm.sh/date-fns-tz@2.0.1";
 import OpenAI from "https://esm.sh/openai@4.52.2";
 import Groq from "https://esm.sh/groq-sdk@0.10.0";
