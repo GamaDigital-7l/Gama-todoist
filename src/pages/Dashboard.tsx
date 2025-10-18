@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale"; // Importação adicionada
 import { ClientTask } from "@/types/client"; // Importar ClientTask
 import { showSuccess } from "@/utils/toast"; // Importar showSuccess para feedback
+import PullToRefresh from "@/components/PullToRefresh"; // Importar PullToRefresh
 
 interface Profile {
   id: string;
@@ -320,6 +321,21 @@ const Dashboard: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
   };
 
+  // Função para o PullToRefresh
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchTodayPriority(),
+      refetchTodayNoPriority(),
+      refetchJobsWoeToday(),
+      refetchOverdue(),
+      refetchRecurrent(),
+      refetchCompleted(),
+      refetchClientDashboardTasks(),
+      refetchAllTasks(),
+    ]);
+    showSuccess("Dashboard atualizado!");
+  };
+
   // --- Novas Lógicas para Estatísticas ---
   const today = new Date();
   const startOfThisWeek = startOfWeek(today, { weekStartsOn: 0 }); // Domingo como início da semana
@@ -424,257 +440,259 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
-          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-32 justify-center text-center font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                {isSameDay(selectedDate, new Date()) ? (
-                  <span>Hoje</span>
-                ) : (
-                  format(selectedDate, "PPP", { locale: ptBR })
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => setSelectedDate(date || new Date())}
-              initialFocus
-              locale={ptBR}
-            />
-            </PopoverContent>
-          </Popover>
-          <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
-                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Crie uma nova tarefa para organizar seu dia.
-                </DialogDescription>
-              </DialogHeader>
-              <TaskForm
-                onTaskSaved={handleTaskAdded}
-                onClose={() => setIsTaskFormOpen(false)}
-                initialOriginBoard="general"
-                initialDueDate={selectedDate} // Passa a data selecionada
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
+            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, -1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-32 justify-center text-center font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                  {isSameDay(selectedDate, new Date()) ? (
+                    <span>Hoje</span>
+                  ) : (
+                    format(selectedDate, "PPP", { locale: ptBR })
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-popover border-border rounded-md shadow-lg">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => setSelectedDate(date || new Date())}
+                initialFocus
+                locale={ptBR}
               />
-            </DialogContent>
-          </Dialog>
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" size="icon" onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Rápida
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">Adicionar Nova Tarefa</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Crie uma nova tarefa para organizar seu dia.
+                  </DialogDescription>
+                </DialogHeader>
+                <TaskForm
+                  onTaskSaved={handleTaskAdded}
+                  onClose={() => setIsTaskFormOpen(false)}
+                  initialOriginBoard="general"
+                  initialDueDate={selectedDate} // Passa a data selecionada
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {hasTodayTasks && allTodayTasksCompleted && isSameDay(selectedDate, new Date()) && (
+          <Card className="w-full bg-green-600 text-white border-green-700 rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardContent className="p-4 flex items-center justify-center gap-2">
+              <CheckCircle2 className="h-6 w-6" />
+              <p className="text-lg font-semibold">Dia Concluído! ✅</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <TaskListBoard
+            title="Hoje Prioridade"
+            tasks={todayPriorityTasks || []}
+            isLoading={isLoadingTodayPriority}
+            error={errorTodayPriority}
+            refetchTasks={handleTaskAdded}
+            quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
+            originBoard="today_priority"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Hoje sem Prioridade"
+            tasks={todayNoPriorityTasks || []}
+            isLoading={isLoadingTodayNoPriority}
+            error={errorTodayNoPriority}
+            refetchTasks={handleTaskAdded}
+            quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
+            originBoard="today_no_priority"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Jobs Woe hoje"
+            tasks={jobsWoeTodayTasks || []}
+            isLoading={isLoadingJobsWoeToday}
+            error={errorJobsWoeToday}
+            refetchTasks={handleTaskAdded}
+            quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
+            originBoard="jobs_woe_today"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Tarefas de Clientes"
+            tasks={clientDashboardTasks || []}
+            isLoading={isLoadingClientDashboardTasks}
+            error={errorClientDashboardTasks}
+            refetchTasks={handleTaskAdded}
+            showAddButton={false}
+            originBoard="client_tasks"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Atrasadas"
+            tasks={overdueTasks || []}
+            isLoading={isLoadingOverdue}
+            error={errorOverdue}
+            refetchTasks={handleTaskAdded}
+            showAddButton={false}
+            originBoard="overdue"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Recorrentes"
+            tasks={recurrentTasks || []}
+            isLoading={isLoadingRecurrent}
+            error={errorRecurrent}
+            refetchTasks={handleTaskAdded}
+            showAddButton={false}
+            originBoard="recurrent"
+            selectedDate={selectedDate}
+          />
+          <TaskListBoard
+            title="Finalizadas"
+            tasks={completedTasks || []}
+            isLoading={isLoadingCompleted}
+            error={errorCompleted}
+            refetchTasks={handleTaskAdded}
+            showAddButton={false}
+            originBoard="completed"
+            selectedDate={selectedDate}
+          />
+          {/* Card de Amanhã */}
+          <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Amanhã</CardTitle>
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingTomorrowTasks ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{tomorrowTasks?.length || 0}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Tarefas agendadas para {format(tomorrow, "PPP", { locale: ptBR })}.
+              </p>
+              <div className="mt-4">
+                <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={tomorrow} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
+              <ListTodo className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingAllTasks ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{totalTasksCount}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Todas as tarefas criadas.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
+              <XCircle className="h-5 w-5 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverdue ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{totalOverdueCount}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Tarefas que passaram do prazo.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
+              <Repeat className="h-5 w-5 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingRecurrent ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{failedRecurrentCount}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Tarefas recorrentes não concluídas no ciclo.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
+              <CalendarCheck className="h-5 w-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingCompleted ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{completedThisWeekCount}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Tarefas finalizadas esta semana.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
+              <CalendarCheck className="h-5 w-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingCompleted ? (
+                <div className="text-3xl font-bold text-foreground">Carregando...</div>
+              ) : (
+                <div className="text-3xl font-bold text-foreground">{completedThisMonthCount}</div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                Tarefas finalizadas este mês.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {hasTodayTasks && allTodayTasksCompleted && isSameDay(selectedDate, new Date()) && (
-        <Card className="w-full bg-green-600 text-white border-green-700 rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardContent className="p-4 flex items-center justify-center gap-2">
-            <CheckCircle2 className="h-6 w-6" />
-            <p className="text-lg font-semibold">Dia Concluído! ✅</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <TaskListBoard
-          title="Hoje Prioridade"
-          tasks={todayPriorityTasks || []}
-          isLoading={isLoadingTodayPriority}
-          error={errorTodayPriority}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
-          originBoard="today_priority"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Hoje sem Prioridade"
-          tasks={todayNoPriorityTasks || []}
-          isLoading={isLoadingTodayNoPriority}
-          error={errorTodayNoPriority}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="today_no_priority" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
-          originBoard="today_no_priority"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Jobs Woe hoje"
-          tasks={jobsWoeTodayTasks || []}
-          isLoading={isLoadingJobsWoeToday}
-          error={errorJobsWoeToday}
-          refetchTasks={handleTaskAdded}
-          quickAddTaskInput={<QuickAddTaskInput originBoard="jobs_woe_today" onTaskAdded={handleTaskAdded} dueDate={selectedDate} />}
-          originBoard="jobs_woe_today"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Tarefas de Clientes"
-          tasks={clientDashboardTasks || []}
-          isLoading={isLoadingClientDashboardTasks}
-          error={errorClientDashboardTasks}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="client_tasks"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Atrasadas"
-          tasks={overdueTasks || []}
-          isLoading={isLoadingOverdue}
-          error={errorOverdue}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="overdue"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Recorrentes"
-          tasks={recurrentTasks || []}
-          isLoading={isLoadingRecurrent}
-          error={errorRecurrent}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="recurrent"
-          selectedDate={selectedDate}
-        />
-        <TaskListBoard
-          title="Finalizadas"
-          tasks={completedTasks || []}
-          isLoading={isLoadingCompleted}
-          error={errorCompleted}
-          refetchTasks={handleTaskAdded}
-          showAddButton={false}
-          originBoard="completed"
-          selectedDate={selectedDate}
-        />
-        {/* Card de Amanhã */}
-        <Card className="w-full bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Amanhã</CardTitle>
-            <CalendarIcon className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingTomorrowTasks ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{tomorrowTasks?.length || 0}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Tarefas agendadas para {format(tomorrow, "PPP", { locale: ptBR })}.
-            </p>
-            <div className="mt-4">
-              <QuickAddTaskInput originBoard="general" onTaskAdded={handleTaskAdded} dueDate={tomorrow} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>
-            <ListTodo className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingAllTasks ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{totalTasksCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Todas as tarefas criadas.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Tarefas Atrasadas</CardTitle>
-            <XCircle className="h-5 w-5 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingOverdue ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{totalOverdueCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Tarefas que passaram do prazo.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Recorrentes Falhas</CardTitle>
-            <Repeat className="h-5 w-5 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingRecurrent ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{failedRecurrentCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Tarefas recorrentes não concluídas no ciclo.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Concluídas na Semana</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingCompleted ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{completedThisWeekCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Tarefas finalizadas esta semana.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground">Concluídas no Mês</CardTitle>
-            <CalendarCheck className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingCompleted ? (
-              <div className="text-3xl font-bold text-foreground">Carregando...</div>
-            ) : (
-              <div className="text-3xl font-bold text-foreground">{completedThisMonthCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Tarefas finalizadas este mês.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </PullToRefresh>
   );
 };
 

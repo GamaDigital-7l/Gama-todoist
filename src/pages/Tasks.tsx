@@ -22,6 +22,7 @@ import TemplateTaskForm from "@/components/TemplateTaskForm";
 import TemplateTaskItem from "@/components/TemplateTaskItem";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
+import PullToRefresh from "@/components/PullToRefresh"; // Importar PullToRefresh
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -300,6 +301,15 @@ const Tasks: React.FC = () => {
     );
   };
 
+  // Função para o PullToRefresh
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetch(),
+      refetchTemplateTasks(),
+    ]);
+    showSuccess("Tarefas atualizadas!");
+  };
+
   if (isLoading || isLoadingTemplateTasks) return <p className="text-muted-foreground">Carregando tarefas...</p>;
   if (error) return <p className="text-red-500">Erro ao carregar tarefas: {error.message}</p>;
   if (errorTemplateTasks) return <p className="text-red-500">Erro ao carregar tarefas padrão: {errorTemplateTasks.message}</p>;
@@ -310,105 +320,107 @@ const Tasks: React.FC = () => {
   const allTasks = tasks || [];
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
-        <Dialog
-          open={isFormOpen}
-          onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) setEditingTask(undefined);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
-            </Button>
-          </DialogTrigger>
-          <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
-            <DialogHeader>
-              <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para organizar seu dia."}
-              </DialogDescription>
-            </DialogHeader>
-            <TaskForm
-              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? new Date(editingTask.due_date) : undefined } : undefined}
-              onTaskSaved={handleTaskUpdated}
-              onClose={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <p className="text-lg text-muted-foreground">
-        Organize suas tarefas diárias, semanais e mensais aqui.
-      </p>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Suas Tarefas</h1>
+          <Dialog
+            open={isFormOpen}
+            onOpenChange={(open) => {
+              setIsFormOpen(open);
+              if (!open) setEditingTask(undefined);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingTask(undefined)} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
+              <DialogHeader>
+                <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Adicionar Nova Tarefa"}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {editingTask ? "Atualize os detalhes da sua tarefa." : "Crie uma nova tarefa para organizar seu dia."}
+                </DialogDescription>
+              </DialogHeader>
+              <TaskForm
+                initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? new Date(editingTask.due_date) : undefined } : undefined}
+                onTaskSaved={handleTaskUpdated}
+                onClose={() => setIsFormOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+        <p className="text-lg text-muted-foreground">
+          Organize suas tarefas diárias, semanais e mensais aqui.
+        </p>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
-          <CardHeader>
-            <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="current_tasks" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md">
-                <TabsTrigger value="current_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Minhas Tarefas</TabsTrigger>
-                <TabsTrigger value="template_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Tarefas Padrão</TabsTrigger>
-              </TabsList>
-              <div className="mt-4">
-                <TabsContent value="current_tasks">
-                  <Tabs defaultValue="daily" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
-                      <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
-                      <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
-                      <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
-                      <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
-                    </TabsList>
-                    <div className="mt-4">
-                      <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
-                      <TabsContent value="weekly">{renderTaskList(weeklyTasks)}</TabsContent>
-                      <TabsContent value="monthly">{renderTaskList(monthlyTasks)}</TabsContent>
-                      <TabsContent value="all">{renderTaskList(allTasks)}</TabsContent>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
+            <CardHeader>
+              <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="current_tasks" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md">
+                  <TabsTrigger value="current_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Minhas Tarefas</TabsTrigger>
+                  <TabsTrigger value="template_tasks" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Tarefas Padrão</TabsTrigger>
+                </TabsList>
+                <div className="mt-4">
+                  <TabsContent value="current_tasks">
+                    <Tabs defaultValue="daily" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-secondary/50 border border-border rounded-md">
+                        <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Diárias</TabsTrigger>
+                        <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Semanais</TabsTrigger>
+                        <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Mensais</TabsTrigger>
+                        <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md">Todas</TabsTrigger>
+                      </TabsList>
+                      <div className="mt-4">
+                        <TabsContent value="daily">{renderTaskList(dailyTasks)}</TabsContent>
+                        <TabsContent value="weekly">{renderTaskList(weeklyTasks)}</TabsContent>
+                        <TabsContent value="monthly">{renderTaskList(monthlyTasks)}</TabsContent>
+                        <TabsContent value="all">{renderTaskList(allTasks)}</TabsContent>
+                      </div>
+                    </Tabs>
+                  </TabsContent>
+                  <TabsContent value="template_tasks">
+                    <div className="flex justify-end mb-4">
+                      <Dialog
+                        open={isTemplateFormOpen}
+                        onOpenChange={(open) => {
+                          setIsTemplateFormOpen(open);
+                          if (!open) setEditingTemplateTask(undefined);
+                        }}
+                      >
+                        <DialogTrigger asChild>
+                          <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
+                          <DialogHeader>
+                            <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
+                            <DialogDescription className="text-muted-foreground">
+                              {editingTemplateTask ? "Atualize os detalhes da sua tarefa padrão." : "Crie uma nova tarefa padrão para automatizar seu dia."}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <TemplateTaskForm
+                            initialData={editingTemplateTask}
+                            onTemplateTaskSaved={refetchTemplateTasks}
+                            onClose={() => setIsTemplateFormOpen(false)}
+                          />
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  </Tabs>
-                </TabsContent>
-                <TabsContent value="template_tasks">
-                  <div className="flex justify-end mb-4">
-                    <Dialog
-                      open={isTemplateFormOpen}
-                      onOpenChange={(open) => {
-                        setIsTemplateFormOpen(open);
-                        if (!open) setEditingTemplateTask(undefined);
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <Button onClick={() => setEditingTemplateTask(undefined)} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa Padrão
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
-                        <DialogHeader>
-                          <DialogTitle className="text-foreground">{editingTemplateTask ? "Editar Tarefa Padrão" : "Adicionar Nova Tarefa Padrão"}</DialogTitle>
-                          <DialogDescription className="text-muted-foreground">
-                            {editingTemplateTask ? "Atualize os detalhes da sua tarefa padrão." : "Crie uma nova tarefa padrão para automatizar seu dia."}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <TemplateTaskForm
-                          initialData={editingTemplateTask}
-                          onTemplateTaskSaved={refetchTemplateTasks}
-                          onClose={() => setIsTemplateFormOpen(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  {renderTemplateTaskList(templateTasks || [])}
-                </TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
+                    {renderTemplateTaskList(templateTasks || [])}
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
   );
 };
 
