@@ -147,8 +147,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
   if (!uniqueId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">Link Inválido</h1> {/* Fontes adaptáveis */}
-        <p className="text-lg md:text-xl text-muted-foreground">O link de aprovação não foi fornecido.</p> {/* Fontes adaptáveis */}
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">Link Inválido</h1>
+        <p className="text-lg md:text-xl text-muted-foreground">O link de aprovação não foi fornecido.</p>
       </div>
     );
   }
@@ -157,8 +157,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h1 className="text-3xl md:text-4xl font-bold mt-4">Carregando Materiais...</h1> {/* Fontes adaptáveis */}
-        <p className="text-lg md:text-xl text-muted-foreground">Preparando a página de aprovação.</p> {/* Fontes adaptáveis */}
+        <h1 className="text-3xl md:text-4xl font-bold mt-4">Carregando Materiais...</h1>
+        <p className="text-lg md:text-xl text-muted-foreground">Preparando a página de aprovação.</p>
       </div>
     );
   }
@@ -166,8 +166,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-red-500">Erro ao Carregar</h1> {/* Fontes adaptáveis */}
-        <p className="text-lg md:text-xl text-red-500 text-center">{error.message}</p> {/* Fontes adaptáveis */}
+        <h1 className="text-3xl md:text-4xl font-bold text-red-500">Erro ao Carregar</h1>
+        <p className="text-lg md:text-xl text-red-500 text-center">{error.message}</p>
       </div>
     );
   }
@@ -175,8 +175,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
   if (!data || !data.client || !data.tasks) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 md:p-6 lg:p-8">
-        <h1 className="text-3xl md:text-4xl font-bold">Conteúdo Não Encontrado</h1> {/* Fontes adaptáveis */}
-        <p className="text-lg md:text-xl text-muted-foreground">Não foi possível carregar os materiais para aprovação.</p> {/* Fontes adaptáveis */}
+        <h1 className="text-3xl md:text-4xl font-bold">Conteúdo Não Encontrado</h1>
+        <p className="text-lg md:text-xl text-muted-foreground">Não foi possível carregar os materiais para aprovação.</p>
       </div>
     );
   }
@@ -189,23 +189,23 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
       <header className="flex flex-col items-center justify-center text-center mb-8">
         {/* Logo da Agência (Ex: Gama Creative) - Pode ser uma imagem fixa ou configurável */}
         <img src="/favicon.svg" alt="Gama Creative Logo" className="h-16 w-16 mb-4" />
-        <h1 className="text-4xl md:text-5xl font-bold mb-2">Gama Creative</h1> {/* Fontes adaptáveis */}
+        <h1 className="text-4xl md:text-5xl font-bold mb-2">Gama Creative</h1>
         
         {client.logo_url && (
           <img src={client.logo_url} alt={client.name} className="h-20 w-20 rounded-full object-cover mt-4 mb-2" />
         )}
-        <h2 className="text-3xl md:text-4xl font-semibold text-primary mb-2 break-words">{client.name}</h2> {/* Fontes adaptáveis */}
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl break-words"> {/* Fontes adaptáveis */}
+        <h2 className="text-3xl md:text-4xl font-semibold text-primary mb-2 break-words">{client.name}</h2>
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl break-words">
           Revise e aprove os materiais abaixo para o mês de {format(parseISO(`${approvalLink.month_year_reference}-01`), "MMMM yyyy", { locale: ptBR })}.
         </p>
         {isLinkExpired && (
-          <p className="text-red-500 text-xl md:text-2xl font-bold mt-4">{/* Fontes adaptáveis */}Este link de aprovação expirou!</p>
+          <p className="text-red-500 text-xl md:text-2xl font-bold mt-4">Este link de aprovação expirou!</p>
         )}
       </header>
 
-      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Ajustado para grid-cols-1 sm:grid-cols-2 */}
+      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {tasks.length === 0 ? (
-          <div className="col-span-full text-center text-muted-foreground text-xl md:text-2xl mt-8"> {/* Fontes adaptáveis */}
+          <div className="col-span-full text-center text-muted-foreground text-xl md:text-2xl mt-8">
             Nenhum material pendente de aprovação para este mês.
           </div>
         ) : (
@@ -232,24 +232,24 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                 </div>
               )}
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{task.title}</CardTitle> {/* Fontes adaptáveis */}
+                <CardTitle className="text-xl md:text-2xl font-semibold text-foreground break-words">{task.title}</CardTitle>
                 {task.responsible && (
-                  <CardDescription className="text-sm md:text-base text-muted-foreground flex items-center gap-1"> {/* Fontes adaptáveis */}
+                  <CardDescription className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
                     <User className="h-4 w-4 flex-shrink-0" /> Responsável: {task.responsible.first_name} {task.responsible.last_name}
                   </CardDescription>
                 )}
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-between p-4">
                 {task.description && (
-                  <p className="text-sm md:text-base text-muted-foreground mb-3 break-words">{task.description}</p> {/* Fontes adaptáveis */}
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 break-words">{task.description}</p>
                 )}
                 {task.due_date && (
-                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-1"> {/* Fontes adaptáveis */}
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-1">
                     <CalendarDays className="h-3 w-3 flex-shrink-0" /> Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
                   </p>
                 )}
                 {task.time && (
-                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-3"> {/* Fontes adaptáveis */}
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mb-3">
                     <Clock className="h-3 w-3 flex-shrink-0" /> Horário: {task.time}
                   </p>
                 )}
@@ -264,21 +264,21 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                 )}
 
                 {task.status === 'approved' ? (
-                  <Button disabled className="w-full bg-green-600 text-white text-sm md:text-base"> {/* Fontes adaptáveis */}
+                  <Button disabled className="w-full bg-green-600 text-white text-sm md:text-base">
                     <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovado
                   </Button>
                 ) : task.status === 'edit_requested' ? (
                   <>
-                    <Button disabled className="w-full bg-orange-600 text-white mb-2 text-sm md:text-base"> {/* Fontes adaptáveis */}
+                    <Button disabled className="w-full bg-orange-600 text-white mb-2 text-sm md:text-base">
                       <Edit className="mr-2 h-4 w-4" /> Edição Solicitada
                     </Button>
                     {task.edit_reason && (
-                      <p className="text-xs md:text-sm text-orange-500 italic break-words">Motivo: {task.edit_reason}</p> {/* Fontes adaptáveis */}
+                      <p className="text-xs md:text-sm text-orange-500 italic break-words">Motivo: {task.edit_reason}</p>
                     )}
                     <Button
                       onClick={() => handleApproveTask(task.id)}
                       disabled={isLinkExpired}
-                      className="w-full bg-green-600 text-white hover:bg-green-700 mt-2 text-sm md:text-base" {/* Fontes adaptáveis */}
+                      className="w-full bg-green-600 text-white hover:bg-green-700 mt-2 text-sm md:text-base"
                     >
                       <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar Mesmo Assim
                     </Button>
@@ -288,7 +288,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                     <Button
                       onClick={() => handleApproveTask(task.id)}
                       disabled={isLinkExpired}
-                      className="w-full bg-green-600 text-white hover:bg-green-700 text-sm md:text-base" {/* Fontes adaptáveis */}
+                      className="w-full bg-green-600 text-white hover:bg-green-700 text-sm md:text-base"
                     >
                       <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                     </Button>
@@ -296,7 +296,7 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
                       onClick={() => handleRequestEditClick(task.id, task.edit_reason)}
                       disabled={isLinkExpired}
                       variant="outline"
-                      className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10 text-sm md:text-base" {/* Fontes adaptáveis */}
+                      className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10 text-sm md:text-base"
                     >
                       <Edit className="mr-2 h-4 w-4" /> Solicitar Edição
                     </Button>
