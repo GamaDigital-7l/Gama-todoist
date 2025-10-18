@@ -617,11 +617,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 p-1 flex-nowrap"> {/* Adicionado flex-nowrap */}
+          <div className="inline-flex h-full space-x-4 p-1 flex-nowrap">
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full" {/* Adicionado h-full */}
+                className="flex flex-col min-w-[300px] max-w-[380px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >
@@ -631,7 +631,7 @@ const ClientKanbanPage: React.FC = () => {
                     {clientTasks?.filter(task => task.status === column.status).length} tarefas
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3"> {/* Adicionado flex-1 overflow-y-auto */}
+                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
                   {isLoadingTasks ? (
                     <p className="text-muted-foreground">Carregando tarefas...</p>
                   ) : tasksError ? (
