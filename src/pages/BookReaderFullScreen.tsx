@@ -161,9 +161,9 @@ const BookReaderFullScreen: React.FC = () => {
   const previousPage = () => changePage(-1);
   const nextPage = () => changePage(1);
 
-  const zoomIn = () => setScale(prev => Math.min(prev + 0.2, 3.0));
-  const zoomOut = () => setScale(prev => Math.max(prev - 0.2, initialScale ? initialScale * 0.5 : 0.5));
-  const resetZoom = () => setScale(initialScale || 1.0);
+  const zoomIn = () => startTransition(() => setScale(prev => Math.min(prev + 0.2, 3.0)));
+  const zoomOut = () => startTransition(() => setScale(prev => Math.max(prev - 0.2, initialScale ? initialScale * 0.5 : 0.5)));
+  const resetZoom = () => startTransition(() => setScale(initialScale || 1.0));
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageInput(e.target.value);
