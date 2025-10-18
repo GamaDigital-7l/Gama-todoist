@@ -62,5 +62,5 @@ export const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 export const DAYS_OF_WEEK_LABELS: { [key: string]: string } = {
   "Sunday": "Dom", "Monday": "Seg", "Tuesday": "Ter", "Wednesday": "Qua",
-  "Thursday": 4, "Friday": "Sex", "Saturday": "Sáb"
+  "Thursday": "Qui", "Friday": "Sex", "Saturday": "Sáb"
 };

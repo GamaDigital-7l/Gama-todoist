@@ -245,17 +245,17 @@ const Settings: React.FC = () => {
       <TelegramSettingsCard
         userId={userId}
         session={session}
-        form={form}
+        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
       />
 
       <NotificationSettingsCard
         userId={userId}
         session={session}
-        form={form}
+        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
       />
 
       <AISettingsCard
-        form={form}
+        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
         onSubmit={onSubmit}
       />
 

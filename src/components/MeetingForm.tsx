@@ -38,15 +38,164 @@ export const meetingSchema = z.object({ // Exportar o schema
 export type MeetingFormValues = z.infer<typeof meetingSchema>;
 
 interface MeetingFormProps {
-  form: UseFormReturn<MeetingFormValues>; // Receber a instância do formulário
-  onSubmit: (values: MeetingFormValues) => Promise<void>; // Receber o handler de submissão
-  isSubmitting: boolean;
+  initialData?: MeetingFormValues & { id: string }; // Revertendo para aceitar initialData
+  onMeetingSaved: () => void;
   onClose: () => void;
 }
 
-const MeetingForm: React.FC<MeetingFormProps> = ({ form, onSubmit, isSubmitting, onClose }) => {
-  // Removido useSession, userId, useForm, zodResolver, initialData, setIsSubmitting
-  // A lógica de submissão e estado de carregamento agora é gerenciada pelo componente pai
+const MeetingForm: React.FC<MeetingFormProps> = ({ initialData, onMeetingSaved, onClose }) => {
+  const { session } = useSession();
+  const userId = session?.user?.id;
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const form = useForm<MeetingFormValues>({
+    resolver: zodResolver(meetingSchema),
+    defaultValues: initialData ? {
+      ...initialData,
+      date: new Date(initialData.date),
+    } : {
+      title: "",
+      description: "",
+      date: new Date(),
+      start_time: "",
+      end_time: null,
+      location: "",
+      sendToGoogleCalendar: false,
+      google_event_id: null,
+      google_html_link: null,
+    },
+  });
+
+  const onSubmit = async (values: MeetingFormValues) => {
+    if (!userId) {
+      showError("Usuário não autenticado.");
+      return;
+    }
+    setIsSubmitting(true);
+
+    try {
+      let googleEventId: string | null = values.google_event_id || null;
+      let googleHtmlLink: string | null = values.google_html_link || null;
+      const currentMeetingId = values.id;
+
+      const formattedDate = format(values.date, "yyyy-MM-dd");
+
+      if (values.sendToGoogleCalendar) {
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (googleEventId) {
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('update-google-calendar-event', {
+            body: {
+              googleEventId: googleEventId,
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao atualizar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento atualizado no Google Calendar!");
+        } else {
+          const { data: googleData, error: googleError } = await supabase.functions.invoke('create-google-calendar-event', {
+            body: {
+              title: values.title,
+              description: values.description,
+              date: formattedDate,
+              startTime: values.start_time,
+              endTime: values.end_time,
+              location: values.location,
+            },
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (googleError) {
+            throw new Error(googleError.message || "Erro ao criar evento no Google Calendar.");
+          }
+          googleEventId = googleData.googleEventId;
+          googleHtmlLink = googleData.htmlLink;
+          showSuccess("Evento criado no Google Calendar!");
+        }
+      } else if (googleEventId) {
+        if (!session?.access_token) {
+          showError("Sessão não encontrada. Faça login novamente para interagir com o Google Calendar.");
+          setIsSubmitting(false);
+          return;
+        }
+        const { error: googleDeleteError } = await supabase.functions.invoke('delete-google-calendar-event', {
+          body: { googleEventId: googleEventId },
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (googleDeleteError) {
+          if (googleDeleteError.status === 404) {
+            console.warn(`Evento Google Calendar ${googleEventId} não encontrado, mas a exclusão foi solicitada. Prosseguindo com exclusão local.`);
+          } else {
+            throw new Error(googleDeleteError.message || "Erro ao deletar evento do Google Calendar.");
+          }
+        }
+        googleEventId = null;
+        googleHtmlLink = null;
+        showSuccess("Evento removido do Google Calendar!");
+      }
+
+      const dataToSave = {
+        title: values.title,
+        description: values.description || null,
+        date: formattedDate,
+        start_time: values.start_time,
+        end_time: values.end_time || null,
+        location: values.location || null,
+        google_event_id: googleEventId, 
+        google_html_link: googleHtmlLink, 
+        updated_at: new Date().toISOString(),
+      };
+
+      if (currentMeetingId) {
+        const { error } = await supabase
+          .from("meetings")
+          .update(dataToSave)
+          .eq("id", currentMeetingId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+        showSuccess("Reunião atualizada com sucesso!");
+      } else {
+        const { error } = await supabase.from("meetings").insert({
+          ...dataToSave,
+          user_id: userId,
+        });
+
+        if (error) throw error;
+        showSuccess("Reunião adicionada com sucesso!");
+      }
+      form.reset();
+      onMeetingSaved();
+      onClose();
+    } catch (error: any) {
+      showError("Erro ao salvar reunião: " + error.message);
+      console.error("Erro ao salvar reunião:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 bg-card rounded-xl frosted-glass card-hover-effect">

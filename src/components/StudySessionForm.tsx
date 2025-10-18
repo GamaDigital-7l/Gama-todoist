@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSession } from "@/integrations/supabase/auth";
+import { ptBR } from "date-fns/locale";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
 
 const studySessionSchema = z.object({

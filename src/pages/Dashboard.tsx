@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays } from "date-fns";
+import { isToday, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays, parseISO } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -398,7 +398,7 @@ const Dashboard: React.FC = () => {
           isTaskRelevantForDate = parseInt(task.recurrence_details) === date.getDate();
         }
       } else if (task.due_date) {
-        isTaskRelevantForDate = format(new Date(task.due_date), "yyyy-MM-dd") === formattedDate;
+        isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;
       }
       
       // Only show tasks that are relevant for the date and not completed for their current cycle

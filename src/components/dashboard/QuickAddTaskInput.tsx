@@ -107,6 +107,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
         time: null,
         recurrence_type: "none",
         recurrence_details: null,
+        recurrence_time: null,
         origin_board: originBoard,
         current_board: originBoard, // current_board é o mesmo que origin_board na criação
         is_completed: false,
@@ -191,6 +192,7 @@ const QuickAddTaskInput: React.FC<QuickAddTaskInputProps> = ({ originBoard, onTa
           </DialogHeader>
           <TaskForm
             initialData={{
+              id: "", // Adicionado id vazio para satisfazer a interface
               title: input, // Preencher o título com o que foi digitado
               due_date: dueDate,
               origin_board: originBoard,

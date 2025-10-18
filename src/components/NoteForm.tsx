@@ -19,6 +19,7 @@ import TimePicker from "./TimePicker";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; 
@@ -161,7 +162,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           const imageUrl = publicUrlData.publicUrl;
 
           quill.deleteText(range.index, 1);
-          quill.insertEmbed(index, 'image', imageUrl);
+          quill.insertEmbed(range.index, 'image', imageUrl); // Corrigido para range.index
           showSuccess("Imagem adicionada com sucesso!");
 
         } catch (err: any) {
@@ -367,6 +368,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   selected={form.watch("reminder_date") || undefined}
                   onSelect={(date) => form.setValue("reminder_date", date || null)}
                   initialFocus
+                  locale={ptBR}
                 />
               </div>
               <div>

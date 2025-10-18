@@ -18,6 +18,13 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ptBR } from "date-fns/locale";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants"; // Importar a constante
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const healthGoalSchema = z.object({
   title: z.string().min(1, "O título da meta é obrigatório."),
@@ -224,15 +231,6 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             {form.formState.errors.target_date.message}
           </p>
         )}
-      </div>
-      <div>
-        <Label htmlFor="description" className="text-foreground">Descrição (Opcional)</Label>
-        <Input
-          id="description"
-          {...form.register("description")}
-          placeholder="Detalhes da meta de saúde..."
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-        />
       </div>
       <div>
         <Label htmlFor="status" className="text-foreground">Status</Label>
