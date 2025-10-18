@@ -193,10 +193,10 @@ const ClientDetails: React.FC = () => {
       {/* Tabs para Dashboard e Kanban */}
       <Tabs defaultValue="dashboard" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-2 bg-secondary/50 border border-border rounded-md mb-4">
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base"> {/* Fontes adaptáveis */}
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base"> {/* Fontes adaptáveis */}
+          <TabsTrigger value="kanban" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:border-primary/50 rounded-md text-sm md:text-base">
             <KanbanSquare className="mr-2 h-4 w-4" /> Kanban
           </TabsTrigger>
         </TabsList>
@@ -204,22 +204,22 @@ const ClientDetails: React.FC = () => {
         <TabsContent value="dashboard" className="flex-1">
           <Card className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
             <CardHeader>
-              <CardTitle className="text-foreground text-lg md:text-xl">Visão Geral do Cliente</CardTitle> {/* Fontes adaptáveis */}
-              <CardDescription className="text-muted-foreground text-sm md:text-base"> {/* Fontes adaptáveis */}
+              <CardTitle className="text-foreground text-lg md:text-xl">Visão Geral do Cliente</CardTitle>
+              <CardDescription className="text-muted-foreground text-sm md:text-base">
                 Informações detalhadas e um resumo das atividades do cliente.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 p-4">
               {client.description ? (
-                <p className="text-muted-foreground break-words text-sm md:text-base">{client.description}</p> {/* Fontes adaptáveis */}
+                <p className="text-sm md:text-base text-muted-foreground mb-3 break-words">{client.description}</p>
               ) : (
-                <p className="text-muted-foreground text-sm md:text-base">Nenhuma descrição fornecida para este cliente.</p> {/* Fontes adaptáveis */}
+                <p className="text-sm md:text-base text-muted-foreground">Nenhuma descrição fornecida para este cliente.</p>
               )}
               {/* Adicionar mais informações do dashboard aqui, se necessário */}
-              <div className="mt-4 space-y-1"> {/* Espaçamento uniforme */}
-                <p className="text-sm md:text-base text-muted-foreground">Tipo de Cliente: <span className="font-semibold text-foreground">{client.type}</span></p> {/* Fontes adaptáveis */}
-                <p className="text-sm md:text-base text-muted-foreground">Meta de Entregas Mensais: <span className="font-semibold text-foreground">{client.monthly_delivery_goal}</span></p> {/* Fontes adaptáveis */}
-                <p className="text-sm md:text-base text-muted-foreground">Criado em: <span className="font-semibold text-foreground">{format(parseISO(client.created_at), "PPP", { locale: ptBR })}</span></p> {/* Fontes adaptáveis */}
+              <div className="mt-4 space-y-1">
+                <p className="text-sm md:text-base text-muted-foreground">Tipo de Cliente: <span className="font-semibold text-foreground">{client.type}</span></p>
+                <p className="text-sm md:text-base text-muted-foreground">Meta de Entregas Mensais: <span className="font-semibold text-foreground">{client.monthly_delivery_goal}</span></p>
+                <p className="text-sm md:text-base text-muted-foreground">Criado em: <span className="font-semibold text-foreground">{format(parseISO(client.created_at), "PPP", { locale: ptBR })}</span></p>
               </div>
             </CardContent>
           </Card>
