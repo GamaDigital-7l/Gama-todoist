@@ -5,6 +5,7 @@ import { Header } from "./Header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import OfflineIndicator from "../OfflineIndicator"; // Importar OfflineIndicator
+import DeepLinkHandler from "../DeepLinkHandler"; // Importar DeepLinkHandler
 
 interface LayoutProps {
   isOnline: boolean; // Adicionar prop isOnline
@@ -59,6 +60,7 @@ const Layout: React.FC<LayoutProps> = ({ isOnline }) => { // Receber isOnline co
               </motion.div>
             )}
           </AnimatePresence>
+          <DeepLinkHandler /> {/* Render DeepLinkHandler here */}
           <Outlet />
         </main>
       </div>

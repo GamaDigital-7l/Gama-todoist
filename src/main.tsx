@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./globals.css";
 import { pdfjs } from "react-pdf"; // Importar pdfjs
+import { BrowserRouter } from "react-router-dom"; // Import BrowserRouter
 
 // Definir o workerSrc para o caminho do CDN, usando a versão do pdfjs que react-pdf está usando.
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -23,4 +24,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);

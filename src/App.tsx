@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Removed BrowserRouter, useNavigate
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
@@ -19,7 +19,6 @@ import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
-import ClientKanbanPage from "./pages/ClientKanbanPage";
 import PublicApprovalPage from "./pages/PublicApprovalPage";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
@@ -47,7 +46,6 @@ const LazyNotes = lazy(() => import("./pages/Notes"));
 const LazyPlanner = lazy(() => import("./pages/Planner"));
 const LazyClients = lazy(() => import("./pages/Clients"));
 const LazyClientDetails = lazy(() => import("./pages/ClientDetails"));
-const LazyClientKanbanPage = lazy(() => import("./pages/ClientKanbanPage"));
 const LazyPublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
 const LazyResults = lazy(() => import("./pages/Results"));
 const LazyNotFound = lazy(() => import("./pages/NotFound"));
@@ -77,21 +75,14 @@ persistQueryClient({
 // Componente para proteger rotas
 const ProtectedRoute: React.FC<{ children: React.ReactNode; isOnline: boolean }> = ({ children, isOnline }) => {
   const { session, isLoading } = useSession();
-  const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && !session) {
-      navigate('/login', { state: { from: location.pathname }, replace: true });
-    }
-  }, [session, isLoading, navigate, location]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-lg md:text-xl">Carregando autenticação...</div>;
   }
 
   if (!session) {
-    return null; // Ou um spinner, mas Navigate já está cuidando do redirecionamento
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   return (
@@ -104,10 +95,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isOnline: boolean }>
 
 // Componente para gerenciar a conectividade e atualizações do PWA
 const PWAHandler: React.FC<{ children: (isOnline: boolean) => React.ReactNode }> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
 
   useEffect(() => {
@@ -135,7 +123,6 @@ const PWAHandler: React.FC<{ children: (isOnline: boolean) => React.ReactNode }>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'APP_UPDATE') {
-          setNewVersionAvailable(true);
           showInfo("Uma nova versão do aplicativo está disponível! Clique para atualizar.", {
             action: {
               label: "Atualizar",
@@ -180,39 +167,7 @@ const PWAHandler: React.FC<{ children: (isOnline: boolean) => React.ReactNode }>
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [deferredPrompt, navigate, location]);
-
-  // Lógica de Deep Linking
-  useEffect(() => {
-    const handleDeepLink = () => {
-      const path = window.location.pathname;
-      const search = window.location.search;
-
-      // Exemplo de deep links internos
-      if (path.startsWith('/tasks') && search.includes('action=new')) {
-        // Lógica para abrir o formulário de nova tarefa
-        // Isso pode ser feito via estado global ou redirecionamento para uma rota com modal
-        navigate('/tasks', { state: { openNewTaskForm: true } });
-      } else if (path.startsWith('/clients') && search.includes('openTaskId=')) {
-        const taskId = new URLSearchParams(search).get('openTaskId');
-        const clientId = path.split('/')[2]; // Assumindo /clients/:id
-        if (clientId && taskId) {
-          navigate(`/clients/${clientId}?openTaskId=${taskId}`);
-        }
-      } else if (path.startsWith('/approval/')) {
-        // Já é uma rota pública, não precisa de redirecionamento extra
-      }
-      // Adicione mais lógica de deep linking conforme necessário
-    };
-
-    // Executar ao carregar a página
-    handleDeepLink();
-
-    // Adicionar listener para mudanças de URL (se o app já estiver aberto e um deep link for ativado)
-    window.addEventListener('popstate', handleDeepLink);
-    return () => window.removeEventListener('popstate', handleDeepLink);
-  }, [navigate, location]);
-
+  }, [deferredPrompt]);
 
   return <>{children(isOnline)}</>;
 };
@@ -225,227 +180,225 @@ const App = () => {
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <TooltipProvider>
           <Sonner />
-          <BrowserRouter>
-            <SessionContextProvider>
-              <PWAHandler>
-                {(isOnline) => (
-                  <AnimatePresence>
-                    <Routes location={location} key={location.pathname}>
-                      <Route path="/login" element={
-                        <motion.div
-                          initial={{ opacity: 0, x: -100 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 100 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <LazyLogin />
-                        </motion.div>
-                      } />
-                      <Route path="/books/:id/read" element={
-                        <motion.div
-                          initial={{ opacity: 0, y: 50 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -50 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <ProtectedRoute isOnline={isOnline}><LazyBookReaderFullScreen /></ProtectedRoute>
-                        </motion.div>
-                      } />
-                      <Route path="/approval/:uniqueId" element={
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <LazyPublicApprovalPage />
-                        </motion.div>
-                      } />
-                      <Route
-                        path="/"
-                        element={
-                          <ProtectedRoute isOnline={isOnline}>
-                            <Layout isOnline={isOnline} />
-                          </ProtectedRoute>
-                        }
+          <SessionContextProvider>
+            <PWAHandler>
+              {(isOnline) => (
+                <AnimatePresence>
+                  <Routes location={location} key={location.pathname}>
+                    <Route path="/login" element={
+                      <motion.div
+                        initial={{ opacity: 0, x: -100 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 100 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <Route index element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyDashboard />
-                          </motion.div>
-                        } />
-                        <Route path="/dashboard" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyDashboard />
-                          </motion.div>
-                        } />
-                        <Route path="/tasks" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyTasks />
-                          </motion.div>
-                        } />
-                        <Route path="/goals" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyGoals />
-                          </motion.div>
-                        } />
-                        <Route path="/books" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyBooks />
-                          </motion.div>
-                        } />
-                        <Route path="/books/:id" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyBookDetails />
-                          </motion.div>
-                        } />
-                        <Route path="/study" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyStudy />
-                          </motion.div>
-                        } />
-                        <Route path="/health" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyHealth />
-                          </motion.div>
-                        } />
-                        <Route path="/notes" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyNotes />
-                          </motion.div>
-                        } />
-                        <Route path="/planner" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyPlanner />
-                          </motion.div>
-                        } />
-                        <Route path="/clients" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyClients />
-                          </motion.div>
-                        } />
-                        <Route path="/clients/:id" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyClientDetails />
-                          </motion.div>
-                        } />
-                        <Route path="/ai-chat" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyAIChat />
-                          </motion.div>
-                        } />
-                        <Route path="/settings" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazySettings />
-                          </motion.div>
-                        } />
-                        <Route path="/results" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyResults />
-                          </motion.div>
-                        } />
-                        <Route path="/finance" element={
-                          <motion.div
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <LazyFinance />
-                          </motion.div>
-                        } />
-                      </Route>
-                      <Route path="*" element={
+                        <LazyLogin />
+                      </motion.div>
+                    } />
+                    <Route path="/books/:id/read" element={
+                      <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ProtectedRoute isOnline={isOnline}><LazyBookReaderFullScreen /></ProtectedRoute>
+                      </motion.div>
+                    } />
+                    <Route path="/approval/:uniqueId" element={
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <LazyPublicApprovalPage />
+                      </motion.div>
+                    } />
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute isOnline={isOnline}>
+                          <Layout isOnline={isOnline} />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route index element={
                         <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <LazyNotFound />
+                          <LazyDashboard />
                         </motion.div>
                       } />
-                    </Routes>
-                  </AnimatePresence>
-                )}
-              </PWAHandler>
-            </SessionContextProvider>
-          </BrowserRouter>
+                      <Route path="/dashboard" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyDashboard />
+                        </motion.div>
+                      } />
+                      <Route path="/tasks" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyTasks />
+                        </motion.div>
+                      } />
+                      <Route path="/goals" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyGoals />
+                        </motion.div>
+                      } />
+                      <Route path="/books" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyBooks />
+                        </motion.div>
+                      } />
+                      <Route path="/books/:id" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyBookDetails />
+                        </motion.div>
+                      } />
+                      <Route path="/study" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyStudy />
+                        </motion.div>
+                      } />
+                      <Route path="/health" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyHealth />
+                        </motion.div>
+                      } />
+                      <Route path="/notes" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyNotes />
+                        </motion.div>
+                      } />
+                      <Route path="/planner" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyPlanner />
+                        </motion.div>
+                      } />
+                      <Route path="/clients" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyClients />
+                        </motion.div>
+                      } />
+                      <Route path="/clients/:id" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyClientDetails />
+                        </motion.div>
+                      } />
+                      <Route path="/ai-chat" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyAIChat />
+                        </motion.div>
+                      } />
+                      <Route path="/settings" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazySettings />
+                        </motion.div>
+                      } />
+                      <Route path="/results" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyResults />
+                        </motion.div>
+                      } />
+                      <Route path="/finance" element={
+                        <motion.div
+                          initial={{ opacity: 0, x: 100 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LazyFinance />
+                        </motion.div>
+                      } />
+                    </Route>
+                    <Route path="*" element={
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <LazyNotFound />
+                      </motion.div>
+                    } />
+                  </Routes>
+                </AnimatePresence>
+              )}
+            </PWAHandler>
+          </SessionContextProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
