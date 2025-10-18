@@ -27,9 +27,9 @@ import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
 import { ThemeProvider } from "./components/ThemeProvider";
 import PushNotificationManager from "./components/PushNotificationManager";
-import React, { useEffect, useState, Suspense, lazy } from "react"; // Adicionado Suspense e lazy
+import React, { useEffect, useState, Suspense, lazy } from "react";
 import { showInfo, showSuccess, showError } from "./utils/toast";
-import { AnimatePresence, motion } from "framer-motion"; // Importar AnimatePresence e motion
+import { AnimatePresence, motion } from "framer-motion";
 
 // Lazy load de páginas para otimização de desempenho
 const LazyDashboard = lazy(() => import("./pages/Dashboard"));
@@ -96,7 +96,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isOnline: boolean }>
   return (
     <>
       <PushNotificationManager />
-      {React.cloneElement(children as React.ReactElement, { isOnline })} {/* Passar isOnline para o Layout */}
+      {React.cloneElement(children as React.ReactElement, { isOnline })}
     </>
   );
 };
@@ -179,7 +179,7 @@ const PWAHandler: React.FC<{ children: (isOnline: boolean) => React.ReactNode }>
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [deferredPrompt, navigate, location]); // Adicionado deferredPrompt como dependência
+  }, [deferredPrompt, navigate, location]);
 
   // Lógica de Deep Linking
   useEffect(() => {
@@ -213,11 +213,11 @@ const PWAHandler: React.FC<{ children: (isOnline: boolean) => React.ReactNode }>
   }, [navigate, location]);
 
 
-  return <>{children(isOnline)}</>; // Renderiza os filhos passando o estado isOnline
+  return <>{children(isOnline)}</>;
 };
 
 const App = () => {
-  const location = useLocation(); // Usar useLocation dentro do componente App
+  const location = useLocation();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -227,9 +227,9 @@ const App = () => {
           <BrowserRouter>
             <SessionContextProvider>
               <PWAHandler>
-                {(isOnline) => ( {/* PWAHandler agora passa isOnline */}
-                  <AnimatePresence mode="wait"> {/* Adicionado AnimatePresence */}
-                    <Routes location={location} key={location.pathname}> {/* key para forçar re-render e animação */}
+                {(isOnline) => (
+                  <AnimatePresence> {/* Removido mode="wait" */}
+                    <Routes location={location} key={location.pathname}>
                       <Route path="/login" element={
                         <motion.div
                           initial={{ opacity: 0, x: -100 }}
@@ -263,8 +263,8 @@ const App = () => {
                       <Route
                         path="/"
                         element={
-                          <ProtectedRoute isOnline={isOnline}> {/* Passar isOnline para ProtectedRoute */}
-                            <Layout isOnline={isOnline} /> {/* Passar isOnline para o Layout */}
+                          <ProtectedRoute isOnline={isOnline}>
+                            <Layout isOnline={isOnline} />
                           </ProtectedRoute>
                         }
                       >
