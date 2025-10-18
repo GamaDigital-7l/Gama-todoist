@@ -122,7 +122,7 @@ const AIChat: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring min-w-[150px]" {/* Adicionado min-w */}
+            className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring min-w-[150px]" /* Adicionado min-w */
             disabled={isLoading}
           />
           <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
