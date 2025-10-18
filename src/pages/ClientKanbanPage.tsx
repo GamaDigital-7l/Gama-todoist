@@ -21,12 +21,20 @@ import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGene
 import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/use-mobile"; // Importar useIsMobile
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"; // Importar componentes do Carousel
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "backlog", title: "Backlog", color: "bg-gray-700" },
   { status: "in_production", title: "Em Produção", color: "bg-blue-700" },
   { status: "in_approval", title: "Em Aprovação", color: "bg-yellow-700" },
-  { status: "edit_requested", title: "Edição Solicitada", color: "bg-orange-700" }, // Novo status
+  { status: "edit_requested", title: "Edição Solicitada", color: "bg-orange-700" },
   { status: "approved", title: "Aprovado", color: "bg-green-700" },
   { status: "scheduled", title: "Agendado", color: "bg-purple-700" },
   { status: "published", title: "Publicado", color: "bg-indigo-700" },
@@ -115,7 +123,9 @@ const ClientKanbanPage: React.FC = () => {
   const { session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams(); // Inicializar useSearchParams
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isMobile = useIsMobile(); // Usar o hook para detectar mobile
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthYearRef = format(currentMonth, "yyyy-MM");
@@ -401,7 +411,7 @@ const ClientKanbanPage: React.FC = () => {
             },
           });
           if (error) throw error;
-          console.log("Notificação de conclusão de cliente enviada:", data);
+          // console.log("Notificação de conclusão de cliente enviada:", data); // Removido console.log
         } catch (err) {
           console.error("Erro ao enviar notificação de conclusão de cliente:", err);
         }
@@ -619,45 +629,97 @@ const ClientKanbanPage: React.FC = () => {
 
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto">
-        <div className="inline-flex h-full space-x-4 p-1">
-          {KANBAN_COLUMNS.map((column) => (
-            <Card
-              key={column.status}
-              className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, column.status)}
-            >
-              <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
-                <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
-                <CardDescription className="text-sm text-white/80">
-                  {clientTasks?.filter(task => task.status === column.status).length} tarefas
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
-                {isLoadingTasks ? (
-                  <p className="text-muted-foreground">Carregando tarefas...</p>
-                ) : tasksError ? (
-                  <p className="text-red-500">Erro: {tasksError.message}</p>
-                ) : (
-                  clientTasks?.filter(task => task.status === column.status).map(task => (
-                    <ClientTaskItem
-                      key={task.id}
-                      task={task}
-                      refetchTasks={refetchClientTasks}
-                      onEdit={handleEditTask}
-                      onDragStart={handleDragStart}
-                      clientId={clientId!}
-                      monthYearRef={monthYearRef}
-                    />
-                  ))
-                )}
-                <Button onClick={() => handleAddTask(column.status)} variant="outline" className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {isMobile ? (
+          <Carousel
+            opts={{
+              align: "start",
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4">
+              {KANBAN_COLUMNS.map((column) => (
+                <CarouselItem key={column.status} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                  <Card
+                    className="flex flex-col h-full bg-card border border-border rounded-xl shadow-md frosted-glass"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, column.status)}
+                  >
+                    <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
+                      <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
+                      <CardDescription className="text-sm text-white/80">
+                        {clientTasks?.filter(task => task.status === column.status).length} tarefas
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
+                      {isLoadingTasks ? (
+                        <p className="text-muted-foreground">Carregando tarefas...</p>
+                      ) : tasksError ? (
+                        <p className="text-red-500">Erro: {tasksError.message}</p>
+                      ) : (
+                        clientTasks?.filter(task => task.status === column.status).map(task => (
+                          <ClientTaskItem
+                            key={task.id}
+                            task={task}
+                            refetchTasks={refetchClientTasks}
+                            onEdit={handleEditTask}
+                            onDragStart={handleDragStart}
+                            clientId={clientId!}
+                            monthYearRef={monthYearRef}
+                          />
+                        ))
+                      )}
+                      <Button onClick={() => handleAddTask(column.status)} variant="outline" className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
+            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+          </Carousel>
+        ) : (
+          <div className="inline-flex h-full space-x-4 p-1">
+            {KANBAN_COLUMNS.map((column) => (
+              <Card
+                key={column.status}
+                className="flex flex-col w-80 flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, column.status)}
+              >
+                <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
+                  <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
+                  <CardDescription className="text-sm text-white/80">
+                    {clientTasks?.filter(task => task.status === column.status).length} tarefas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
+                  {isLoadingTasks ? (
+                    <p className="text-muted-foreground">Carregando tarefas...</p>
+                  ) : tasksError ? (
+                    <p className="text-red-500">Erro: {tasksError.message}</p>
+                  ) : (
+                    clientTasks?.filter(task => task.status === column.status).map(task => (
+                      <ClientTaskItem
+                        key={task.id}
+                        task={task}
+                        refetchTasks={refetchClientTasks}
+                        onEdit={handleEditTask}
+                        onDragStart={handleDragStart}
+                        clientId={clientId!}
+                        monthYearRef={monthYearRef}
+                      />
+                    ))
+                  )}
+                  <Button onClick={() => handleAddTask(column.status)} variant="outline" className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Formulário de Tarefa do Cliente */}
