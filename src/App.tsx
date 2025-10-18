@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { persistQueryClient } from "@tanstack/query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
@@ -189,28 +189,6 @@ const App = () => {
       });
     }
   }, []);
-
-  // Lógica de Deep Linking (mantida)
-  useEffect(() => {
-    const handleDeepLink = () => {
-      const path = window.location.pathname;
-      const search = window.location.search;
-
-      if (path.startsWith('/tasks') && search.includes('action=new')) {
-        navigate('/tasks', { state: { openNewTaskForm: true } });
-      } else if (path.startsWith('/clients') && search.includes('openTaskId=')) {
-        const taskId = new URLSearchParams(search).get('openTaskId');
-        const clientId = path.split('/')[2];
-        if (clientId && taskId) {
-          navigate(`/clients/${clientId}?openTaskId=${taskId}`);
-        }
-      }
-    };
-
-    handleDeepLink();
-    window.addEventListener('popstate', handleDeepLink);
-    return () => window.removeEventListener('popstate', handleDeepLink);
-  }, [navigate, location]);
 
   return (
     <QueryClientProvider client={queryClient}>
