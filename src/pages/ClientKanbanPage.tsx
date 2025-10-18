@@ -30,6 +30,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { OriginBoard } from "@/types/task"; // Importar OriginBoard
+import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "in_production", title: "Em Produção", color: "bg-blue-700" },
@@ -481,7 +482,7 @@ const ClientKanbanPage: React.FC = () => {
 
   if (!clientId) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 bg-background text-foreground">
         <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
         <p className="text-lg text-muted-foreground">O ID do cliente não foi fornecido.</p>
         <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
@@ -527,7 +528,7 @@ const ClientKanbanPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 bg-background text-foreground h-full"> {/* Removido padding aqui, será adicionado no ClientDetails */}
+    <div className="flex flex-1 flex-col gap-4 bg-background text-foreground h-full p-0"> {/* Removido padding aqui */}
       {/* O cabeçalho do cliente (nome, logo, botões de voltar/editar/excluir) foi movido para ClientDetails.tsx */}
 
       {/* Seletor de Mês e Progresso */}
@@ -712,7 +713,7 @@ const ClientKanbanPage: React.FC = () => {
 
       {/* Formulário de Tarefa do Cliente */}
       <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-        <DialogContent className="sm:max-w-[425px] w-[90vw] bg-card border border-border rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTask?.id ? "Editar Tarefa do Cliente" : "Adicionar Nova Tarefa do Cliente"}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
