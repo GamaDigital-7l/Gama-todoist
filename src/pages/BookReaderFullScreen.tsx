@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useTransition } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +49,7 @@ const BookReaderFullScreen: React.FC = () => {
   const [initialScale, setInitialScale] = useState<number | null>(null);
   const [pageInput, setPageInput] = useState<string>("");
   const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
+  const [isPending, startTransition] = useTransition(); // Initialize useTransition
 
   const { data: book, isLoading, error } = useQuery<Book | null, Error>({
     queryKey: ["book-fullscreen", id],
@@ -145,13 +146,15 @@ const BookReaderFullScreen: React.FC = () => {
   };
 
   const changePage = (offset: number) => {
-    setPageNumber(prevPageNumber => {
-      const newPage = Math.max(1, Math.min(prevPageNumber + offset, numPages || 1));
-      if (newPage !== prevPageNumber) {
-        updateCurrentPageInDb(newPage);
-        setPageInput(String(newPage));
-      }
-      return newPage;
+    startTransition(() => { // Wrap state updates in startTransition
+      setPageNumber(prevPageNumber => {
+        const newPage = Math.max(1, Math.min(prevPageNumber + offset, numPages || 1));
+        if (newPage !== prevPageNumber) {
+          updateCurrentPageInDb(newPage);
+          setPageInput(String(newPage));
+        }
+        return newPage;
+      });
     });
   };
 
@@ -167,14 +170,16 @@ const BookReaderFullScreen: React.FC = () => {
   };
 
   const goToPage = () => {
-    const newPage = parseInt(pageInput, 10);
-    if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-      setPageNumber(newPage);
-      updateCurrentPageInDb(newPage);
-    } else {
-      showError(`Por favor, insira um número de página válido entre 1 e ${numPages || 1}.`);
-      setPageInput(String(pageNumber));
-    }
+    startTransition(() => { // Wrap state updates in startTransition
+      const newPage = parseInt(pageInput, 10);
+      if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+        setPageNumber(newPage);
+        updateCurrentPageInDb(newPage);
+      } else {
+        showError(`Por favor, insira um número de página válido entre 1 e ${numPages || 1}.`);
+        setPageInput(String(pageNumber));
+      }
+    });
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -182,6 +187,7 @@ const BookReaderFullScreen: React.FC = () => {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
     const touchEndX = e.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX;
     const swipeThreshold = 50;
