@@ -667,11 +667,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 flex-nowrap"> {/* Removido 'p-1' */}
+          <div className="inline-flex h-full space-x-4 flex-nowrap">
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full" {/* Largura fixa de 280px */}
+                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >
