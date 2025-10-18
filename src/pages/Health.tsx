@@ -10,8 +10,8 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import HealthMetricForm, { HealthMetricFormValues } from "@/components/HealthMetricForm";
 import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm";
-import { format, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format, differenceInDays } from "date-fns"; // Importação corrigida
+import { ptBR } from "date-fns/locale"; // Importação adicionada
 import { useSession } from "@/integrations/supabase/auth";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
@@ -151,7 +151,7 @@ const Health: React.FC = () => {
   if (metricsError) {
     showError("Erro ao carregar métricas de saúde: " + metricsError.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar métricas de saúde: {metricsError.message}</p>
       </div>
@@ -161,7 +161,7 @@ const Health: React.FC = () => {
   if (goalsError) {
     showError("Erro ao carregar metas de saúde: " + goalsError.message);
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <p className="text-lg text-red-500">Erro ao carregar metas de saúde: {goalsError.message}</p>
       </div>

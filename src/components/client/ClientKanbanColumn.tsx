@@ -58,8 +58,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           tasks?.filter(task => task.status === column.status).map(task => (
             <ClientTaskItem
               key={task.id}
-              task={task}
-              refetchTasks={() => { /* refetchTasks é passado pelo ClientKanbanPage */ }}
+              clientTask={task} // Corrigido de 'task' para 'clientTask'
+              refetchClientTasks={() => { /* refetchTasks é passado pelo ClientKanbanPage */ }}
               onEdit={handleEditTask}
               onDragStart={handleDragStart}
               clientId={clientId}

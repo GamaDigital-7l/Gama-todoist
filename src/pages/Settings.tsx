@@ -39,15 +39,15 @@ const TIMEZONES = [
 const settingsSchema = z.object({
   groq_api_key: z.string().nullable().optional(),
   openai_api_key: z.string().nullable().optional(),
-  ai_provider_preference: z.enum(["groq", "openai"]).optional().default("groq"),
-  notification_channel: z.enum(["web_push", "none"]).optional().default("web_push"),
+  ai_provider_preference: z.enum(["groq", "openai"]).default("groq"), // Removido .optional()
+  notification_channel: z.enum(["web_push", "none"]).default("web_push"), // Removido .optional()
   telegram_bot_token: z.string().nullable().optional(),
   telegram_chat_id: z.string().nullable().optional(),
-  telegram_enabled: z.boolean().optional().default(false),
-  daily_brief_morning_time: z.string().optional().default("08:00"),
-  daily_brief_evening_time: z.string().optional().default("18:00"),
-  weekly_brief_day: z.string().optional().default("Sunday"),
-  weekly_brief_time: z.string().optional().default("08:00"),
+  telegram_enabled: z.boolean().default(false), // Removido .optional()
+  daily_brief_morning_time: z.string().default("08:00"), // Removido .optional()
+  daily_brief_evening_time: z.string().default("18:00"), // Removido .optional()
+  weekly_brief_day: z.string().default("Sunday"), // Removido .optional()
+  weekly_brief_time: z.string().default("08:00"), // Removido .optional()
 });
 
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -245,17 +245,17 @@ const Settings: React.FC = () => {
       <TelegramSettingsCard
         userId={userId}
         session={session}
-        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
+        form={form}
       />
 
       <NotificationSettingsCard
         userId={userId}
         session={session}
-        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
+        form={form}
       />
 
       <AISettingsCard
-        form={form as unknown as UseFormReturn<SettingsFormValues>} // Cast para resolver o erro de tipagem
+        form={form}
         onSubmit={onSubmit}
       />
 

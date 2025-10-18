@@ -141,14 +141,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
   });
 
   useEffect(() => {
-    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
-      setSelectedDays(watchedRecurrenceDetails.split(','));
-    } else {
-      setSelectedDays([]);
-    }
-  }, [recurrenceType, watchedRecurrenceDetails]);
-
-  useEffect(() => {
     const setupInitialBoardDefaults = async () => {
       if (!initialData && userId && (initialOriginBoard === "today_priority" || initialOriginBoard === "today_no_priority" || initialOriginBoard === "jobs_woe_today")) {
         form.setValue("due_date", initialDueDate || new Date()); 

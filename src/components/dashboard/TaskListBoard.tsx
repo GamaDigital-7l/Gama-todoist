@@ -11,7 +11,6 @@ import { useSession } from "@/integrations/supabase/auth";
 import { Task, OriginBoard } from "@/types/task";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import TaskForm from "@/components/TaskForm";
-import TaskItem from "@/components/TaskItem";
 import { parseISO } from "date-fns"; // Importação corrigida
 
 interface TaskListBoardProps {

@@ -253,7 +253,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialData, onClientSaved, onC
         />
         {form.formState.errors.logo_file && (
           <p className="text-red-500 text-sm mt-1">
-            {form.formState.errors.logo_file.message}
+            {form.formState.errors.logo_file.message as string}
           </p>
         )}
         {(previewLogo || form.watch("logo_url")) && (
