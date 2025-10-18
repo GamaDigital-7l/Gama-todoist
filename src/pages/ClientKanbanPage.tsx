@@ -34,12 +34,9 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
       client_task_tags(
         tags(id, name, color)
       ),
-      subtasks:client_tasks!client_tasks_main_task_id_fkey(
+      subtasks:client_tasks!main_task_id(
         id, title, description, due_date, time, status, is_completed, created_at, updated_at, completed_at,
-        is_standard_task, main_task_id, public_approval_enabled, public_approval_link_id,
-        client_task_tags(
-          tags(id, name, color)
-        )
+        is_standard_task, main_task_id, public_approval_enabled, public_approval_link_id
       )
     `)
     .eq("client_id", clientId)
@@ -57,7 +54,8 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
     tags: task.client_task_tags.map((ctt: any) => ctt.tags),
     subtasks: task.subtasks.map((subtask: any) => ({
       ...subtask,
-      tags: subtask.client_task_tags.map((stt: any) => stt.tags),
+      // Removido o mapeamento de tags para subtarefas temporariamente
+      tags: [], 
     })),
   })) || [];
 
