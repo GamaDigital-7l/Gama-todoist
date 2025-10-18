@@ -22,23 +22,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Obter a chave privada VAPID dos segredos
-    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
-    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
-
-    if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
-      return new Response(
-        JSON.stringify({ error: "VAPID keys not configured in Supabase secrets." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    webpush.setVapidDetails(
-      'mailto: <gustavogama099@gmail.com>',
-      VAPID_PUBLIC_KEY,
-      VAPID_PRIVATE_KEY
-    );
-
     const { taskId, userId: bodyUserId } = await req.json(); // Obter userId do corpo
 
     if (!bodyUserId || !taskId) {
@@ -49,18 +32,38 @@ serve(async (req) => {
     }
     const userId = bodyUserId;
 
-    // Obter o fuso horário do usuário
-    const { data: profile, error: profileError } = await supabaseServiceRole
-      .from('profiles')
-      .select('timezone')
-      .eq('id', userId)
+    // Obter o fuso horário do usuário e configurações de notificação
+    const { data: settings, error: settingsError } = await supabaseServiceRole
+      .from("settings")
+      .select("webpush_enabled, profiles(timezone)")
+      .eq("user_id", userId)
+      .limit(1)
       .single();
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error(`[User ${userId}] Erro ao buscar fuso horário do perfil:`, profileError);
-      throw profileError;
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error(`[User ${userId}] Erro ao buscar configurações do usuário:`, settingsError);
+      throw settingsError;
     }
-    const userTimezone = profile?.timezone || SAO_PAULO_TIMEZONE;
+
+    let webpushEnabled = settings?.webpush_enabled || false;
+    const userTimezone = settings?.profiles?.timezone || SAO_PAULO_TIMEZONE;
+
+    // Configuração do web-push (apenas se habilitado e chaves presentes)
+    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
+    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+
+    if (webpushEnabled) {
+      if (!VAPID_PRIVATE_KEY || !VAPID_PUBLIC_KEY) {
+        console.error("VAPID keys not configured in Supabase secrets for Web Push notifications.");
+        webpushEnabled = false; // Desabilitar webpush para este usuário se as chaves estiverem faltando
+      } else {
+        webpush.setVapidDetails(
+          'mailto: <gustavogama099@gmail.com>',
+          VAPID_PUBLIC_KEY!,
+          VAPID_PRIVATE_KEY!
+        );
+      }
+    }
 
     // Buscar a tarefa específica
     const { data: task, error: fetchTaskError } = await supabaseServiceRole
@@ -101,43 +104,39 @@ serve(async (req) => {
       ],
     };
 
-    // Buscar todas as inscrições de push para o usuário
-    const { data: subscriptions, error: fetchSubsError } = await supabaseServiceRole
-      .from('user_subscriptions')
-      .select('subscription')
-      .eq('user_id', userId);
+    // Enviar notificação Web Push
+    if (webpushEnabled) {
+      const { data: subscriptions, error: fetchSubsError } = await supabaseServiceRole
+        .from('user_subscriptions')
+        .select('subscription')
+        .eq('user_id', userId);
 
-    if (fetchSubsError) {
-      console.error(`[User ${userId}] Erro ao buscar inscrições de usuário:`, fetchSubsError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch user subscriptions." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (!subscriptions || subscriptions.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No push subscriptions found for this user." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const notificationPromises = subscriptions.map(async (subRecord) => {
-      try {
-        await webpush.sendNotification(
-          subRecord.subscription as webpush.PushSubscription,
-          JSON.stringify(payload)
-        );
-        console.log(`[User ${userId}] Notificação push enviada para a tarefa ${task.id}.`);
-      } catch (pushError: any) {
-        console.error(`[User ${userId}] Erro ao enviar notificação push para a tarefa ${task.id}:`, pushError);
-        if (pushError.statusCode === 410 || pushError.statusCode === 404) {
-          console.warn(`[User ${userId}] Inscrição de push inválida/expirada. Removendo...`);
-          await supabaseServiceRole.from('user_subscriptions').delete().eq('subscription', subRecord.subscription);
-        }
+      if (fetchSubsError) {
+        console.error(`[User ${userId}] Erro ao buscar inscrições de usuário:`, fetchSubsError);
+        // Não lançar erro fatal, apenas continuar sem web push
+      } else if (subscriptions && subscriptions.length > 0) {
+        const notificationPromises = subscriptions.map(async (subRecord) => {
+          try {
+            await webpush.sendNotification(
+              subRecord.subscription as webpush.PushSubscription,
+              JSON.stringify(payload)
+            );
+            console.log(`[User ${userId}] Notificação push enviada para a tarefa ${task.id}.`);
+          } catch (pushError: any) {
+            console.error(`[User ${userId}] Erro ao enviar notificação push para a tarefa ${task.id}:`, pushError);
+            if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+              console.warn(`[User ${userId}] Inscrição de push inválida/expirada. Removendo...`);
+              await supabaseServiceRole.from('user_subscriptions').delete().eq('subscription', subRecord.subscription);
+            }
+          }
+        });
+        await Promise.all(notificationPromises);
+      } else {
+        console.log(`[User ${userId}] Nenhuma inscrição de web push encontrada.`);
       }
-    });
-    await Promise.all(notificationPromises);
+    } else {
+      console.log(`[User ${userId}] Notificações Web Push desabilitadas ou chaves VAPID ausentes.`);
+    }
 
     return new Response(JSON.stringify({ message: "Recurring task notification sent." }), {
       status: 200,
