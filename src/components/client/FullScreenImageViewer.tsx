@@ -1,23 +1,42 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 interface FullScreenImageViewerProps {
   isOpen: boolean;
   onClose: () => void;
-  imageUrl: string;
+  imageUrls: string[]; // Alterado para array de URLs
+  initialIndex: number; // Novo: índice da imagem inicial
   description?: string | null;
 }
 
-const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ isOpen, onClose, imageUrl, description }) => {
-  if (!isOpen || !imageUrl) return null;
+const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ isOpen, onClose, imageUrls, initialIndex, description }) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [isOpen, initialIndex]);
+
+  if (!isOpen || imageUrls.length === 0) return null;
+
+  const currentImageUrl = imageUrls[currentIndex];
+
+  const goToPrevious = () => {
+    setCurrentIndex((prevIndex) => (prevIndex === 0 ? imageUrls.length - 1 : prevIndex - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex === imageUrls.length - 1 ? 0 : prevIndex + 1));
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-90 z-50 p-4 border-none rounded-none max-w-full max-h-full h-full w-full">
+      <DialogContent className="fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-90 z-50 p-4 border-none rounded-none max-w-full max-h-full h-full w-full animate-fade-in-slide-up">
         <Button
           variant="ghost"
           size="icon"
@@ -27,15 +46,48 @@ const FullScreenImageViewer: React.FC<FullScreenImageViewerProps> = ({ isOpen, o
           <X className="h-6 w-6" />
           <span className="sr-only">Fechar</span>
         </Button>
-        <div className="relative flex flex-col items-center justify-center h-full w-full p-2"> {/* Adicionado p-2 para padding interno */}
+
+        {imageUrls.length > 1 && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToPrevious}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20"
+            >
+              <ChevronLeft className="h-8 w-8" />
+              <span className="sr-only">Anterior</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20"
+            >
+              <ChevronRight className="h-8 w-8" />
+              <span className="sr-only">Próxima</span>
+            </Button>
+          </>
+        )}
+
+        <div className="relative flex flex-col items-center justify-center h-full w-full p-2">
           <img
-            src={imageUrl}
+            src={currentImageUrl}
             alt={description || "Imagem da tarefa"}
-            className="max-w-full max-h-[80vh] object-contain" // max-h para evitar que a imagem ocupe toda a altura e esconda a descrição
+            className="max-w-full max-h-[80vh] object-contain"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder.svg'; // Fallback para imagem quebrada
+            }}
           />
           {description && (
-            <div className="mt-4 p-3 bg-gray-800 bg-opacity-70 rounded-md text-white text-center max-w-full overflow-auto break-words"> {/* Adicionado break-words */}
+            <div className="mt-4 p-3 bg-gray-800 bg-opacity-70 rounded-md text-white text-center max-w-full overflow-auto break-words">
               <p className="text-sm">{description}</p>
+            </div>
+          )}
+          {imageUrls.length > 1 && (
+            <div className="absolute bottom-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+              {currentIndex + 1} / {imageUrls.length}
             </div>
           )}
         </div>

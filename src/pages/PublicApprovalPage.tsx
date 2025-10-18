@@ -61,7 +61,7 @@ const fetchApprovalData = async (uniqueId: string): Promise<{ client: Client; ta
     .eq('client_id', approvalLink.client_id)
     .eq('user_id', approvalLink.user_id)
     .eq('month_year_reference', approvalLink.month_year_reference)
-    .in('status', ['in_approval', 'edit_requested']) // Apenas tarefas que precisam de ação
+    .in('status', ['in_approval', 'edit_requested', 'approved']) // Incluir 'approved' para mostrar o status final
     .order('order_index', { ascending: true });
 
   if (fetchTasksError) {
@@ -90,7 +90,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
   });
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageUrls, setSelectedImageUrls] = useState<string[]>([]);
+  const [initialImageIndex, setInitialImageIndex] = useState(0);
   const [selectedImageDescription, setSelectedImageDescription] = useState<string | null>(null);
   const [isEditReasonDialogOpen, setIsEditReasonDialogOpen] = useState(false);
   const [taskToEditId, setTaskToEditId] = useState<string | null>(null);
@@ -138,8 +139,9 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
     setInitialEditReason(null);
   };
 
-  const openImageViewer = (imageUrl: string, description?: string | null) => {
-    setSelectedImage(imageUrl);
+  const openImageViewer = (urls: string[], index: number, description?: string | null) => {
+    setSelectedImageUrls(urls);
+    setInitialImageIndex(index);
     setSelectedImageDescription(description || null);
     setIsImageViewerOpen(true);
   };
@@ -217,12 +219,12 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
               task.status === 'edit_requested' && "border-orange-500"
             )}>
               {task.image_urls && task.image_urls.length > 0 && (
-                <div className="relative w-full h-60 bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                <div className="relative w-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg aspect-video">
                   <img
                     src={task.image_urls[0]}
                     alt={task.title}
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => !isLinkExpired && openImageViewer(task.image_urls![0], task.description)}
+                    className="max-w-full max-h-full object-contain cursor-pointer"
+                    onClick={() => !isLinkExpired && openImageViewer(task.image_urls!, 0, task.description)}
                   />
                   {task.image_urls.length > 1 && (
                     <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
@@ -311,7 +313,8 @@ const PublicApprovalPage: React.FC<PublicApprovalPageProps> = () => {
       <FullScreenImageViewer
         isOpen={isImageViewerOpen}
         onClose={() => setIsImageViewerOpen(false)}
-        imageUrl={selectedImage || ""}
+        imageUrls={selectedImageUrls}
+        initialIndex={initialImageIndex}
         description={selectedImageDescription}
       />
 

@@ -18,6 +18,13 @@ import EditReasonDialog from "./EditReasonDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import ClientTaskForm from "./ClientTaskForm";
 import { OriginBoard } from "@/types/task";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface ClientTaskItemProps {
   task: ClientTask;
@@ -34,7 +41,8 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
   const queryClient = useQueryClient();
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageUrls, setSelectedImageUrls] = useState<string[]>([]);
+  const [initialImageIndex, setInitialImageIndex] = useState(0);
   const [selectedImageDescription, setSelectedImageDescription] = useState<string | null>(null);
   const [isEditReasonDialogOpen, setIsEditReasonDialogOpen] = useState(false);
   const [taskToEditId, setTaskToEditId] = useState<string | null>(null);
@@ -60,7 +68,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       if (newIsCompleted) {
         updateData.status = 'published';
       } else if (task.status === 'published' || task.status === 'approved') {
-        updateData.status = 'backlog';
+        updateData.status = 'in_production'; // Alterado de 'backlog' para 'in_production'
       }
 
       // Se for uma tarefa padrão, também atualiza a tarefa principal no dashboard
@@ -118,7 +126,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       if (newStatus === 'approved' || newStatus === 'published') {
         updateData.is_completed = true;
         updateData.completed_at = new Date().toISOString();
-      } else if (newStatus === 'edit_requested' || newStatus === 'backlog' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
+      } else if (newStatus === 'edit_requested' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
         updateData.is_completed = false;
         updateData.completed_at = null;
       }
@@ -220,8 +228,9 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
     setIsEditReasonDialogOpen(false);
   };
 
-  const openImageViewer = (imageUrl: string, description?: string | null) => {
-    setSelectedImage(imageUrl);
+  const openImageViewer = (urls: string[], index: number, description?: string | null) => {
+    setSelectedImageUrls(urls);
+    setInitialImageIndex(index);
     setSelectedImageDescription(description || null);
     setIsImageViewerOpen(true);
   };
@@ -235,7 +244,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
   return (
     <div
       className={cn(
-        "flex flex-col p-0 bg-card border rounded-lg shadow-sm cursor-grab active:cursor-grabbing overflow-hidden",
+        "flex flex-col bg-card border rounded-xl shadow-sm cursor-grab active:cursor-grabbing overflow-hidden",
         isOverdue ? "border-red-500" : "border-border",
         task.is_completed && "opacity-70",
         isEditRequested && "border-orange-500"
@@ -244,13 +253,32 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       onDragStart={(e) => onDragStart(e, task.id, task.status)}
     >
       {task.image_urls && task.image_urls.length > 0 && (
-        <div className="relative w-full h-40 bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg">
-          <img
-            src={task.image_urls[0]}
-            alt={task.title}
-            className="w-full h-full object-cover cursor-pointer"
-            onClick={() => !isImageViewerOpen && openImageViewer(task.image_urls![0], task.description)}
-          />
+        <div className="relative w-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg aspect-video"> {/* Usando aspect-video para proporção */}
+          {task.image_urls.length > 1 ? (
+            <Carousel className="w-full h-full">
+              <CarouselContent>
+                {task.image_urls.map((url, index) => (
+                  <CarouselItem key={index} className="flex items-center justify-center">
+                    <img
+                      src={url}
+                      alt={`${task.title} - Imagem ${index + 1}`}
+                      className="max-w-full max-h-full object-contain cursor-pointer"
+                      onClick={() => !isImageViewerOpen && openImageViewer(task.image_urls!, index, task.description)}
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70" />
+              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70" />
+            </Carousel>
+          ) : (
+            <img
+              src={task.image_urls[0]}
+              alt={task.title}
+              className="max-w-full max-h-full object-contain cursor-pointer"
+              onClick={() => !isImageViewerOpen && openImageViewer(task.image_urls!, 0, task.description)}
+            />
+          )}
           {task.image_urls.length > 1 && (
             <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
               +{task.image_urls.length - 1}
@@ -363,14 +391,15 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
       <FullScreenImageViewer
         isOpen={isImageViewerOpen}
         onClose={() => setIsImageViewerOpen(false)}
-        imageUrl={selectedImage || ""}
+        imageUrls={selectedImageUrls}
+        initialIndex={initialImageIndex}
         description={selectedImageDescription}
       />
 
       <EditReasonDialog
         isOpen={isEditReasonDialogOpen}
         onClose={() => setIsEditReasonDialogOpen(false)}
-        onSubmit={handleRequestEdit}
+        onSubmit={handleRequestEditSubmit}
         initialReason={initialEditReason}
       />
     </div>
