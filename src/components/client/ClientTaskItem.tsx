@@ -35,12 +35,74 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageDescription, setSelectedImageDescription] = useState<string | null>(null);
   const [isEditReasonDialogOpen, setIsEditReasonDialogOpen] = useState(false);
   const [taskToEditId, setTaskToEditId] = useState<string | null>(null);
   const [initialEditReason, setInitialEditReason] = useState<string | null>(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false); // Para o formulário de edição da tarefa
 
-  const updateTaskStatusMutation = useMutation({
+  // Nova mutação para o checkbox (is_completed, completed_at)
+  const updateClientTaskCompletionMutation = useMutation({
+    mutationFn: async ({ taskId, newIsCompleted }: { taskId: string; newIsCompleted: boolean }) => {
+      if (!userId) {
+        showError("Usuário não autenticado.");
+        throw new Error("Usuário não autenticado.");
+      }
+
+      const updateData: Partial<ClientTask> = {
+        is_completed: newIsCompleted,
+        completed_at: newIsCompleted ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Se a tarefa for marcada como concluída, também atualiza o status para 'published'
+      // Se for desmarcada, e o status era 'published' ou 'approved', volta para 'backlog'
+      if (newIsCompleted) {
+        updateData.status = 'published';
+      } else if (task.status === 'published' || task.status === 'approved') {
+        updateData.status = 'backlog';
+      }
+
+      // Se for uma tarefa padrão, também atualiza a tarefa principal no dashboard
+      if (task.is_standard_task && task.main_task_id) {
+        const mainTaskUpdateData: { is_completed?: boolean; current_board?: OriginBoard; updated_at: string } = {
+          is_completed: newIsCompleted,
+          current_board: newIsCompleted ? 'completed' : 'client_tasks',
+          updated_at: new Date().toISOString(),
+        };
+        const { error: mainTaskError } = await supabase
+          .from("tasks")
+          .update(mainTaskUpdateData)
+          .eq("id", task.main_task_id)
+          .eq("user_id", userId);
+        if (mainTaskError) console.error("Erro ao sincronizar tarefa principal:", mainTaskError);
+        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "completed", userId] });
+      }
+
+      const { error } = await supabase
+        .from("client_tasks")
+        .update(updateData)
+        .eq("id", taskId)
+        .eq("client_id", task.client_id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess("Status de conclusão da tarefa atualizado!");
+      refetchTasks();
+      queryClient.invalidateQueries({ queryKey: ["clientTasks", task.client_id, userId, task.month_year_reference] });
+    },
+    onError: (err: any) => {
+      showError("Erro ao atualizar status de conclusão da tarefa: " + err.message);
+      console.error("Erro ao atualizar status de conclusão da tarefa:", err);
+    },
+  });
+
+  // Nova mutação para botões de Aprovar/Solicitar Edição (status, is_completed, completed_at, edit_reason)
+  const updateClientTaskApprovalMutation = useMutation({
     mutationFn: async ({ taskId, newStatus, editReason }: { taskId: string; newStatus: ClientTaskStatus; editReason?: string | null }) => {
       if (!userId) {
         showError("Usuário não autenticado.");
@@ -53,45 +115,46 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
         edit_reason: editReason || null,
       };
 
-      // Se a tarefa for aprovada, marcar como concluída
-      if (newStatus === 'approved') {
+      if (newStatus === 'approved' || newStatus === 'published') {
         updateData.is_completed = true;
         updateData.completed_at = new Date().toISOString();
-      } else if (newStatus === 'edit_requested') {
+      } else if (newStatus === 'edit_requested' || newStatus === 'backlog' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
         updateData.is_completed = false;
         updateData.completed_at = null;
       }
 
-      const { error } = await supabase
+      const { data: updatedClientTask, error } = await supabase
         .from("client_tasks")
         .update(updateData)
         .eq("id", taskId)
         .eq("client_id", task.client_id)
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .select('is_standard_task, main_task_id')
+        .single();
 
       if (error) throw error;
 
       // Sincronizar com a tarefa principal se for uma tarefa padrão
-      if (task.is_standard_task && task.main_task_id) {
+      if (updatedClientTask.is_standard_task && updatedClientTask.main_task_id) {
         const mainTaskUpdateData: { is_completed?: boolean; current_board?: OriginBoard; updated_at: string } = {
           updated_at: new Date().toISOString(),
         };
-        if (newStatus === 'approved') {
+        if (updateData.is_completed) {
           mainTaskUpdateData.is_completed = true;
           mainTaskUpdateData.current_board = 'completed';
-        } else if (newStatus === 'edit_requested') {
+        } else {
           mainTaskUpdateData.is_completed = false;
-          mainTaskUpdateData.current_board = 'general'; // Ou outro board padrão para tarefas não concluídas
+          mainTaskUpdateData.current_board = 'client_tasks';
         }
         
         const { error: mainTaskError } = await supabase
           .from("tasks")
           .update(mainTaskUpdateData)
-          .eq("id", task.main_task_id)
+          .eq("id", updatedClientTask.main_task_id)
           .eq("user_id", userId);
         if (mainTaskError) console.error("Erro ao sincronizar tarefa principal:", mainTaskError);
         queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "general", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] });
         queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "completed", userId] });
       }
     },
@@ -149,16 +212,17 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
   });
 
   const handleApproveTask = () => {
-    updateTaskStatusMutation.mutate({ taskId: task.id, newStatus: 'approved' });
+    updateClientTaskApprovalMutation.mutate({ taskId: task.id, newStatus: 'approved' });
   };
 
   const handleRequestEdit = (reason: string) => {
-    updateTaskStatusMutation.mutate({ taskId: task.id, newStatus: 'edit_requested', editReason: reason });
+    updateClientTaskApprovalMutation.mutate({ taskId: task.id, newStatus: 'edit_requested', editReason: reason });
     setIsEditReasonDialogOpen(false);
   };
 
-  const openImageViewer = (imageUrl: string) => {
+  const openImageViewer = (imageUrl: string, description?: string | null) => {
     setSelectedImage(imageUrl);
+    setSelectedImageDescription(description || null);
     setIsImageViewerOpen(true);
   };
 
@@ -185,7 +249,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             src={task.image_urls[0]}
             alt={task.title}
             className="w-full h-full object-cover cursor-pointer"
-            onClick={() => openImageViewer(task.image_urls![0])}
+            onClick={() => !isImageViewerOpen && openImageViewer(task.image_urls![0], task.description)}
           />
           {task.image_urls.length > 1 && (
             <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
@@ -200,7 +264,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             <Checkbox
               id={`client-task-${task.id}`}
               checked={task.is_completed}
-              onCheckedChange={(checked) => updateTaskStatusMutation.mutate({ taskId: task.id, newStatus: checked ? 'published' : 'backlog' })}
+              onCheckedChange={(checked) => updateClientTaskCompletionMutation.mutate({ taskId: task.id, newIsCompleted: checked as boolean })}
               className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
               disabled={task.status === 'published'}
             />
@@ -234,7 +298,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
                   clientId={clientId}
                   monthYearRef={monthYearRef}
                   initialData={task}
-                  onTaskSaved={refetchTasks}
+                  onTaskSaved={handleTaskSaved}
                   onClose={() => setIsTaskFormOpen(false)}
                 />
               </DialogContent>
@@ -291,7 +355,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
             variant="outline"
             className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10"
           >
-            <Edit className="mr-2 h-4 w-4" /> Editar
+            <Edit className="mr-2 h-4 w-4" /> Solicitar Edição
           </Button>
         </div>
       </div>
@@ -300,14 +364,14 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
         isOpen={isImageViewerOpen}
         onClose={() => setIsImageViewerOpen(false)}
         imageUrl={selectedImage || ""}
-        description={task.description}
+        description={selectedImageDescription}
       />
 
       <EditReasonDialog
         isOpen={isEditReasonDialogOpen}
         onClose={() => setIsEditReasonDialogOpen(false)}
         onSubmit={handleRequestEdit}
-        initialReason={task.edit_reason}
+        initialReason={initialEditReason}
       />
     </div>
   );

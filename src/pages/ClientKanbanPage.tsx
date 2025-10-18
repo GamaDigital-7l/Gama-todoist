@@ -29,6 +29,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { OriginBoard } from "@/types/task"; // Importar OriginBoard
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "backlog", title: "Backlog", color: "bg-gray-700" },
@@ -181,22 +182,71 @@ const ClientKanbanPage: React.FC = () => {
     }
   }, [clientTasks, searchParams, navigate, isTaskFormOpen]);
 
-
-  const updateTaskStatusMutation = useMutation({
+  // Nova mutação para operações de arrastar e soltar (status e order_index)
+  const updateClientTaskKanbanMutation = useMutation({
     mutationFn: async ({ taskId, newStatus, newOrderIndex }: { taskId: string; newStatus: ClientTaskStatus; newOrderIndex: number }) => {
       if (!userId || !clientId) throw new Error("Usuário não autenticado ou cliente não encontrado.");
+
+      const { data: currentTask, error: fetchError } = await supabase
+        .from("client_tasks")
+        .select('is_standard_task, main_task_id')
+        .eq('id', taskId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const updateData: Partial<ClientTask> = {
+        status: newStatus,
+        order_index: newOrderIndex,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Determinar is_completed e completed_at com base no newStatus para a tarefa do cliente
+      if (newStatus === 'approved' || newStatus === 'published') {
+        updateData.is_completed = true;
+        updateData.completed_at = new Date().toISOString();
+      } else if (newStatus === 'edit_requested' || newStatus === 'backlog' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
+        updateData.is_completed = false;
+        updateData.completed_at = null;
+      }
+
       const { error } = await supabase
         .from("client_tasks")
-        .update({ status: newStatus, order_index: newOrderIndex, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq("id", taskId)
         .eq("client_id", clientId)
         .eq("user_id", userId);
+
       if (error) throw error;
+
+      // Sincronizar com a tarefa principal se for uma tarefa padrão
+      if (currentTask.is_standard_task && currentTask.main_task_id) {
+        const mainTaskUpdateData: { is_completed?: boolean; current_board?: OriginBoard; updated_at: string } = {
+          updated_at: new Date().toISOString(),
+        };
+        if (updateData.is_completed) {
+          mainTaskUpdateData.is_completed = true;
+          mainTaskUpdateData.current_board = 'completed';
+        } else {
+          mainTaskUpdateData.is_completed = false;
+          mainTaskUpdateData.current_board = 'client_tasks';
+        }
+        
+        const { error: mainTaskError } = await supabase
+          .from("tasks")
+          .update(mainTaskUpdateData)
+          .eq("id", currentTask.main_task_id)
+          .eq("user_id", userId);
+        if (mainTaskError) console.error("Erro ao sincronizar tarefa principal:", mainTaskError);
+        queryClient.invalidateQueries({ queryKey: ["allTasks", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "client_tasks", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboardTasks", "completed", userId] });
+      }
     },
     onSuccess: () => {
+      showSuccess("Status da tarefa atualizado!");
       refetchClientTasks();
       queryClient.invalidateQueries({ queryKey: ["clientTasks", clientId, userId, monthYearRef] });
-      showSuccess("Status da tarefa atualizado com sucesso!");
     },
     onError: (err: any) => {
       showError("Erro ao atualizar status da tarefa: " + err.message);
@@ -226,9 +276,9 @@ const ClientKanbanPage: React.FC = () => {
 
     const droppedTaskId = draggedTaskId;
     const tasksInTargetColumn = clientTasks?.filter(task => task.status === targetStatus) || [];
-    const newOrderIndex = tasksInTargetColumn.length;
+    const newOrderIndex = tasksInTargetColumn.length; // Adicionar ao final da coluna
 
-    await updateTaskStatusMutation.mutateAsync({
+    await updateClientTaskKanbanMutation.mutateAsync({
       taskId: droppedTaskId,
       newStatus: targetStatus,
       newOrderIndex: newOrderIndex,
