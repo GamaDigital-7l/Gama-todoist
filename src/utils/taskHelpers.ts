@@ -1,4 +1,4 @@
-import { isToday, isThisWeek, isThisMonth, parseISO } from "date-fns";
+import { isToday, isThisWeek, isThisMonth } from "date-fns";
 
 interface TaskForAdjustment {
   is_completed: boolean;
@@ -20,7 +20,7 @@ export const getAdjustedTaskCompletionStatus = (task: TaskForAdjustment): boolea
     return false; // Nunca concluída neste ciclo
   }
 
-  const lastCompletionDate = parseISO(task.last_successful_completion_date);
+  const lastCompletionDate = new Date(task.last_successful_completion_date);
   const today = new Date();
 
   switch (task.recurrence_type) {

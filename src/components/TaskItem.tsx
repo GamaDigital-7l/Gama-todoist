@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Repeat, Clock, Edit, Trash2, PlusCircle, AlertCircle, Star, ChevronDown, ChevronRight, Users } from "lucide-react"; // Adicionado AlertCircle, Star, ChevronDown, ChevronRight, Users
@@ -175,7 +175,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
   const isClientTask = task.origin_board === "client_tasks";
 
   return (
-    <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}> {/* Ajustado ml e pl para subtarefas */}
+    <div className={`space-y-2 ${level > 0 ? 'ml-4 border-l pl-2 border-border' : ''}`}>
       <div className={cn(
         "flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl shadow-sm frosted-glass card-hover-effect",
         level === 0 ? "p-3 border border-border bg-background" : "p-2 bg-muted/20"
@@ -193,13 +193,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
               className={cn(
                 "font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 break-words",
                 isTaskCompletedForPeriod ? "line-through text-muted-foreground" : "text-foreground",
-                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm" // Fontes adaptáveis
+                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm"
               )}
             >
-              {task.overdue && ( // Exibir alerta de atraso
+              {task.overdue && (
                 <AlertCircle className="h-4 w-4 text-red-500 inline-block mr-1 flex-shrink-0" />
               )}
-              {task.is_priority && ( // Exibir indicador de prioridade
+              {task.is_priority && (
                 <Star className="h-4 w-4 text-yellow-500 inline-block mr-1 flex-shrink-0" fill="currentColor" />
               )}
               {task.title}
@@ -207,15 +207,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, refetchTasks, level = 0 }) =>
             {task.description && (
               <p className={cn(
                 "text-muted-foreground break-words",
-                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm" // Fontes adaptáveis
+                level === 0 ? "text-sm md:text-base" : "text-xs md:text-sm"
               )}>{task.description}</p>
             )}
             {task.due_date && task.recurrence_type === "none" && (
               <p className={cn(
                 "text-xs text-muted-foreground",
-                level > 0 && "text-[0.65rem] md:text-xs" // Ainda menor para subtarefas aninhadas
+                level > 0 && "text-[0.65rem] md:text-xs"
               )}>
-                Vencimento: {format(parseISO(task.due_date), "PPP", { locale: ptBR })}
+                Vencimento: {format(new Date(task.due_date), "PPP", { locale: ptBR })}
               </p>
             )}
             {task.time && (

@@ -7,7 +7,7 @@ import DashboardTaskList from "@/components/DashboardTaskList";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/integrations/supabase/auth";
-import { isToday, parseISO, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays } from "date-fns";
+import { isToday, differenceInDays, format, getDay, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, addDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -68,7 +68,7 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at, updated_at,
       task_tags(
         tags(id, name, color)
       )
@@ -117,7 +117,7 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
       return true; // A filtragem já foi feita na query Supabase
     }
     // Para boards de 'hoje', filtrar por due_date ou recorrência
-    if (task.due_date && isSameDay(parseISO(task.due_date), selectedDate)) {
+    if (task.due_date && isSameDay(new Date(task.due_date), selectedDate)) {
       return true;
     }
     if (task.recurrence_type !== "none") {
@@ -144,7 +144,7 @@ const fetchAllTasks = async (userId: string): Promise<Task[]> => {
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at, updated_at,
       task_tags(
         tags(id, name, color)
       )
@@ -332,11 +332,11 @@ const Dashboard: React.FC = () => {
   const totalRecurrentCount = recurrentTasks?.length || 0;
 
   const completedThisWeekCount = completedTasks?.filter(task => 
-    task.completed_at && parseISO(task.completed_at) >= startOfThisWeek && parseISO(task.completed_at) <= endOfThisWeek
+    task.completed_at && new Date(task.completed_at) >= startOfThisWeek && new Date(task.completed_at) <= endOfThisWeek
   ).length || 0;
 
   const completedThisMonthCount = completedTasks?.filter(task =>
-    task.completed_at && parseISO(task.completed_at) >= startOfThisMonth && parseISO(task.completed_at) <= endOfThisMonth
+    task.completed_at && new Date(task.completed_at) >= startOfThisMonth && new Date(task.completed_at) <= endOfThisMonth
   ).length || 0;
 
   const failedRecurrentTasks = recurrentTasks?.filter(task => !getAdjustedTaskCompletionStatus(task)) || [];
@@ -368,7 +368,7 @@ const Dashboard: React.FC = () => {
       .from("tasks")
       .select(`
         id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-        last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+        last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at, updated_at,
         task_tags(
           tags(id, name, color)
         )
@@ -398,7 +398,7 @@ const Dashboard: React.FC = () => {
           isTaskRelevantForDate = parseInt(task.recurrence_details) === date.getDate();
         }
       } else if (task.due_date) {
-        isTaskRelevantForDate = format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate;
+        isTaskRelevantForDate = format(new Date(task.due_date), "yyyy-MM-dd") === formattedDate;
       }
       
       // Only show tasks that are relevant for the date and not completed for their current cycle
@@ -424,7 +424,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6"> {/* Adicionado md:px-10 para padding lateral */}
+    <div className="flex flex-1 flex-col gap-6 p-4 md:px-10 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
@@ -494,7 +494,7 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Simplificado o grid para melhor responsividade */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <TaskListBoard
           title="Hoje Prioridade"
           tasks={todayPriorityTasks || []}
@@ -526,12 +526,12 @@ const Dashboard: React.FC = () => {
           selectedDate={selectedDate}
         />
         <TaskListBoard
-          title="Tarefas de Clientes" {/* Novo quadro para tarefas de clientes */}
+          title="Tarefas de Clientes"
           tasks={clientDashboardTasks || []}
           isLoading={isLoadingClientDashboardTasks}
           error={errorClientDashboardTasks}
           refetchTasks={handleTaskAdded}
-          showAddButton={false} {/* Tarefas de clientes são adicionadas via Kanban do cliente */}
+          showAddButton={false}
           originBoard="client_tasks"
           selectedDate={selectedDate}
         />
@@ -588,7 +588,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Cartões de Estatísticas de Tarefas movidos para o final da página */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Simplificado o grid para melhor responsividade */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">Total de Tarefas</CardTitle>

@@ -22,7 +22,6 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/integrations/supabase/auth";
 import TagSelector from "./TagSelector";
 import { OriginBoard, RecurrenceType, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
-import { parseISO } from "date-fns";
 import TimePicker from "./TimePicker"; // Importar TimePicker
 import { useQueryClient } from "@tanstack/react-query";
 

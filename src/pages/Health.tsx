@@ -10,7 +10,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import HealthMetricForm, { HealthMetricFormValues } from "@/components/HealthMetricForm";
 import HealthGoalForm, { HealthGoalFormValues } from "@/components/HealthGoalForm";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +30,8 @@ interface HealthGoal extends Omit<HealthGoalFormValues, 'start_date' | 'target_d
   start_date: string;
   target_date: string;
   is_completed: boolean;
+  description?: string | null; // Added description
+  status: "pending" | "in_progress" | "completed"; // Added status
 }
 
 const fetchHealthMetrics = async (userId: string): Promise<HealthMetric[]> => {
@@ -195,8 +197,8 @@ const Health: React.FC = () => {
               <HealthGoalForm
                 initialData={editingGoal ? {
                   ...editingGoal,
-                  start_date: parseISO(editingGoal.start_date),
-                  target_date: parseISO(editingGoal.target_date),
+                  start_date: new Date(editingGoal.start_date),
+                  target_date: new Date(editingGoal.target_date),
                 } : undefined}
                 onGoalSaved={refetchGoals}
                 onClose={() => setIsGoalFormOpen(false)}
@@ -226,7 +228,7 @@ const Health: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <HealthMetricForm
-                initialData={editingMetric ? { ...editingMetric, date: parseISO(editingMetric.date) } : undefined}
+                initialData={editingMetric ? { ...editingMetric, date: new Date(editingMetric.date) } : undefined}
                 onMetricSaved={refetchMetrics}
                 onClose={() => setIsMetricFormOpen(false)}
               />
@@ -246,7 +248,7 @@ const Health: React.FC = () => {
             const currentWeightLost = latestWeight ? (goal.initial_weight_kg - latestWeight) : 0;
             const remainingToLose = totalToLose - currentWeightLost;
             const progressPercentage = totalToLose > 0 ? (currentWeightLost / totalToLose) * 100 : 0;
-            const daysRemaining = differenceInDays(parseISO(goal.target_date), new Date());
+            const daysRemaining = differenceInDays(new Date(goal.target_date), new Date());
 
             return (
               <Card key={goal.id} className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 frosted-glass card-hover-effect">
@@ -272,7 +274,7 @@ const Health: React.FC = () => {
                   )}
                   {goal.target_date && (
                     <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2">
-                      <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(parseISO(goal.target_date), "PPP", { locale: ptBR })}
+                      <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data Alvo: {format(new Date(goal.target_date), "PPP", { locale: ptBR })}
                     </p>
                   )}
                   <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1">
@@ -333,7 +335,7 @@ const Health: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1">
-                  <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(metric.date), "PPP", { locale: ptBR })}
+                  <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(new Date(metric.date), "PPP", { locale: ptBR })}
                 </p>
                 {metric.notes && (
                   <p className="text-sm md:text-base text-muted-foreground flex items-start gap-1 break-words">

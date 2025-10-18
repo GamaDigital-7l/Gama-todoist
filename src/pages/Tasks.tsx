@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react"; // Adicionado useEffect
+import React, { useEffect } from "react";
 import TaskForm from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"; // Adicionado useMutation
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getDay, isToday, isThisWeek, isThisMonth, parseISO, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { getDay, isToday, isThisWeek, isThisMonth, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,14 @@ import { Task, Tag, DAYS_OF_WEEK_MAP, DAYS_OF_WEEK_LABELS, TemplateTask, Templat
 import TaskItem from "@/components/TaskItem";
 import TemplateTaskForm from "@/components/TemplateTaskForm";
 import TemplateTaskItem from "@/components/TemplateTaskItem";
-import { useSearchParams, useNavigate } from "react-router-dom"; // Adicionado useSearchParams, useNavigate
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const fetchTasks = async (userId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select(`
       id, title, description, due_date, time, is_completed, recurrence_type, recurrence_details, 
-      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at,
+      last_successful_completion_date, origin_board, current_board, is_priority, overdue, parent_task_id, created_at, completed_at, updated_at,
       task_tags(
         tags(id, name, color)
       )
@@ -236,7 +236,7 @@ const Tasks: React.FC = () => {
     }
 
     if (!task.due_date) return false;
-    const dueDate = parseISO(task.due_date);
+    const dueDate = new Date(task.due_date);
 
     switch (filterType) {
       case "weekly":
@@ -335,7 +335,7 @@ const Tasks: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <TaskForm
-              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
+              initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? new Date(editingTask.due_date) : undefined } : undefined}
               onTaskSaved={handleTaskUpdated}
               onClose={() => setIsFormOpen(false)}
             />
@@ -346,7 +346,7 @@ const Tasks: React.FC = () => {
         Organize suas tarefas diárias, semanais e mensais aqui.
       </p>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2"> {/* Ajustado para grid-cols-1 */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect">
           <CardHeader>
             <CardTitle className="text-foreground">Gerenciamento de Tarefas</CardTitle>

@@ -10,7 +10,7 @@ import { showError } from "@/utils/toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/integrations/supabase/auth";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NoteForm from "@/components/NoteForm";
 import NoteItem from "@/components/NoteItem";
@@ -104,7 +104,7 @@ const Notes: React.FC = () => {
   const [isTagFormOpen, setIsTagFormOpen] = useState(false);
 
   const handleEditNote = (note: Note) => {
-    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", note.id, "and object:", note); // Removido console.log
+    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", note.id, "and object:", note);
     setEditingNote(note);
     setIsFormOpen(true);
   };
@@ -134,7 +134,7 @@ const Notes: React.FC = () => {
           contentText = checklistItems.map(item => item.text).join(" ");
         }
       } catch (e) {
-        // console.error("Erro ao parsear conteúdo da checklist:", e); // Removido console.error
+        // console.error("Erro ao parsear conteúdo da checklist:", e);
       }
     }
 
@@ -190,7 +190,7 @@ const Notes: React.FC = () => {
         Seu caderno digital para todas as suas ideias, pensamentos e informações importantes.
       </p>
 
-      <QuickNoteCreator onNoteCreated={refetch} userId={userId} /> {/* Passando userId */}
+      <QuickNoteCreator onNoteCreated={refetch} userId={userId} />
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-grow min-w-0">
@@ -201,7 +201,7 @@ const Notes: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 bg-input border-border text-foreground focus-visible:ring-ring"
-            disabled={!userId} // Desabilitar se não houver userId
+            disabled={!userId}
           />
         </div>
         <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
@@ -209,7 +209,7 @@ const Notes: React.FC = () => {
             <Button
               variant="outline"
               className="w-full sm:w-auto justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-2 flex-shrink-0"
-              disabled={!userId} // Desabilitar se não houver userId
+              disabled={!userId}
             >
               <TagIcon className="h-4 w-4 flex-shrink-0" />
               {selectedFilterTagIds.length > 0 ? (

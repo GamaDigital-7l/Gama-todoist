@@ -129,7 +129,7 @@ const TaskListBoard: React.FC<TaskListBoardProps> = ({
                 </DialogDescription>
               </DialogHeader>
               <TaskForm
-                initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? parseISO(editingTask.due_date) : undefined } : undefined}
+                initialData={editingTask ? { ...editingTask, due_date: editingTask.due_date ? new Date(editingTask.due_date) : undefined } : undefined}
                 onTaskSaved={refetchTasks}
                 onClose={() => setIsTaskFormOpen(false)}
                 initialOriginBoard={originBoard}

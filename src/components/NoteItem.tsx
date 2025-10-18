@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Adicionado Card, CardContent, CardHeader, CardTitle
 
@@ -82,7 +82,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
   });
 
   const handleEditNote = (noteToEdit: Note) => {
-    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", noteToEdit.id, "and object:", noteToEdit); // Removido console.log
+    // console.log("Notes.tsx - handleEditNote: Editing note with ID:", noteToEdit.id, "and object:", noteToEdit);
     setEditingNote(noteToEdit);
     setIsFormOpen(true);
   };
@@ -113,7 +113,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         await updateNoteMutation.mutateAsync({ content: JSON.stringify(currentContent) });
       }
     } catch (err) {
-      // console.error("Erro ao atualizar item da checklist:", err); // Removido console.error
+      // console.error("Erro ao atualizar item da checklist:", err);
       showError("Erro ao atualizar item da checklist.");
     }
   };
@@ -124,7 +124,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         const checklistItems = JSON.parse(note.content);
         if (!Array.isArray(checklistItems)) return <p className="text-sm text-red-500">Conteúdo da checklist inválido.</p>;
         return (
-          <ul className="space-y-1 text-sm md:text-base text-gray-800 dark:text-gray-100"> {/* Fontes adaptáveis */}
+          <ul className="space-y-1 text-sm md:text-base text-gray-800 dark:text-gray-100">
             {checklistItems.map((item: { text: string; completed: boolean }, index: number) => (
               <li key={index} className="flex items-center gap-2">
                 <Checkbox
@@ -140,11 +140,11 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
           </ul>
         );
       } catch (e) {
-        // console.error("Erro ao parsear conteúdo da checklist:", e); // Removido console.error
+        // console.error("Erro ao parsear conteúdo da checklist:", e);
         return <p className="text-sm text-red-500">Erro ao carregar checklist.</p>;
       }
     }
-    return <div className="prose dark:prose-invert max-w-none text-sm md:text-base text-gray-800 dark:text-gray-100 break-words" dangerouslySetInnerHTML={{ __html: note.content }} />; // Fontes adaptáveis
+    return <div className="prose dark:prose-invert max-w-none text-sm md:text-base text-gray-800 dark:text-gray-100 break-words" dangerouslySetInnerHTML={{ __html: note.content }} />;
   };
 
   return (
@@ -192,7 +192,7 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
         )}
       </div>
       <CardHeader className="pb-2" onClick={() => handleEditNote(note)}>
-        {note.title && <CardTitle className="text-lg md:text-xl font-semibold break-words">{note.title}</CardTitle>} {/* Fontes adaptáveis */}
+        {note.title && <CardTitle className="text-lg md:text-xl font-semibold break-words">{note.title}</CardTitle>}
       </CardHeader>
       <CardContent className="flex-grow" onClick={() => handleEditNote(note)}>
         {renderNoteContent()}
@@ -206,8 +206,8 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, refetchNotes }) => {
           </div>
         )}
         {note.reminder_date && note.reminder_time && (
-          <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mt-2"> {/* Fontes adaptáveis */}
-            <Bell className="h-3 w-3 text-blue-500 flex-shrink-0" /> Lembrete: {format(parseISO(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
+          <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mt-2">
+            <Bell className="h-3 w-3 text-blue-500 flex-shrink-0" /> Lembrete: {format(new Date(note.reminder_date), "PPP", { locale: ptBR })} às {note.reminder_time}
           </p>
         )}
       </CardContent>

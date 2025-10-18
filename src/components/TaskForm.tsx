@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2 } from "lucide-react"; 
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
@@ -49,8 +49,8 @@ const taskSchema = z.object({
   recurrence_details: z.string().optional().nullable(),
   recurrence_time: z.string().optional().nullable(), // Novo campo
   selected_tag_ids: z.array(z.string()).optional(),
-  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"),
-  current_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today"]).default("general"), // Novo campo
+  origin_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today", "client_tasks"]).default("general"),
+  current_board: z.enum(["general", "today_priority", "today_no_priority", "overdue", "completed", "recurrent", "jobs_woe_today", "client_tasks"]).default("general"), // Novo campo
   is_priority: z.boolean().default(false), // Novo campo
   parent_task_id: z.string().nullable().optional(),
 });
@@ -99,7 +99,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
     resolver: zodResolver(taskSchema),
     defaultValues: initialData ? {
       ...initialData,
-      due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? parseISO(initialData.due_date) : initialData.due_date) : undefined,
+      due_date: initialData.due_date ? (typeof initialData.due_date === 'string' ? new Date(initialData.due_date) : initialData.due_date) : undefined,
       time: initialData.time || undefined,
       recurrence_details: initialData.recurrence_details || undefined,
       recurrence_time: initialData.recurrence_time || undefined, // Novo campo
@@ -389,7 +389,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
         <div>
           <Label htmlFor="recurrence_time" className="text-foreground">Horário de Recorrência (Opcional)</Label>
           <TimePicker
-            value={form.watch("recurrence_time") || undefined}
+            value={form.watch("recurrence_time") || null}
             onChange={(time) => form.setValue("recurrence_time", time || null)}
           />
           <p className="text-xs text-muted-foreground mt-1">
@@ -401,7 +401,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
       {recurrenceType === "weekly" && (
         <div>
           <Label className="text-foreground">Dias da Semana</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"> {/* Ajustado para grid-cols-2 sm:grid-cols-4 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
             {DAYS_OF_WEEK.map((day) => (
               <div key={day.value} className="flex items-center space-x-2">
                 <Checkbox
@@ -466,6 +466,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialData, onTaskSaved, onClose, 
             <SelectItem value="overdue">Atrasadas</SelectItem>
             <SelectItem value="completed">Finalizadas</SelectItem>
             <SelectItem value="recurrent">Recorrentes</SelectItem>
+            <SelectItem value="client_tasks">Tarefas de Clientes</SelectItem>
           </SelectContent>
         </Select>
       </div>

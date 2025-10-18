@@ -18,7 +18,7 @@ import TagSelector from "./TagSelector";
 import TimePicker from "./TimePicker";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
@@ -62,7 +62,7 @@ const sanitizeFilename = (filename: string) => {
 const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, userId }) => { // userId recebido como prop
   const quillRef = useRef<ReactQuill>(null);
 
-  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData); // Log de depuração removido
+  // console.log("NoteForm.tsx - Component Render: initialData received:", initialData);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
@@ -70,7 +70,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       ...initialData,
       content: initialData.content || "", // Garante que content não seja undefined
       selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
-      reminder_date: initialData.reminder_date ? parseISO(initialData.reminder_date) : undefined,
+      reminder_date: initialData.reminder_date ? new Date(initialData.reminder_date) : undefined,
       reminder_time: initialData.reminder_time || undefined,
       pinned: initialData.pinned,
     } : {
@@ -94,7 +94,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       try {
         setChecklistItems(JSON.parse(initialData.content || "[]") as { text: string; completed: boolean }[]);
       } catch (e) {
-        // console.error("Erro ao parsear conteúdo da checklist inicial:", e); // Removido console.error
+        // console.error("Erro ao parsear conteúdo da checklist inicial:", e);
         setChecklistItems([]);
       }
     } else if (noteType === "text") {
@@ -173,7 +173,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           showSuccess("Imagem adicionada com sucesso!");
 
         } catch (err: any) {
-          // console.error("Erro ao fazer upload da imagem:", err); // Removido console.error
+          // console.error("Erro ao fazer upload da imagem:", err);
           showError("Erro ao adicionar imagem: " + err.message);
           // Remove placeholder if upload fails
           quill.deleteText(range.index, 1);
@@ -205,8 +205,8 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
   ];
 
   const onSubmit = async (values: NoteFormValues) => {
-    // console.log("NoteForm.tsx - onSubmit: userId:", userId); // Log de depuração removido
-    // console.log("NoteForm.tsx - onSubmit: initialData:", initialData); // Log de depuração removido
+    // console.log("NoteForm.tsx - onSubmit: userId:", userId);
+    // console.log("NoteForm.tsx - onSubmit: initialData:", initialData);
 
     if (!userId) {
       showError("Usuário não autenticado.");
@@ -285,7 +285,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
       onClose();
     } catch (err: any) {
       showError("Erro ao salvar nota: " + err.message);
-      // console.error("Erro ao salvar nota:", err); // Removido console.error
+      // console.error("Erro ao salvar nota:", err);
     }
   };
 
@@ -297,7 +297,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           {...form.register("title")}
           placeholder="Título"
           className="w-full bg-transparent border-none text-foreground text-lg font-semibold focus-visible:ring-0 px-0 mb-2"
-          disabled={!userId} // Desabilitar se não houver userId
+          disabled={!userId}
         />
 
         {noteType === "text" ? (
@@ -310,7 +310,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
             modules={modules}
             formats={formats}
             placeholder="Criar uma nota..."
-            readOnly={!userId} // Desabilitar se não houver userId
+            readOnly={!userId}
             className="bg-transparent text-foreground"
           />
         ) : (
@@ -323,14 +323,14 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                     setChecklistItems(prev => prev.map((i, idx) => idx === index ? { ...i, completed: checked as boolean } : i));
                   }}
                   className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-                  disabled={!userId} // Desabilitar se não houver userId
+                  disabled={!userId}
                 />
                 <Input
                   value={item.text}
                   onChange={(e) => updateChecklistItem(index, e.target.value)}
                   placeholder={`Item ${index + 1}`}
                   className="flex-grow bg-transparent border-none text-foreground focus-visible:ring-0 px-0 break-words"
-                  disabled={!userId} // Desabilitar se não houver userId
+                  disabled={!userId}
                 />
                 <Button
                   type="button"
@@ -338,7 +338,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
                   size="icon"
                   onClick={() => removeChecklistItem(index)}
                   className="text-red-500 hover:bg-red-500/10 flex-shrink-0"
-                  disabled={!userId} // Desabilitar se não houver userId
+                  disabled={!userId}
                 >
                   <XCircle className="h-4 w-4" />
                   <span className="sr-only">Remover Item</span>
@@ -357,7 +357,7 @@ const NoteForm: React.FC<NoteFormProps> = ({ initialData, onNoteSaved, onClose, 
           size="icon"
           onClick={handlePinToggle}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-          disabled={!userId} // Desabilitar se não houver userId
+          disabled={!userId}
         >
           {isPinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
           <span className="sr-only">{isPinned ? "Desafixar" : "Fixar"}</span>

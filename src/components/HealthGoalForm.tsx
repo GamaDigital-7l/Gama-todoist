@@ -31,6 +31,8 @@ const healthGoalSchema = z.object({
   start_date: z.date().default(new Date()),
   target_date: z.date().refine(date => date >= new Date(new Date().setHours(0,0,0,0)), "A data alvo não pode ser no passado."),
   is_completed: z.boolean().default(false),
+  description: z.string().optional().nullable(), // Adicionado description
+  status: z.enum(["pending", "in_progress", "completed"]).default("pending"), // Adicionado status
 });
 
 export type HealthGoalFormValues = z.infer<typeof healthGoalSchema>;
@@ -58,6 +60,8 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
       start_date: new Date(),
       target_date: undefined,
       is_completed: false,
+      description: "",
+      status: "pending",
     },
   });
 
@@ -75,6 +79,8 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
         start_date: format(values.start_date, "yyyy-MM-dd"),
         target_date: format(values.target_date, "yyyy-MM-dd"),
         is_completed: values.is_completed,
+        description: values.description || null,
+        status: values.status,
         updated_at: new Date().toISOString(),
       };
 
@@ -217,6 +223,33 @@ const HealthGoalForm: React.FC<HealthGoalFormProps> = ({ initialData, onGoalSave
             {form.formState.errors.target_date.message}
           </p>
         )}
+      </div>
+      <div>
+        <Label htmlFor="description" className="text-foreground">Descrição (Opcional)</Label>
+        <Input
+          id="description"
+          {...form.register("description")}
+          placeholder="Detalhes da meta de saúde..."
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+      </div>
+      <div>
+        <Label htmlFor="status" className="text-foreground">Status</Label>
+        <Select
+          onValueChange={(value: "pending" | "in_progress" | "completed") =>
+            form.setValue("status", value)
+          }
+          value={form.watch("status")}
+        >
+          <SelectTrigger id="status" className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
+            <SelectValue placeholder="Selecionar status" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
+            <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="in_progress">Em Progresso</SelectItem>
+            <SelectItem value="completed">Concluída</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex items-center space-x-2">
         <Checkbox

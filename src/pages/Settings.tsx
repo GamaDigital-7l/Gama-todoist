@@ -50,7 +50,7 @@ const settingsSchema = z.object({
   weekly_brief_time: z.string().optional().default("08:00"),
 });
 
-type SettingsFormValues = z.infer<typeof settingsSchema>;
+export type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const Settings: React.FC = () => {
   const { session } = useSession();
@@ -106,7 +106,7 @@ const Settings: React.FC = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      // console.error("Erro ao verificar status do Google Calendar ou e-mail do perfil:", profileError); // Removido console.error
+      // console.error("Erro ao verificar status do Google Calendar ou e-mail do perfil:", profileError);
     } else if (profileData) {
       setIsGoogleConnected(!!profileData.google_access_token);
       setUserTimezone(profileData.timezone);
@@ -175,7 +175,7 @@ const Settings: React.FC = () => {
 
     } catch (error: any) {
       showError("Erro ao salvar configurações: " + error.message);
-      // console.error("Erro ao salvar configurações:", error); // Removido console.error
+      console.error("Erro ao salvar configurações:", error);
     }
   };
 
