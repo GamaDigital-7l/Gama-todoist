@@ -223,7 +223,7 @@ const ClientTaskItem: React.FC<ClientTaskItemProps> = ({ task, refetchTasks, onE
     updateClientTaskApprovalMutation.mutate({ taskId: task.id, newStatus: 'approved' });
   };
 
-  const handleRequestEdit = (reason: string) => {
+  const handleRequestEditSubmit = (reason: string) => {
     updateClientTaskApprovalMutation.mutate({ taskId: task.id, newStatus: 'edit_requested', editReason: reason });
     setIsEditReasonDialogOpen(false);
   };
