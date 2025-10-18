@@ -46,7 +46,7 @@ const transactionSchema = z.object({
   recurrence_id: z.string().nullable().optional(), // Not implemented in this form yet
   payment_method: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  attachment_url: z.string().nullable().optional(), // Not implemented in this form yet
+  attachment_url: z.string().nullable().optional(), // Adicionado
   is_recurrent_instance: z.boolean().default(false), // Not implemented in this form yet
 });
 
@@ -76,6 +76,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, onTransa
       account_id: initialData.account_id || "",
       payment_method: initialData.payment_method || null,
       notes: initialData.notes || null,
+      attachment_url: initialData.attachment_url || null, // Adicionado
     } : {
       date: new Date(),
       description: "",
@@ -87,6 +88,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, onTransa
       account_id: "",
       payment_method: null,
       notes: null,
+      attachment_url: null, // Adicionado
     },
   });
 
@@ -384,6 +386,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, onTransa
           placeholder="Ex: Pix, Cartão de Crédito"
           className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="attachment_url" className="text-foreground">URL do Anexo (Opcional)</Label>
+        <Input
+          id="attachment_url"
+          {...form.register("attachment_url")}
+          placeholder="Ex: https://exemplo.com/recibo.pdf"
+          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
+        />
+        {form.formState.errors.attachment_url && (
+          <p className="text-red-500 text-sm mt-1">
+            {form.formState.errors.attachment_url.message}
+          </p>
+        )}
       </div>
 
       <div>

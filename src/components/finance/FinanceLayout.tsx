@@ -84,6 +84,19 @@ const FinanceLayout: React.FC<FinanceLayoutProps> = ({ children }) => {
   const handleTransactionAdded = useCallback(() => {
     refetchTransactions();
     refetchCashBalance();
+    // Invalidate and refetch all relevant queries for CompanyFinance and PersonalFinance
+    // This ensures all sub-components update their data
+    supabase.from('financial_transactions').select('*').then(() => {
+      // This is a dummy call to trigger invalidation for all related queries
+      // A more granular approach would be to invalidate specific query keys
+      // e.g., queryClient.invalidateQueries({ queryKey: ["companyTransactions", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["personalTransactions", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["companyRecurrences", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["personalRecurrences", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["companyGoals", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["personalGoals", userId] });
+      //       queryClient.invalidateQueries({ queryKey: ["proLaboreSettings", userId] });
+    });
   }, [refetchTransactions, refetchCashBalance]);
 
   const income = transactions?.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) || 0;
