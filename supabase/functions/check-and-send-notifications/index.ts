@@ -17,7 +17,7 @@ const SAO_PAULO_TIMEZONE = "America/Sao_Paulo"; // Fallback timezone
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 200 }); // Adicionado status: 200
   }
 
   try {

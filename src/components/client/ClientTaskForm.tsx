@@ -41,6 +41,7 @@ const clientTaskSchema = z.object({
   is_standard_task: z.boolean().default(true), // Nova propriedade
   main_task_id: z.string().nullable().optional(), // Nova propriedade para subtarefas
   public_approval_enabled: z.boolean().default(false), // Nova propriedade
+  public_approval_link_id: z.string().nullable().optional(), // NOVO: para armazenar o unique_id
 });
 
 export type ClientTaskFormValues = z.infer<typeof clientTaskSchema>;
@@ -92,6 +93,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, 
       is_standard_task: initialData.is_standard_task,
       main_task_id: initialData.main_task_id || initialMainTaskId || null,
       public_approval_enabled: initialData.public_approval_enabled,
+      public_approval_link_id: initialData.public_approval_link_id || null, // Inicializar
     } : {
       title: "",
       description: "",
@@ -102,11 +104,13 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, 
       is_standard_task: true,
       main_task_id: initialMainTaskId || null,
       public_approval_enabled: false,
+      public_approval_link_id: null, // Inicializar
     },
   });
 
   const selectedTagIds = form.watch("selected_tag_ids") || [];
   const watchedMainTaskId = form.watch("main_task_id");
+  const watchedPublicApprovalEnabled = form.watch("public_approval_enabled");
 
   const { data: clientMainTasks, isLoading: isLoadingClientMainTasks } = useQuery<MainTaskOption[], Error>({
     queryKey: ["clientMainTasks", userId, clientId],
@@ -126,6 +130,26 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, 
 
     try {
       let clientTaskId: string;
+      let publicApprovalLinkId: string | null = values.public_approval_link_id || null;
+
+      // Gerar link de aprovação pública se habilitado e não existir
+      if (values.public_approval_enabled && !publicApprovalLinkId) {
+        const monthYearRef = values.due_date ? format(values.due_date, "yyyy-MM") : format(new Date(), "yyyy-MM");
+        const { data: linkData, error: linkError } = await supabase.functions.invoke('generate-approval-link', {
+          body: { clientId, monthYearRef },
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+        });
+
+        if (linkError) throw new Error(linkError.message || "Erro ao gerar link de aprovação pública.");
+        publicApprovalLinkId = linkData.uniqueId;
+        showSuccess("Link de aprovação pública gerado!");
+      } else if (!values.public_approval_enabled && publicApprovalLinkId) {
+        // Se desabilitado e um link existia, podemos considerar removê-lo ou apenas desvincular
+        // Por simplicidade, vamos apenas desvincular aqui. A remoção real pode ser manual ou por política de expiração.
+        publicApprovalLinkId = null;
+      }
 
       const dataToSave = {
         client_id: clientId,
@@ -134,9 +158,12 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, 
         due_date: values.due_date ? format(values.due_date, "yyyy-MM-dd") : null,
         time: values.time || null,
         status: values.status,
+        is_completed: values.status === "completed" || values.status === "approved", // Marcar como concluída se status for 'completed' ou 'approved'
+        completed_at: (values.status === "completed" || values.status === "approved") ? new Date().toISOString() : null,
         is_standard_task: values.is_standard_task,
         main_task_id: values.main_task_id || null,
         public_approval_enabled: values.public_approval_enabled,
+        public_approval_link_id: publicApprovalLinkId, // Salvar o ID do link
         updated_at: new Date().toISOString(),
       };
 
@@ -304,7 +331,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, initialData, 
       <div className="flex items-center space-x-2">
         <Checkbox
           id="public_approval_enabled"
-          checked={form.watch("public_approval_enabled")}
+          checked={watchedPublicApprovalEnabled}
           onCheckedChange={(checked) => form.setValue("public_approval_enabled", checked as boolean)}
           className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
         />

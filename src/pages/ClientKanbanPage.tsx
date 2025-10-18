@@ -7,7 +7,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate } from "@/types/client"; // Importação atualizada
 import ClientKanbanColumn from "@/components/client/ClientKanbanColumn"; // Importação atualizada
 import ClientKanbanHeader from "@/components/client/ClientKanbanHeader";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSession } from "@/integrations/supabase/auth";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,13 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
     .from("client_tasks")
     .select(`
       id, title, description, due_date, time, status, is_completed, created_at, updated_at, completed_at,
-      is_standard_task, main_task_id, public_approval_enabled,
+      is_standard_task, main_task_id, public_approval_enabled, public_approval_link_id,
       client_task_tags(
         tags(id, name, color)
       ),
-      public_approval_links(
-        unique_id
-      ),
       subtasks:client_tasks!main_task_id(
         id, title, description, due_date, time, status, is_completed, created_at, updated_at, completed_at,
-        is_standard_task, main_task_id, public_approval_enabled,
+        is_standard_task, main_task_id, public_approval_enabled, public_approval_link_id,
         client_task_tags(
           tags(id, name, color)
         )
@@ -58,7 +55,6 @@ const fetchClientTasks = async (clientId: string, userId: string, month: Date): 
   const mappedData = data?.map((task: any) => ({
     ...task,
     tags: task.client_task_tags.map((ctt: any) => ctt.tags),
-    public_approval_link_id: task.public_approval_links?.[0]?.unique_id || null, // Extrair unique_id
     subtasks: task.subtasks.map((subtask: any) => ({
       ...subtask,
       tags: subtask.client_task_tags.map((stt: any) => stt.tags),
@@ -75,11 +71,11 @@ const fetchClientTaskTemplates = async (clientId: string, userId: string): Promi
   const { data, error } = await supabase
     .from("client_task_generation_templates")
     .select(`
-      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, created_at, updated_at
+      id, template_name, delivery_count, generation_pattern, is_active, default_due_days, is_standard_task, is_priority, created_at, updated_at
     `)
     .eq("client_id", clientId)
     .eq("user_id", userId)
-    .order("template_name", { ascending: true });
+    .eq("is_active", true); // Filtrar apenas templates ativos
 
   if (error) {
     console.error("Erro ao carregar templates:", error);

@@ -15,7 +15,7 @@ const DAYS_OF_WEEK_MAP: { [key: string]: number } = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 200 }); // Adicionado status: 200
   }
 
   try {

@@ -26,7 +26,7 @@ const fetchPublicApprovalLink = async (linkId: string): Promise<PublicApprovalLi
         id, name, logo_url
       ),
       client_tasks:client_tasks(
-        id, title, description, due_date, time, status, is_completed, created_at, updated_at, public_approval_enabled,
+        id, title, description, due_date, time, status, is_completed, created_at, updated_at, public_approval_enabled, public_approval_link_id,
         client_task_tags(
           tags(id, name, color)
         )

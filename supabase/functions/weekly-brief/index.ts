@@ -40,7 +40,7 @@ const getAdjustedTaskCompletionStatus = (task: any, nowInUserTimezone: Date): bo
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 200 }); // Adicionado status: 200
   }
 
   try {
