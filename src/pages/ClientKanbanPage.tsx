@@ -6,31 +6,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CalendarDays, PlusCircle, Settings, LayoutDashboard, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Share2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Client, ClientTask, ClientTaskStatus, ClientTaskGenerationTemplate, PublicApprovalLink } from "@/types/client";
-import { useSession } from "@/integrations/supabase/auth";
-import { format, subMonths, addMonths, parseISO, isBefore, endOfMonth, isSameMonth, differenceInDays, getWeek, getDay, addDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import ClientTaskForm from "@/components/client/ClientTaskForm";
-import ClientTaskItem from "@/components/client/ClientTaskItem";
-import ClientTaskGenerationTemplateForm from "@/components/client/ClientTaskGenerationTemplateForm";
-import ClientTaskGenerationTemplateItem from "@/components/client/ClientTaskGenerationTemplateItem";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Client, ClientTask, ClientTaskStatus, PublicApprovalLink } from "@/types/client";
+import { useSession } from "@/integrations/supabase/auth";
+import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { OriginBoard } from "@/types/task"; // Importar OriginBoard
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { OriginBoard } from "@/types/task";
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
+import ClientKanbanHeader from "@/components/client/ClientKanbanHeader"; // Novo componente
+import KanbanColumn from "@/components/client/KanbanColumn"; // Novo componente
+import ClientTaskForm from "@/components/client/ClientTaskForm"; // Mantido
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
   { status: "in_production", title: "Em Produção", color: "bg-blue-700" },
@@ -39,7 +26,6 @@ const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }
   { status: "approved", title: "Aprovado", color: "bg-green-700" },
   { status: "scheduled", title: "Agendado", color: "bg-purple-700" },
   { status: "published", title: "Publicado", color: "bg-indigo-700" },
-  // Colunas opcionais (Pausado, Reprovado) podem ser adicionadas aqui se ativadas por cliente
 ];
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
@@ -78,28 +64,6 @@ const fetchClientTasks = async (clientId: string, userId: string, monthYearRef: 
     ...task,
     tags: task.client_task_tags.map((ctt: any) => ctt.tags),
     responsible: task.responsible ? task.responsible : null,
-  })) || [];
-  return mappedData;
-};
-
-const fetchClientTaskTemplates = async (clientId: string, userId: string): Promise<ClientTaskGenerationTemplate[]> => {
-  const { data, error } = await supabase
-    .from("client_task_generation_templates")
-    .select(`
-      *,
-      client_task_tags(
-        tags(id, name, color)
-      )
-    `)
-    .eq("client_id", clientId)
-    .eq("user_id", userId)
-    .order("template_name", { ascending: true });
-  if (error) {
-    throw error;
-  }
-  const mappedData = data?.map((template: any) => ({
-    ...template,
-    client_task_tags: template.client_task_tags.map((ttt: any) => ttt.tags),
   })) || [];
   return mappedData;
 };
@@ -144,12 +108,6 @@ const ClientKanbanPage: React.FC = () => {
     enabled: !!clientId && !!userId,
   });
 
-  const { data: clientTaskTemplates, isLoading: isLoadingTemplates, error: templatesError, refetch: refetchClientTaskTemplates } = useQuery<ClientTaskGenerationTemplate[], Error>({
-    queryKey: ["clientTaskTemplates", clientId, userId],
-    queryFn: () => fetchClientTaskTemplates(clientId!, userId!),
-    enabled: !!clientId && !!userId,
-  });
-
   const { data: publicApprovalLink, isLoading: isLoadingPublicLink, error: publicLinkError, refetch: refetchPublicApprovalLink } = useQuery<PublicApprovalLink | null, Error>({
     queryKey: ["publicApprovalLink", clientId, userId, monthYearRef],
     queryFn: () => fetchPublicApprovalLink(clientId!, userId!, monthYearRef),
@@ -158,8 +116,6 @@ const ClientKanbanPage: React.FC = () => {
 
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ClientTask | undefined>(undefined);
-  const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<ClientTaskGenerationTemplate | undefined>(undefined);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
@@ -176,14 +132,12 @@ const ClientKanbanPage: React.FC = () => {
         if (taskToOpen) {
           handleEditTask(taskToOpen);
         }
-        // Remover o parâmetro da URL para evitar que o formulário abra novamente em um refresh
         searchParams.delete('openTaskId');
         navigate({ search: searchParams.toString() }, { replace: true });
       }
     }
   }, [clientTasks, searchParams, navigate, isTaskFormOpen]);
 
-  // Nova mutação para operações de arrastar e soltar (status e order_index)
   const updateClientTaskKanbanMutation = useMutation({
     mutationFn: async ({ taskId, newStatus, newOrderIndex }: { taskId: string; newStatus: ClientTaskStatus; newOrderIndex: number }) => {
       if (!userId || !clientId) throw new Error("Usuário não autenticado ou cliente não encontrado.");
@@ -202,11 +156,10 @@ const ClientKanbanPage: React.FC = () => {
         updated_at: new Date().toISOString(),
       };
 
-      // Determinar is_completed e completed_at com base no newStatus para a tarefa do cliente
       if (newStatus === 'approved' || newStatus === 'published') {
         updateData.is_completed = true;
         updateData.completed_at = new Date().toISOString();
-      } else if (newStatus === 'edit_requested' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') { // Removido 'backlog'
+      } else if (newStatus === 'edit_requested' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
         updateData.is_completed = false;
         updateData.completed_at = null;
       }
@@ -220,7 +173,6 @@ const ClientKanbanPage: React.FC = () => {
 
       if (error) throw error;
 
-      // Sincronizar com a tarefa principal se for uma tarefa padrão
       if (currentTask.is_standard_task && currentTask.main_task_id) {
         const mainTaskUpdateData: { is_completed?: boolean; current_board?: OriginBoard; updated_at: string } = {
           updated_at: new Date().toISOString(),
@@ -277,7 +229,7 @@ const ClientKanbanPage: React.FC = () => {
 
     const droppedTaskId = draggedTaskId;
     const tasksInTargetColumn = clientTasks?.filter(task => task.status === targetStatus) || [];
-    const newOrderIndex = tasksInTargetColumn.length; // Adicionar ao final da coluna
+    const newOrderIndex = tasksInTargetColumn.length;
 
     await updateClientTaskKanbanMutation.mutateAsync({
       taskId: droppedTaskId,
@@ -327,44 +279,27 @@ const ClientKanbanPage: React.FC = () => {
     setEditingTask(undefined);
   };
 
-  const handleTemplateSaved = () => {
-    refetchClientTaskTemplates();
-    setIsTemplateFormOpen(false);
-    setEditingTemplate(undefined);
-  };
-
-  const handleEditTemplate = (template: ClientTaskGenerationTemplate) => {
-    setEditingTemplate(template);
-    setIsTemplateFormOpen(true);
-  };
-
-  const handleDeleteTemplate = async (templateId: string) => {
+  const handleGenerateTasksForMonth = async () => {
     if (!userId || !clientId) {
       showError("Usuário não autenticado ou cliente não encontrado.");
       return;
     }
-    if (window.confirm("Tem certeza que deseja deletar este template de geração de tarefas?")) {
-      try {
-        const { error } = await supabase
-          .from("client_task_generation_templates")
-          .delete()
-          .eq("id", templateId)
-          .eq("client_id", clientId)
-          .eq("user_id", userId);
 
-        if (error) throw error;
-        showSuccess("Template deletado com sucesso!");
-        refetchClientTaskTemplates();
-      } catch (err: any) {
-        showError("Erro ao deletar template: " + err.message);
-        console.error("Erro ao deletar template:", err);
-      }
+    // Fetch templates here, as it's needed for the check
+    const { data: clientTaskTemplates, error: templatesError } = await supabase
+      .from("client_task_generation_templates")
+      .select(`id`)
+      .eq("client_id", clientId)
+      .eq("user_id", userId)
+      .eq("is_active", true);
+
+    if (templatesError) {
+      showError("Erro ao buscar templates de geração: " + templatesError.message);
+      return;
     }
-  };
 
-  const handleGenerateTasksForMonth = async () => {
-    if (!userId || !clientId || !clientTaskTemplates || clientTaskTemplates.length === 0) {
-      showError("Nenhum template de geração de tarefas configurado para este cliente.");
+    if (!clientTaskTemplates || clientTaskTemplates.length === 0) {
+      showError("Nenhum template de geração de tarefas ativo configurado para este cliente.");
       return;
     }
 
@@ -418,7 +353,7 @@ const ClientKanbanPage: React.FC = () => {
       const uniqueId = data.uniqueId;
       const publicLink = `${window.location.origin}/approval/${uniqueId}`;
       setGeneratedLink(publicLink);
-      refetchPublicApprovalLink(); // Atualiza o status do link no UI
+      refetchPublicApprovalLink();
       showSuccess("Link de aprovação gerado com sucesso!");
     } catch (err: any) {
       showError("Erro ao gerar link de aprovação: " + err.message);
@@ -435,42 +370,6 @@ const ClientKanbanPage: React.FC = () => {
     }
   };
 
-  const completedTasksCount = clientTasks?.filter(task => task.is_completed).length || 0;
-  const totalTasksForMonth = clientTasks?.length || 0;
-  const progressPercentage = totalTasksForMonth > 0 ? (completedTasksCount / totalTasksForMonth) * 100 : 0;
-
-  const today = new Date();
-  const isCurrentMonth = isSameMonth(currentMonth, today);
-  const remainingTasks = (client?.monthly_delivery_goal || 0) - completedTasksCount;
-  const daysUntilEndOfMonth = differenceInDays(endOfMonth(currentMonth), today);
-  const showAlert = isCurrentMonth && remainingTasks > 0 && daysUntilEndOfMonth <= 7;
-
-  useEffect(() => {
-    if (userId && clientId && client && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && progressPercentage >= 100) {
-      const sendCompletionNotification = async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('send-client-completion-notification', {
-            body: {
-              clientId,
-              monthYearRef,
-              completedCount,
-              totalCount: client.monthly_delivery_goal,
-              clientName: client.name,
-            },
-            headers: {
-              'Authorization': `Bearer ${session?.access_token}`,
-            },
-          });
-          if (error) throw error;
-          // console.log("Notificação de conclusão de cliente enviada:", data);
-        } catch (err) {
-          console.error("Erro ao enviar notificação de conclusão de cliente:", err);
-        }
-      };
-      sendCompletionNotification();
-    }
-  }, [completedTasksCount, client?.monthly_delivery_goal, progressPercentage, userId, clientId, monthYearRef, client?.name, session?.access_token]);
-
   useEffect(() => {
     if (publicApprovalLink) {
       setGeneratedLink(`${window.location.origin}/approval/${publicApprovalLink.unique_id}`);
@@ -479,22 +378,9 @@ const ClientKanbanPage: React.FC = () => {
     }
   }, [publicApprovalLink]);
 
-
-  if (!clientId) {
+  if (!clientId || !client) {
     return (
-      <div className="flex flex-1 flex-col gap-4 bg-background text-foreground">
-        <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
-        <p className="text-lg text-muted-foreground">O ID do cliente não foi fornecido.</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
-        </Button>
-      </div>
-    );
-  }
-
-  if (isLoadingClient) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
+      <div className="flex flex-1 flex-col items-center justify-center bg-background text-foreground h-full">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <h1 className="text-3xl font-bold mt-4">Carregando Cliente...</h1>
         <p className="text-lg text-muted-foreground">Preparando o workspace do cliente.</p>
@@ -502,166 +388,48 @@ const ClientKanbanPage: React.FC = () => {
     );
   }
 
-  if (clientError) {
-    showError("Erro ao carregar cliente: " + clientError.message);
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-bold">Erro ao Carregar Cliente</h1>
-        <p className="text-lg text-red-500">Ocorreu um erro: {clientError.message}</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
-        </Button>
-      </div>
-    );
-  }
-
-  if (!client) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background text-foreground z-50">
-        <h1 className="text-3xl font-bold">Cliente Não Encontrado</h1>
-        <p className="text-lg text-muted-foreground">O cliente que você está procurando não existe ou foi removido.</p>
-        <Button onClick={() => navigate("/clients")} className="w-fit bg-primary text-primary-foreground hover:bg-primary/90 mt-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-1 flex-col gap-4 bg-background text-foreground h-full p-0"> {/* Removido padding aqui */}
-      {/* O cabeçalho do cliente (nome, logo, botões de voltar/editar/excluir) foi movido para ClientDetails.tsx */}
+    <div className="flex flex-1 flex-col gap-4 bg-background text-foreground h-full">
+      <ClientKanbanHeader
+        client={client}
+        clientTasks={clientTasks}
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+        handleGenerateTasksForMonth={handleGenerateTasksForMonth}
+        handleGenerateApprovalLink={handleGenerateApprovalLink}
+        generatedLink={generatedLink}
+        copyLinkToClipboard={copyLinkToClipboard}
+        isGeneratingLink={isGeneratingLink}
+        publicApprovalLink={publicApprovalLink}
+        session={session}
+        userId={userId}
+      />
 
-      {/* Seletor de Mês e Progresso */}
-      <Card className="bg-card border border-border rounded-xl shadow-sm frosted-glass card-hover-effect p-4 mb-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Select
-              value={monthYearRef}
-              onValueChange={(value) => {
-                const [year, month] = value.split('-').map(Number);
-                setCurrentMonth(new Date(year, month - 1, 1));
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[180px] bg-input border-border text-foreground focus-visible:ring-ring">
-                <SelectValue placeholder="Selecionar Mês" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const date = addMonths(new Date(), i - 6);
-                  const value = format(date, "yyyy-MM");
-                  const label = format(date, "MMMM yyyy", { locale: ptBR });
-                  return <SelectItem key={value} value={value}>{label}</SelectItem>;
-                })}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex-1 w-full sm:w-auto">
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-1 gap-2 sm:gap-0">
-              <span className="text-sm font-medium text-foreground text-center sm:text-left">
-                Meta do Mês: {client.monthly_delivery_goal} | Concluídas: {completedTasksCount}/{totalTasksForMonth} ({progressPercentage.toFixed(0)}%)
-              </span>
-              {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount < client.monthly_delivery_goal && showAlert && (
-                <span className="flex items-center gap-1 text-sm text-orange-500 text-center sm:text-right">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" /> Faltam {remainingTasks}/{client.monthly_delivery_goal} até {format(endOfMonth(currentMonth), "dd/MM", { locale: ptBR })}
-                </span>
-              )}
-              {isCurrentMonth && client.monthly_delivery_goal > 0 && completedTasksCount >= client.monthly_delivery_goal && (
-                <span className="flex items-center gap-1 text-sm text-green-500 text-center sm:text-right">
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" /> Meta Batida!
-                </span>
-              )}
-              <Button onClick={handleGenerateTasksForMonth} size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 w-full sm:w-auto">
-                <CalendarDays className="mr-2 h-4 w-4" /> Gerar Tarefas do Mês
-              </Button>
-            </div>
-            <Progress value={progressPercentage} className="w-full" />
-          </div>
-        </div>
-        <div className="mt-4 flex flex-col sm:flex-row items-center gap-2">
-          {generatedLink ? (
-            <div className="flex-1 w-full flex flex-col sm:flex-row items-center gap-2">
-              <Label htmlFor="approval-link" className="sr-only">Link de Aprovação</Label>
-              <Input
-                id="approval-link"
-                type="text"
-                value={generatedLink}
-                readOnly
-                className="flex-grow bg-input border-border text-foreground focus-visible:ring-ring w-full"
-              />
-              <Button onClick={copyLinkToClipboard} className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
-                Copiar Link
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={handleGenerateApprovalLink}
-              disabled={isGeneratingLink || (clientTasks?.filter(task => task.status === 'in_approval').length || 0) === 0}
-              className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700"
-            >
-              {isGeneratingLink ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Share2 className="mr-2 h-4 w-4" />
-              )}
-              Enviar para Aprovação
-            </Button>
-          )}
-        </div>
-      </Card>
-
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-hidden"> {/* Added overflow-hidden to parent to contain horizontal scrollbar */}
+      <div className="flex-1 overflow-hidden">
         {isMobile ? (
           <Carousel
             opts={{
               align: "start",
-              dragFree: false, // Ativar snap
+              dragFree: false,
             }}
             className="w-full"
           >
             <CarouselContent className="-ml-4">
               {KANBAN_COLUMNS.map((column) => (
                 <CarouselItem key={column.status} className="pl-4 basis-full">
-                  <Card
-                    className="flex flex-col h-full bg-card border border-border rounded-xl shadow-md frosted-glass"
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, column.status)}
-                  >
-                    <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
-                      <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
-                      <CardDescription className="text-sm text-white/80">
-                        {clientTasks?.filter(task => task.status === column.status).length} tarefas
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
-                      {isLoadingTasks ? (
-                        <p className="text-muted-foreground">Carregando tarefas...</p>
-                      ) : tasksError ? (
-                        <p className="text-red-500">Erro: {tasksError.message}</p>
-                      ) : (
-                        clientTasks?.filter(task => task.status === column.status).map(task => (
-                          <ClientTaskItem
-                            key={task.id}
-                            task={task}
-                            refetchTasks={refetchClientTasks}
-                            onEdit={handleEditTask}
-                            onDragStart={handleDragStart}
-                            clientId={clientId!}
-                            monthYearRef={monthYearRef}
-                          />
-                        ))
-                      )}
-                      <Button onClick={() => handleAddTask(column.status)} variant="outline" className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <KanbanColumn
+                    column={column}
+                    tasks={clientTasks}
+                    isLoadingTasks={isLoadingTasks}
+                    tasksError={tasksError}
+                    handleAddTask={handleAddTask}
+                    handleEditTask={handleEditTask}
+                    handleDragStart={handleDragStart}
+                    handleDragOver={handleDragOver}
+                    handleDrop={handleDrop}
+                    clientId={clientId!}
+                    monthYearRef={monthYearRef}
+                  />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -669,49 +437,27 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="flex h-full gap-4 overflow-x-auto pb-4 scroll-smooth scroll-snap-x-mandatory scroll-p-4"> {/* Changed inline-flex to flex, added pb-4 for scrollbar visibility */}
+          <div className="flex h-full gap-4 overflow-x-auto pb-4 scroll-smooth scroll-snap-x-mandatory scroll-p-4">
             {KANBAN_COLUMNS.map((column) => (
-              <Card
+              <KanbanColumn
                 key={column.status}
-                className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full scroll-snap-align-start" // Adjusted width classes
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, column.status)}
-              >
-                <CardHeader className={`p-3 border-b border-border ${column.color} rounded-t-xl`}>
-                  <CardTitle className="text-lg font-semibold text-white">{column.title}</CardTitle>
-                  <CardDescription className="text-sm text-white/80">
-                    {clientTasks?.filter(task => task.status === column.status).length} tarefas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 p-3 overflow-y-auto space-y-3">
-                  {isLoadingTasks ? (
-                    <p className="text-muted-foreground">Carregando tarefas...</p>
-                  ) : tasksError ? (
-                    <p className="text-red-500">Erro: {tasksError.message}</p>
-                  ) : (
-                    clientTasks?.filter(task => task.status === column.status).map(task => (
-                      <ClientTaskItem
-                        key={task.id}
-                        task={task}
-                        refetchTasks={refetchClientTasks}
-                        onEdit={handleEditTask}
-                        onDragStart={handleDragStart}
-                        clientId={clientId!}
-                        monthYearRef={monthYearRef}
-                      />
-                    ))
-                  )}
-                  <Button onClick={() => handleAddTask(column.status)} variant="outline" className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa
-                  </Button>
-                </CardContent>
-              </Card>
+                column={column}
+                tasks={clientTasks}
+                isLoadingTasks={isLoadingTasks}
+                tasksError={tasksError}
+                handleAddTask={handleAddTask}
+                handleEditTask={handleEditTask}
+                handleDragStart={handleDragStart}
+                handleDragOver={handleDragOver}
+                handleDrop={handleDrop}
+                clientId={clientId!}
+                monthYearRef={monthYearRef}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Formulário de Tarefa do Cliente */}
       <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
         <DialogContent className={DIALOG_CONTENT_CLASSNAMES}>
           <DialogHeader>
