@@ -4,14 +4,16 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import OfflineIndicator from "../OfflineIndicator"; // Importar OfflineIndicator
-import DeepLinkHandler from "../DeepLinkHandler"; // Importar DeepLinkHandler
+import OfflineIndicator from "../OfflineIndicator";
+import DeepLinkHandler from "../DeepLinkHandler";
 
 interface LayoutProps {
-  isOnline: boolean; // Adicionar prop isOnline
+  isOnline: boolean;
+  deferredPrompt: Event | null;
+  onInstallClick: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ isOnline }) => { // Receber isOnline como prop
+const Layout: React.FC<LayoutProps> = ({ isOnline, deferredPrompt, onInstallClick }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -43,10 +45,10 @@ const Layout: React.FC<LayoutProps> = ({ isOnline }) => { // Receber isOnline co
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} deferredPrompt={deferredPrompt} onInstallClick={onInstallClick} />
       <div className="flex flex-col flex-1">
-        <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        <OfflineIndicator isOnline={isOnline} /> {/* Adicionar OfflineIndicator aqui */}
+        <Header onMenuClick={() => setIsSidebarOpen(true)} deferredPrompt={deferredPrompt} onInstallClick={onInstallClick} />
+        <OfflineIndicator isOnline={isOnline} />
         <main className="flex flex-1 flex-col relative mt-[calc(4rem+var(--sat))]">
           <AnimatePresence>
             {isLoading && (
@@ -60,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ isOnline }) => { // Receber isOnline co
               </motion.div>
             )}
           </AnimatePresence>
-          <DeepLinkHandler /> {/* Render DeepLinkHandler here */}
+          <DeepLinkHandler />
           <Outlet />
         </main>
       </div>

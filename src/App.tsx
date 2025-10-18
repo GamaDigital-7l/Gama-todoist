@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom"; // Removido BrowserRouter
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
@@ -27,7 +27,7 @@ import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./integrations/supabase/auth";
 import { ThemeProvider } from "./components/ThemeProvider";
 import PushNotificationManager from "./components/PushNotificationManager";
-import React, { useEffect, useState, Suspense, lazy } from "react";
+import React, { useEffect, useState, Suspense, lazy, useCallback } from "react";
 import { showInfo, showSuccess, showError } from "./utils/toast";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -101,19 +101,18 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   );
 };
 
-// Componente para gerenciar a conectividade e atualizações do PWA
-const PWAHandler: React.FC = () => {
-  const navigate = useNavigate();
+const App = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [newVersionAvailable, setNewVersionAvailable] = useState(false); // Mantido para futuras implementações de atualização
 
+  // Lógica de conectividade
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       showSuccess("Você está online novamente!");
-      // Tentar sincronizar requisições pendentes
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then(registration => {
           if (registration.sync) {
@@ -130,7 +129,47 @@ const PWAHandler: React.FC = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Lógica para detectar atualização do Service Worker
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Lógica de instalação PWA
+  const handleInstallClick = useCallback(() => {
+    if (deferredPrompt) {
+      (deferredPrompt as any).prompt();
+      (deferredPrompt as any).userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          showSuccess('Nexus Flow instalado com sucesso!');
+        } else {
+          showInfo('Instalação cancelada.');
+        }
+        setDeferredPrompt(null);
+      });
+    }
+  }, [deferredPrompt]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      // Opcional: mostrar um toast aqui se o deferredPrompt não for nulo
+      // showInfo("Instale o Nexus Flow para uma experiência completa!", {
+      //   action: { label: "Instalar", onClick: handleInstallClick },
+      //   duration: 10000,
+      // });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, [handleInstallClick]);
+
+  // Lógica para detectar atualização do Service Worker (mantida)
+  useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'APP_UPDATE') {
@@ -149,84 +188,36 @@ const PWAHandler: React.FC = () => {
         }
       });
     }
+  }, []);
 
-    // Lógica para o evento beforeinstallprompt (para instalação manual)
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      showInfo("Instale o Nexus Flow para uma experiência completa!", {
-        action: {
-          label: "Instalar",
-          onClick: () => {
-            if (deferredPrompt) {
-              (deferredPrompt as any).prompt();
-              (deferredPrompt as any).userChoice.then((choiceResult: any) => {
-                if (choiceResult.outcome === 'accepted') {
-                  showSuccess('Nexus Flow instalado com sucesso!');
-                } else {
-                  showInfo('Instalação cancelada.');
-                }
-                setDeferredPrompt(null);
-              });
-            }
-          },
-        },
-        duration: 10000, // Mostrar por 10 segundos
-      });
-    });
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [deferredPrompt, navigate, location]);
-
-  // Lógica de Deep Linking
+  // Lógica de Deep Linking (mantida)
   useEffect(() => {
     const handleDeepLink = () => {
       const path = window.location.pathname;
       const search = window.location.search;
 
-      // Exemplo de deep links internos
       if (path.startsWith('/tasks') && search.includes('action=new')) {
-        // Lógica para abrir o formulário de nova tarefa
-        // Isso pode ser feito via estado global ou redirecionamento para uma rota com modal
         navigate('/tasks', { state: { openNewTaskForm: true } });
       } else if (path.startsWith('/clients') && search.includes('openTaskId=')) {
         const taskId = new URLSearchParams(search).get('openTaskId');
-        const clientId = path.split('/')[2]; // Assumindo /clients/:id
+        const clientId = path.split('/')[2];
         if (clientId && taskId) {
           navigate(`/clients/${clientId}?openTaskId=${taskId}`);
         }
-      } else if (path.startsWith('/approval/')) {
-        // Já é uma rota pública, não precisa de redirecionamento extra
       }
-      // Adicione mais lógica de deep linking conforme necessário
     };
 
-    // Executar ao carregar a página
     handleDeepLink();
-
-    // Adicionar listener para mudanças de URL (se o app já estiver aberto e um deep link for ativado)
     window.addEventListener('popstate', handleDeepLink);
     return () => window.removeEventListener('popstate', handleDeepLink);
   }, [navigate, location]);
-
-
-  return null; // Este componente não renderiza nada visível
-};
-
-const App = () => {
-  const location = useLocation(); // Usar useLocation dentro do componente App
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <TooltipProvider>
           <Sonner />
-          {/* BrowserRouter removido daqui */}
             <SessionContextProvider>
-              <PWAHandler />
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>
                   <Route path="/login" element={
@@ -263,7 +254,11 @@ const App = () => {
                     path="/"
                     element={
                       <ProtectedRoute>
-                        <Layout />
+                        <Layout 
+                          isOnline={isOnline} 
+                          deferredPrompt={deferredPrompt} 
+                          onInstallClick={handleInstallClick} 
+                        />
                       </ProtectedRoute>
                     }
                   >
@@ -431,7 +426,6 @@ const App = () => {
                 </Routes>
               </AnimatePresence>
             </SessionContextProvider>
-          {/* BrowserRouter removido daqui */}
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

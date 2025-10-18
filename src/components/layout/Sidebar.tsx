@@ -1,45 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ListTodo, Goal, Book, Brain, Heart, NotebookPen, CalendarDays, Users, MessageSquare, Settings, BarChart3, Download, Wallet, Menu } from "lucide-react"; // Adicionado ícone Wallet e Menu
+import { Home, ListTodo, Goal, Book, Brain, Heart, NotebookPen, CalendarDays, Users, MessageSquare, Settings, BarChart3, Download, Wallet, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import React, { useState, useEffect } from "react";
+import React from "react"; // Removido useState e useEffect
 import { showSuccess, showInfo } from "@/utils/toast";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  deferredPrompt: Event | null;
+  onInstallClick: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, deferredPrompt, onInstallClick }) => {
   const location = useLocation();
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = () => {
-    if (deferredPrompt) {
-      (deferredPrompt as any).prompt();
-      (deferredPrompt as any).userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          showSuccess('Nexus Flow instalado com sucesso!');
-        } else {
-          showInfo('Instalação cancelada.');
-        }
-        setDeferredPrompt(null);
-      });
-    }
-  };
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: Home },
@@ -47,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: "Planner", path: "/planner", icon: CalendarDays },
     { name: "Metas", path: "/goals", icon: Goal },
     { name: "Clientes", path: "/clients", icon: Users },
-    { name: "Financeiro", path: "/finance", icon: Wallet }, // Novo item de navegação
+    { name: "Financeiro", path: "/finance", icon: Wallet },
     { name: "Estudo", path: "/study", icon: Brain },
     { name: "Saúde", path: "/health", icon: Heart },
     { name: "Livros", path: "/books", icon: Book },
@@ -103,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </nav>
       <div className="mt-auto p-4 border-t border-sidebar-border">
         {deferredPrompt && (
-          <Button onClick={handleInstallClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button onClick={onInstallClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
             <Download className="mr-2 h-4 w-4" /> Instalar App
           </Button>
         )}

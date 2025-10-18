@@ -7,42 +7,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useSession } from "@/integrations/supabase/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError, showInfo } from "@/utils/toast";
-import React, { useState, useEffect } from "react";
+import React from "react"; // Removido useState e useEffect
 
 interface HeaderProps {
   onMenuClick: () => void;
+  deferredPrompt: Event | null;
+  onInstallClick: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, deferredPrompt, onInstallClick }) => {
   const { session } = useSession();
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = () => {
-    if (deferredPrompt) {
-      (deferredPrompt as any).prompt();
-      (deferredPrompt as any).userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          showSuccess('Nexus Flow instalado com sucesso!');
-        } else {
-          showInfo('Instalação cancelada.');
-        }
-        setDeferredPrompt(null);
-      });
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -75,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       <div className="flex-1 text-lg font-semibold">Nexus Flow</div>
       <div className="flex items-center gap-4">
         {deferredPrompt && (
-          <Button variant="ghost" size="icon" onClick={handleInstallClick} className="text-primary hover:text-primary-light">
+          <Button variant="ghost" size="icon" onClick={onInstallClick} className="text-primary hover:text-primary-light">
             <Download className="h-5 w-5" />
             <span className="sr-only">Instalar Aplicativo</span>
           </Button>
