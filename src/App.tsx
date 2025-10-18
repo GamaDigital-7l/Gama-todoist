@@ -1,8 +1,8 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/query-persist-client"; // Reverted import path
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"; // Reverted import path
+import { persistQueryClient } from "@tanstack/react-query-persist-client"; // CORRIGIDO: Pacote correto
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"; // Caminho padrão
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -127,6 +127,7 @@ const App = () => {
     };
 
     window.addEventListener('online', handleOnline);
+
     window.addEventListener('offline', handleOffline);
 
     return () => {
