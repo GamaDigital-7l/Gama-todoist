@@ -24,6 +24,7 @@ import TagSelector from "./TagSelector";
 import { OriginBoard, RecurrenceType, TemplateTask, TemplateFormOriginBoard } from "@/types/task";
 import { parseISO } from "date-fns";
 import TimePicker from "./TimePicker"; // Importar TimePicker
+import { useQueryClient } from "@tanstack/react-query";
 
 const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Domingo" },
@@ -40,7 +41,7 @@ const templateTaskSchema = z.object({
   description: z.string().optional(),
   recurrence_type: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
   recurrence_details: z.string().optional().nullable(),
-  recurrence_time: z.string().optional().nullable(), // Novo campo
+  recurrence_time: z.string().optional().nullable(),
   origin_board: z.enum(["general", "today_priority", "today_no_priority", "jobs_woe_today"]).default("general"),
   selected_tag_ids: z.array(z.string()).optional(),
 });
@@ -51,7 +52,7 @@ interface TemplateTaskFormProps {
   initialData?: Omit<TemplateTaskFormValues, 'recurrence_details' | 'origin_board' | 'recurrence_time'> & {
     id: string;
     recurrence_details?: string | null;
-    recurrence_time?: string | null; // Novo campo
+    recurrence_time?: string | null;
     tags?: { id: string; name: string; color: string }[];
     origin_board: TemplateFormOriginBoard;
   };
@@ -59,32 +60,59 @@ interface TemplateTaskFormProps {
   onClose: () => void;
 }
 
-const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialData, onTemplateTaskSaved, onClose }) => {
+const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ initialData, onTemplateTaskSaved, onClose }) => {
   const { session } = useSession();
   const userId = session?.user?.id;
+  const queryClient = useQueryClient();
 
   const form = useForm<TemplateTaskFormValues>({
     resolver: zodResolver(templateTaskSchema),
     defaultValues: initialData ? {
-      ...initialData,
-      generation_pattern: initialData.generation_pattern || [{ week: 1, day_of_week: "Monday", count: 1 }],
-      is_active: initialData.is_active,
-      default_due_days: initialData.default_due_days || undefined,
-      is_standard_task: initialData.is_standard_task || false, // Novo campo
+      title: initialData.title,
+      description: initialData.description || undefined,
+      recurrence_type: initialData.recurrence_type,
+      recurrence_details: initialData.recurrence_details || undefined,
+      recurrence_time: initialData.recurrence_time || undefined,
+      origin_board: initialData.origin_board,
+      selected_tag_ids: initialData.tags?.map(tag => tag.id) || [],
     } : {
-      template_name: "",
-      delivery_count: 0,
-      generation_pattern: [{ week: 1, day_of_week: "Monday", count: 1 }],
-      is_active: true,
-      default_due_days: undefined,
-      is_standard_task: false, // Novo campo
+      title: "",
+      description: "",
+      recurrence_type: "none",
+      recurrence_details: undefined,
+      recurrence_time: undefined,
+      origin_board: "general",
+      selected_tag_ids: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "generation_pattern",
-  });
+  const recurrenceType = form.watch("recurrence_type");
+  const selectedTagIds = form.watch("selected_tag_ids") || [];
+  const watchedRecurrenceDetails = form.watch("recurrence_details");
+
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (recurrenceType === "weekly" && watchedRecurrenceDetails) {
+      setSelectedDays(watchedRecurrenceDetails.split(','));
+    } else {
+      setSelectedDays([]);
+    }
+  }, [recurrenceType, watchedRecurrenceDetails]);
+
+  const handleDayToggle = (dayValue: string) => {
+    setSelectedDays(prev => {
+      const newDays = prev.includes(dayValue)
+        ? prev.filter(d => d !== dayValue)
+        : [...prev, dayValue];
+      form.setValue("recurrence_details", newDays.join(','), { shouldDirty: true });
+      return newDays;
+    });
+  };
+
+  const handleTagSelectionChange = (newSelectedTagIds: string[]) => {
+    form.setValue("selected_tag_ids", newSelectedTagIds, { shouldDirty: true });
+  };
 
   const onSubmit = async (values: TemplateTaskFormValues) => {
     if (!userId) {
@@ -93,42 +121,59 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialDa
     }
 
     try {
+      let templateTaskId: string;
+
       const dataToSave = {
-        template_name: values.template_name,
-        delivery_count: values.delivery_count,
-        generation_pattern: values.generation_pattern,
-        is_active: values.is_active,
-        default_due_days: values.default_due_days || null,
-        is_standard_task: values.is_standard_task, // Novo campo
+        title: values.title,
+        description: values.description || null,
+        recurrence_type: values.recurrence_type,
+        recurrence_details: values.recurrence_type === "weekly" ? selectedDays.join(',') || null : values.recurrence_details || null,
+        recurrence_time: values.recurrence_time || null,
+        origin_board: values.origin_board,
         updated_at: new Date().toISOString(),
       };
 
       if (initialData?.id) {
-        const { error } = await supabase
-          .from("client_task_generation_templates")
+        const { data, error } = await supabase
+          .from("template_tasks")
           .update(dataToSave)
           .eq("id", initialData.id)
-          .eq("client_id", clientId)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select("id")
+          .single();
 
         if (error) throw error;
-        showSuccess("Template de geração atualizado com sucesso!");
+        templateTaskId = data.id;
+        showSuccess("Tarefa padrão atualizada com sucesso!");
       } else {
-        const { error } = await supabase.from("client_task_generation_templates").insert({
+        const { data, error } = await supabase.from("template_tasks").insert({
           ...dataToSave,
-          client_id: clientId,
           user_id: userId,
-        });
+        }).select("id").single();
 
         if (error) throw error;
-        showSuccess("Template de geração adicionado com sucesso!");
+        templateTaskId = data.id;
+        showSuccess("Tarefa padrão adicionada com sucesso!");
       }
+
+      await supabase.from("template_task_tags").delete().eq("template_task_id", templateTaskId);
+
+      if (values.selected_tag_ids && values.selected_tag_ids.length > 0) {
+        const templateTaskTagsToInsert = values.selected_tag_ids.map(tagId => ({
+          template_task_id: templateTaskId,
+          tag_id: tagId,
+        }));
+        const { error: tagInsertError } = await supabase.from("template_task_tags").insert(templateTaskTagsToInsert);
+        if (tagInsertError) throw tagInsertError;
+      }
+
       form.reset();
       onTemplateTaskSaved();
       onClose();
+      queryClient.invalidateQueries({ queryKey: ["templateTasks", userId] });
     } catch (error: any) {
-      showError("Erro ao salvar template de geração: " + error.message);
-      console.error("Erro ao salvar template de geração:", error);
+      showError("Erro ao salvar tarefa padrão: " + error.message);
+      console.error("Erro ao salvar tarefa padrão:", error);
     }
   };
 
@@ -185,7 +230,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialDa
         <div>
           <Label htmlFor="recurrence_time" className="text-foreground">Horário de Recorrência (Opcional)</Label>
           <TimePicker
-            value={form.watch("recurrence_time") || undefined}
+            value={form.watch("recurrence_time") || null}
             onChange={(time) => form.setValue("recurrence_time", time || null)}
           />
           <p className="text-xs text-muted-foreground mt-1">
@@ -197,7 +242,7 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialDa
       {recurrenceType === "weekly" && (
         <div>
           <Label className="text-foreground">Dias da Semana</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"> {/* Ajustado para grid responsivo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
             {DAYS_OF_WEEK.map((day) => (
               <div key={day.value} className="flex items-center space-x-2">
                 <Checkbox
@@ -258,121 +303,16 @@ const TemplateTaskForm: React.FC<TemplateTaskFormProps> = ({ clientId, initialDa
         </Select>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_active"
-          checked={form.watch("is_active")}
-          onCheckedChange={(checked) => form.setValue("is_active", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-        />
-        <Label htmlFor="is_active" className="text-foreground">Template Ativo</Label>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_standard_task"
-          checked={form.watch("is_standard_task")}
-          onCheckedChange={(checked) => form.setValue("is_standard_task", checked as boolean)}
-          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
-        />
-        <Label htmlFor="is_standard_task" className="text-foreground">Gerar como Tarefa Padrão (aparece no Dashboard Principal)</Label>
-      </div>
-
-      <div>
-        <Label htmlFor="default_due_days" className="text-foreground">Prazo Padrão (dias para entrega, opcional)</Label>
-        <Input
-          id="default_due_days"
-          type="number"
-          {...form.register("default_due_days", { valueAsNumber: true })}
-          placeholder="Ex: 5"
-          className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-        />
-        {form.formState.errors.default_due_days && (
-          <p className="text-red-500 text-sm mt-1">
-            {form.formState.errors.default_due_days.message}
-          </p>
-        )}
-      </div>
-
-      <h3 className="text-lg font-semibold text-foreground mt-4">Padrões de Geração</h3>
-      <div className="space-y-3">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex flex-col sm:flex-row gap-2 items-end p-3 border border-border rounded-md bg-background">
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2"> {/* Ajustado para grid responsivo */}
-              <div>
-                <Label htmlFor={`generation_pattern.${index}.week`} className="text-foreground">Semana (1-4)</Label>
-                <Input
-                  id={`generation_pattern.${index}.week`}
-                  type="number"
-                  {...form.register(`generation_pattern.${index}.week`, { valueAsNumber: true })}
-                  min={1}
-                  max={4}
-                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-                />
-                {form.formState.errors.generation_pattern?.[index]?.week && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {form.formState.errors.generation_pattern[index]?.week?.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor={`generation_pattern.${index}.day_of_week`} className="text-foreground">Dia da Semana</Label>
-                <Select
-                  onValueChange={(value: ClientTaskGenerationPattern['day_of_week']) => form.setValue(`generation_pattern.${index}.day_of_week`, value)}
-                  value={form.watch(`generation_pattern.${index}.day_of_week`)}
-                >
-                  <SelectTrigger id={`generation_pattern.${index}.day_of_week`} className="w-full bg-input border-border text-foreground focus-visible:ring-ring">
-                    <SelectValue placeholder="Selecionar dia" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-                    {DAYS_OF_WEEK_OPTIONS.map(day => (
-                      <SelectItem key={day.value} value={day.value}>{day.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.generation_pattern?.[index]?.day_of_week && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {form.formState.errors.generation_pattern[index]?.day_of_week?.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor={`generation_pattern.${index}.count`} className="text-foreground">Quantidade</Label>
-                <Input
-                  id={`generation_pattern.${index}.count`}
-                  type="number"
-                  {...form.register(`generation_pattern.${index}.count`, { valueAsNumber: true })}
-                  min={1}
-                  className="w-full bg-input border-border text-foreground focus-visible:ring-ring"
-                />
-                {form.formState.errors.generation_pattern?.[index]?.count && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {form.formState.errors.generation_pattern[index]?.count?.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-red-500 hover:bg-red-500/10 flex-shrink-0">
-              <XCircle className="h-4 w-4" />
-              <span className="sr-only">Remover Padrão</span>
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="outline" onClick={() => append({ week: 1, day_of_week: "Monday", count: 1 })} className="w-full border-dashed border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Padrão
-        </Button>
-        {form.formState.errors.generation_pattern && (
-          <p className="text-red-500 text-sm mt-1">
-            {form.formState.errors.generation_pattern.message}
-          </p>
-        )}
-      </div>
+      <TagSelector
+        selectedTagIds={selectedTagIds}
+        onTagSelectionChange={handleTagSelectionChange}
+      />
 
       <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-        {initialData?.id ? "Atualizar Template" : "Adicionar Template"}
+        {initialData?.id ? "Atualizar Tarefa Padrão" : "Adicionar Tarefa Padrão"}
       </Button>
     </form>
   );
 };
 
-export default ClientTaskGenerationTemplateForm;
+export default TemplateTaskForm;
