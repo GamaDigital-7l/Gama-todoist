@@ -217,7 +217,7 @@ const Clients: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
           <Users className="h-7 w-7 text-primary flex-shrink-0" /> Seus Clientes

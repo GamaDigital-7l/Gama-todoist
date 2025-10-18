@@ -169,7 +169,7 @@ const Health: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6 bg-background text-foreground">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:px-10 lg:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-foreground">Minha Saúde</h1>
         <div className="flex gap-2 flex-wrap justify-end w-full sm:w-auto">

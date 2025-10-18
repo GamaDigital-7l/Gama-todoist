@@ -117,7 +117,7 @@ const fetchTasksForSelectedDateBoard = async (userId: string, selectedDate: Date
       return true; // A filtragem já foi feita na query Supabase
     }
     // Para boards de 'hoje', filtrar por due_date ou recorrência
-    if (task.due_date && isSameDay(new Date(task.due_date), selectedDate)) {
+    if (task.due_date && format(parseISO(task.due_date), "yyyy-MM-dd") === formattedDate) {
       return true;
     }
     if (task.recurrence_type !== "none") {

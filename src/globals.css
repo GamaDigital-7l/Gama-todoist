@@ -92,12 +92,12 @@
   }
 
   h1 {
-    @apply text-4xl lg:text-5xl uppercase tracking-tight; /* Ajuste de espaçamento para maiúsculas */
+    @apply text-3xl sm:text-4xl lg:text-5xl uppercase tracking-tight; /* Ajuste de espaçamento para maiúsculas */
     letter-spacing: -1px;
   }
 
   h2 {
-    @apply text-3xl lg:text-4xl uppercase tracking-tight;
+    @apply text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight;
     letter-spacing: -1px;
   }
 
@@ -108,12 +108,17 @@
 
   /* Texto padrão / corpo */
   p, span, div {
-    @apply font-normal text-[--foreground]; /* Usando a cor definida para texto padrão */
+    @apply font-normal text-[--foreground] text-sm sm:text-base; /* Usando a cor definida para texto padrão */
   }
 
   /* Pequenos labels / legendas */
   .label-sm {
-    @apply font-medium text-[--muted-foreground] opacity-80 text-sm;
+    @apply font-medium text-[--muted-foreground] opacity-80 text-xs sm:text-sm;
+  }
+
+  /* Imagens responsivas por padrão */
+  img {
+    @apply max-w-full h-auto;
   }
 
   /* Efeito de Frosted Glass (vidro fosco) */
