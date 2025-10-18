@@ -181,7 +181,7 @@ const Study: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {session.notes && (
-                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{session.notes}</CardDescription> {/* Fontes adaptáveis */}
+                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{session.notes}</CardDescription>
                 )}
                 <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-1"> {/* Fontes adaptáveis */}
                   <BookOpen className="h-4 w-4 text-primary flex-shrink-0" /> Data: {format(parseISO(session.session_date), "PPP", { locale: ptBR })}

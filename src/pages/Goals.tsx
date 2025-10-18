@@ -176,7 +176,7 @@ const Goals: React.FC = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 {goal.description && (
-                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{goal.description}</CardDescription> {/* Fontes adaptáveis */}
+                  <CardDescription className="mb-2 text-muted-foreground break-words text-sm md:text-base">{goal.description}</CardDescription>
                 )}
                 {goal.target_date && (
                   <p className="text-sm md:text-base text-muted-foreground flex items-center gap-1 mb-2"> {/* Fontes adaptáveis */}
