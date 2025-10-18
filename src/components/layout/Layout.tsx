@@ -4,8 +4,13 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import OfflineIndicator from "../OfflineIndicator"; // Importar OfflineIndicator
 
-const Layout = () => {
+interface LayoutProps {
+  isOnline: boolean; // Adicionar prop isOnline
+}
+
+const Layout: React.FC<LayoutProps> = ({ isOnline }) => { // Receber isOnline como prop
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -40,6 +45,7 @@ const Layout = () => {
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex flex-col flex-1">
         <Header onMenuClick={() => setIsSidebarOpen(true)} />
+        <OfflineIndicator isOnline={isOnline} /> {/* Adicionar OfflineIndicator aqui */}
         <main className="flex flex-1 flex-col relative mt-[calc(4rem+var(--sat))]">
           <AnimatePresence>
             {isLoading && (
