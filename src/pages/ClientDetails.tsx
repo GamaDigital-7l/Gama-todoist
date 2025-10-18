@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientKanbanPage from "./ClientKanbanPage";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale"; // Importação adicionada
-import ClientTaskTemplateManagement from "@/components/client/ClientTaskTemplateManagement.tsx"; // Adicionado .tsx
+import ClientTaskTemplateManagement from "../components/client/ClientTaskTemplateManagement.tsx"; // Alterado para caminho relativo
 import { DIALOG_CONTENT_CLASSNAMES } from "@/lib/constants";
 
 const fetchClientById = async (clientId: string): Promise<Client | null> => {
