@@ -5,7 +5,7 @@ import { Header } from "./Header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import OfflineIndicator from "../OfflineIndicator";
-import DeepLinkHandler from "../DeepLinkHandler";
+import DeepLinkHandler from "../components/DeepLinkHandler"; // Corrected import path
 
 interface LayoutProps {
   isOnline: boolean;
