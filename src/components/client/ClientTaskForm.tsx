@@ -36,7 +36,7 @@ const clientTaskSchema = z.object({
   due_date: z.date().optional().nullable(),
   time: z.string().optional().nullable(),
   responsible_id: z.string().nullable().optional(),
-  status: z.enum(["backlog", "in_production", "in_approval", "approved", "scheduled", "published", "edit_requested"]).default("backlog"),
+  status: z.enum(["in_production", "in_approval", "approved", "scheduled", "published", "edit_requested"]).default("in_production"), // 'backlog' removido, padrão 'in_production'
   selected_tag_ids: z.array(z.string()).optional(),
   is_completed: z.boolean().default(false),
   image_files: z.array(z.instanceof(File)).optional(), // Novo campo para upload de múltiplas imagens
@@ -103,7 +103,7 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
       due_date: undefined,
       time: undefined,
       responsible_id: undefined,
-      status: "backlog",
+      status: "in_production", // Padrão para nova tarefa
       selected_tag_ids: [],
       is_completed: false,
       image_files: undefined,
@@ -398,7 +398,6 @@ const ClientTaskForm: React.FC<ClientTaskFormProps> = ({ clientId, monthYearRef,
             <SelectValue placeholder="Selecionar status" />
           </SelectTrigger>
           <SelectContent className="bg-popover text-popover-foreground border-border rounded-md shadow-lg">
-            <SelectItem value="backlog">Backlog</SelectItem>
             <SelectItem value="in_production">Em Produção</SelectItem>
             <SelectItem value="in_approval">Em Aprovação</SelectItem>
             <SelectItem value="approved">Aprovado</SelectItem>

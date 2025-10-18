@@ -198,7 +198,7 @@ serve(async (req) => {
               title: template.template_name,
               description: `Gerado a partir do template: ${template.template_name}`,
               month_year_reference: monthYearRef,
-              status: 'backlog', // Status inicial
+              status: 'in_production', // Status inicial agora é 'in_production'
               due_date: taskDueDate,
               time: null,
               responsible_id: null,

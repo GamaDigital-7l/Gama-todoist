@@ -121,7 +121,7 @@ serve(async (req) => {
         mainTaskUpdateData.current_board = 'completed';
       } else if (newStatus === 'edit_requested') {
         mainTaskUpdateData.is_completed = false;
-        mainTaskUpdateData.current_board = 'general';
+        mainTaskUpdateData.current_board = 'in_production'; // Mover para 'in_production' se edição solicitada
       }
       
       const { error: mainTaskError } = await supabaseServiceRole

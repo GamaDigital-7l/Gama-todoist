@@ -210,7 +210,7 @@ serve(async (req) => {
       if (nowInUserTimezone.getDate() === 1) {
         console.log(`[User ${userId}] Executando reset mensal para tarefas de clientes.`);
 
-        // Mover tarefas do mês anterior para 'completed' ou 'backlog' dependendo do status
+        // Mover tarefas do mês anterior para 'in_production' ou 'completed' dependendo do status
         const { data: clientTasksToReset, error: fetchClientTasksToResetError } = await supabase
           .from('client_tasks')
           .select('id, is_completed, status')
@@ -222,8 +222,8 @@ serve(async (req) => {
         const updates = clientTasksToReset.map(task => {
           let newStatus = task.status;
           if (!task.is_completed) {
-            // Se não foi concluída, move para backlog (ou mantém se já estiver lá)
-            newStatus = 'backlog';
+            // Se não foi concluída, move para 'in_production' (ou mantém se já estiver lá)
+            newStatus = 'in_production';
           } else {
             // Se foi concluída, mantém o status final (published, approved, etc.)
             // ou move para um status de "histórico" se houver um

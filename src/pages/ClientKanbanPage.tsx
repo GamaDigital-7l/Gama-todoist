@@ -32,13 +32,13 @@ import {
 import { OriginBoard } from "@/types/task"; // Importar OriginBoard
 
 const KANBAN_COLUMNS: { status: ClientTaskStatus; title: string; color: string }[] = [
-  { status: "backlog", title: "Backlog", color: "bg-gray-700" },
   { status: "in_production", title: "Em Produção", color: "bg-blue-700" },
   { status: "in_approval", title: "Em Aprovação", color: "bg-yellow-700" },
   { status: "edit_requested", title: "Edição Solicitada", color: "bg-orange-700" },
   { status: "approved", title: "Aprovado", color: "bg-green-700" },
   { status: "scheduled", title: "Agendado", color: "bg-purple-700" },
   { status: "published", title: "Publicado", color: "bg-indigo-700" },
+  // Colunas opcionais (Pausado, Reprovado) podem ser adicionadas aqui se ativadas por cliente
 ];
 
 const fetchClientById = async (clientId: string, userId: string): Promise<Client | null> => {
@@ -205,7 +205,7 @@ const ClientKanbanPage: React.FC = () => {
       if (newStatus === 'approved' || newStatus === 'published') {
         updateData.is_completed = true;
         updateData.completed_at = new Date().toISOString();
-      } else if (newStatus === 'edit_requested' || newStatus === 'backlog' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') {
+      } else if (newStatus === 'edit_requested' || newStatus === 'in_production' || newStatus === 'in_approval' || newStatus === 'scheduled') { // Removido 'backlog'
         updateData.is_completed = false;
         updateData.completed_at = null;
       }
@@ -620,6 +620,7 @@ const ClientKanbanPage: React.FC = () => {
           <Carousel
             opts={{
               align: "start",
+              dragFree: false, // Ativar snap
             }}
             className="w-full"
           >
@@ -667,11 +668,11 @@ const ClientKanbanPage: React.FC = () => {
             <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
           </Carousel>
         ) : (
-          <div className="inline-flex h-full space-x-4 flex-nowrap">
+          <div className="inline-flex h-full space-x-4 flex-nowrap overflow-x-auto scroll-smooth scroll-snap-x-mandatory scroll-p-4">
             {KANBAN_COLUMNS.map((column) => (
               <Card
                 key={column.status}
-                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full"
+                className="flex flex-col w-[280px] flex-shrink-0 bg-card border border-border rounded-xl shadow-md frosted-glass h-full scroll-snap-align-start"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.status)}
               >

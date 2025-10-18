@@ -8,7 +8,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, Edit, XCircle, CalendarDays, Clock, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Client, ClientTask, PublicApprovalLink } from "@/types/client";
+import { Client, ClientTask, PublicApprovalLink, ClientTaskStatus } from "@/types/client"; // Importar ClientTaskStatus
 import { format, parseISO, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import FullScreenImageViewer from "@/components/client/FullScreenImageViewer";

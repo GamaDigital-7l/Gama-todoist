@@ -1,5 +1,5 @@
 export type ClientType = 'fixed' | 'freela' | 'agency';
-export type ClientTaskStatus = 'backlog' | 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published' | 'edit_requested';
+export type ClientTaskStatus = 'in_production' | 'in_approval' | 'approved' | 'scheduled' | 'published' | 'edit_requested'; // 'backlog' removido
 
 export interface Client {
   id: string;
